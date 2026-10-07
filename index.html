@@ -251,43 +251,73 @@ body.smoky{
 }
 
 
-/* ===== V12 ===== */
+/* ===== V13 clean homepage ===== */
 .brand-house-outline{display:none!important}
-.bell-btn{width:38px!important;height:38px!important;padding:3px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
-.bell-btn .ico{width:29px!important;height:29px!important;stroke-width:2.15!important}
-.palette-symbol{font-size:21px;line-height:1;display:block}
 
+/* Bell: between the older tiny version and oversized V12 */
+.bell-btn{
+  width:36px!important;height:36px!important;padding:5px!important;
+  display:inline-flex!important;align-items:center!important;justify-content:center!important
+}
+.bell-btn .ico{width:23px!important;height:23px!important;stroke-width:1.9!important}
+
+/* Keep the button's theme color, make only the palette drawing white */
+#themeBtn .palette-white{
+  width:21px!important;height:21px!important;
+  color:#fff!important;stroke:#fff!important;fill:none!important;
+  stroke-width:1.9!important;stroke-linecap:round;stroke-linejoin:round
+}
+#themeBtn .palette-white circle{fill:#fff!important}
+
+/* Full-width original artwork; fade affects artwork only */
+#home.container{max-width:none!important;padding-left:0!important;padding-right:0!important}
 .art-hero{
- position:relative;width:100%;height:370px;display:flex;align-items:center;justify-content:center;
- overflow:hidden;margin-bottom:0
+  position:relative;width:100%;height:350px;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;margin:0 0 8px
 }
 .art-hero-image{
- position:absolute;inset:0;background:url("alex-banner.png") center 54%/cover no-repeat
+  position:absolute;inset:0;
+  background-image:url("alex-banner.jpg");
+  background-size:cover;background-position:center 54%;background-repeat:no-repeat
 }
 .hero-fade{
- position:absolute;left:0;right:0;bottom:-1px;height:145px;
- background:linear-gradient(to bottom,rgba(255,255,255,0),var(--bg) 92%);
- pointer-events:none
+  position:absolute;left:0;right:0;bottom:-1px;height:125px;
+  background:linear-gradient(to bottom,rgba(255,255,255,0),var(--bg) 94%);
+  pointer-events:none
 }
+/* Solid box, no border, subtle shadow, not floating too strongly */
 .hero-panel{
- position:relative;z-index:2;width:min(540px,calc(100% - 36px));margin:0!important;
- padding:22px 26px 20px!important;border:0!important;border-radius:20px!important;
- background:var(--card)!important;box-shadow:0 6px 18px rgba(55,45,60,.09)!important
+  position:relative;z-index:2;
+  width:min(530px,calc(100% - 36px));
+  margin:0!important;padding:21px 25px 19px!important;
+  border:0!important;border-radius:20px!important;
+  background:var(--card)!important;
+  box-shadow:0 5px 15px rgba(55,45,60,.08)!important
 }
 .hero-panel h1{margin-top:0}
-.home-stories{padding-top:8px}
-#stories.grid{grid-template-columns:repeat(3,minmax(0,1fr));max-width:1180px;margin:0 auto}
-#stories .story-card{min-width:0}
+
+/* Story area gets its OWN wide container, then 3 columns */
+#home>#stories{
+  width:min(1180px,calc(100% - 40px))!important;
+  max-width:1180px!important;margin:8px auto 40px!important;
+}
+#stories.grid{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:16px!important
+}
+#stories .story-card{min-width:0!important;width:auto!important}
 
 @media(max-width:980px){
- #stories.grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #stories.grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
 }
 @media(max-width:640px){
- .art-hero{height:285px}
- .art-hero-image{background-position:center center}
- .hero-fade{height:105px}
- .hero-panel{width:calc(100% - 28px);padding:18px 16px 16px!important;border-radius:17px!important}
- #stories.grid{grid-template-columns:1fr}
+  .art-hero{height:285px}
+  .art-hero-image{background-position:center center}
+  .hero-fade{height:100px}
+  .hero-panel{width:calc(100% - 28px);padding:18px 16px 16px!important;border-radius:17px!important}
+  #home>#stories{width:calc(100% - 24px)!important}
+  #stories.grid{grid-template-columns:1fr!important}
 }
 
 </style>
@@ -383,14 +413,14 @@ document.body.classList.add('gate-locked');
 </div>
 </nav></header>
 
-<main id="home">
+<main id="home" class="container">
 <section class="art-hero">
   <div class="art-hero-image" aria-hidden="true"></div>
   <div class="hero-fade" aria-hidden="true"></div>
   <section class="hero hero-panel"><h1>Nhà có Alex</h1><p class="muted">Góc riêng có Alex làm truyện.</p>
   <div class="search"><input id="q" placeholder="Tìm truyện..." oninput="render()"><button onclick="render()">Tìm</button></div></section>
 </section>
-<div class="container home-stories"><div id="stories" class="grid"></div></div>
+<div id="stories" class="grid"></div>
 </main>
 
 <main id="reader" class="container hidden">
@@ -425,7 +455,14 @@ document.body.classList.add('gate-locked');
 </main>
 
 <div class="float-tools" aria-label="Tùy chỉnh giao diện" onmouseenter="cancelThemeClose()" onmouseleave="scheduleThemeClose()">
-<button id="themeBtn" onclick="toggleThemeMenu()" title="Chọn màu giao diện" aria-label="Chọn màu giao diện"><span class="palette-symbol" aria-hidden="true">🎨</span></button>
+<button id="themeBtn" onclick="toggleThemeMenu()" title="Chọn màu giao diện" aria-label="Chọn màu giao diện">
+      <svg class="ico palette-white" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 3.25a8.75 8.75 0 1 0 0 17.5h1.55a2.3 2.3 0 0 0 0-4.6h-1.3a4.35 4.35 0 0 1 0-8.7h1.15a2.1 2.1 0 0 0 0-4.2Z"/>
+        <circle cx="7.2" cy="10.2" r="1.15" fill="currentColor" stroke="none"/>
+        <circle cx="9.5" cy="6.8" r="1.15" fill="currentColor" stroke="none"/>
+        <circle cx="15.7" cy="7.2" r="1.15" fill="currentColor" stroke="none"/>
+      </svg>
+    </button>
 <button id="fontFamilyBtn" class="text-btn" onclick="toggleFontMenu()" title="Chọn font">Aa</button>
 <button id="fontDown" class="text-btn" onclick="font(-1)" title="Giảm cỡ chữ">A−</button>
 <button id="fontUp" class="text-btn" onclick="font(1)" title="Tăng cỡ chữ">A+</button>

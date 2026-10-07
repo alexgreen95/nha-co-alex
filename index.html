@@ -431,6 +431,64 @@ body.smoky{
   .library-controls{width:calc(100% - 24px);justify-content:flex-start}
 }
 
+
+/* ===== V14.1 banner fades + community demo ===== */
+.hero-fade-top{
+  position:absolute;left:0;right:0;top:-1px;height:78px;
+  background:linear-gradient(to bottom,var(--bg) 0%,rgba(255,255,255,0) 100%);
+  pointer-events:none;z-index:1
+}
+.hero-fade{
+  height:175px!important;
+  background:linear-gradient(to bottom,rgba(255,255,255,0) 0%,var(--bg) 96%)!important;
+}
+.demo-label{
+  width:min(850px,calc(100% - 32px));margin:0 auto 10px;
+  color:var(--muted);font-size:.82rem;text-align:right
+}
+.review-title-link,.comment-location{font-weight:600;color:var(--accent);cursor:pointer}
+.community-card .heart-demo{font-size:.95rem}
+@media(max-width:640px){
+  .hero-fade-top{height:62px}
+  .hero-fade{height:145px!important}
+}
+
+
+/* ===== V14.2: responsive cards + banner contrast + soft themed search ===== */
+.art-hero .hero-panel h1{color:#59434d!important}
+.art-hero .hero-panel .muted{color:#77616b!important}
+.art-hero .hero-panel h1,.art-hero .hero-panel .muted{
+  text-shadow:0 1px 7px rgba(255,255,255,.92),0 0 2px rgba(255,255,255,.78)!important
+}
+
+/* Keep 3-column cards compact on wide 16:9 screens instead of stretching. */
+#home>#stories{width:min(1040px,calc(100% - 48px))!important;max-width:1040px!important}
+#stories.grid{gap:16px!important}
+@media(max-width:980px){#home>#stories{width:min(760px,calc(100% - 36px))!important}}
+@media(max-width:640px){#home>#stories{width:calc(100% - 24px)!important}}
+
+/* Search follows the theme softly; dark themes stay pastel, never black. */
+.hero-panel .search{border:1px solid rgba(112,92,105,.12)!important}
+.hero-panel .search input,.hero-panel .search button{color:#594b51!important}
+body.light .hero-panel .search,body.light .hero-panel .search input{background:#fff8f6!important}
+body.light .hero-panel .search button{background:#f7e3e8!important;border-color:#ecd4dc!important}
+body.smoky .hero-panel .search,body.smoky .hero-panel .search input{background:#f2edf6!important}
+body.smoky .hero-panel .search button{background:#e5dced!important;border-color:#d8cce2!important}
+body.dustyrose .hero-panel .search,body.dustyrose .hero-panel .search input{background:#f9eef1!important}
+body.dustyrose .hero-panel .search button{background:#efdce3!important;border-color:#e3ccd5!important}
+body.mistblue .hero-panel .search,body.mistblue .hero-panel .search input{background:#eff7f8!important}
+body.mistblue .hero-panel .search button{background:#dcecef!important;border-color:#cbdfe3!important}
+body.pastel .hero-panel .search,body.pastel .hero-panel .search input{background:#fff8f2!important}
+body.pastel .hero-panel .search button{background:#f7e8ef!important;border-color:#ead6df!important}
+body.night .hero-panel .search,body.night .hero-panel .search input{background:#eef1f6!important}
+body.night .hero-panel .search button{background:#dce4ef!important;border-color:#ccd7e5!important}
+body.purplenight .hero-panel .search,body.purplenight .hero-panel .search input{background:#f0ebf5!important}
+body.purplenight .hero-panel .search button{background:#e1d7ec!important;border-color:#d3c6e1!important}
+.hero-panel .search input{border-color:transparent!important}
+
+/* Restore the earlier, instantly recognizable palette drawing; keep it white. */
+#themeBtn .palette-white{width:24px!important;height:24px!important;stroke:#fff!important;fill:none!important;stroke-width:2.05!important}
+#themeBtn .palette-white .palette-dot{fill:#fff!important;stroke:none!important}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -527,6 +585,7 @@ document.body.classList.add('gate-locked');
 <main id="home" class="container">
 <section class="art-hero">
   <div class="art-hero-image" aria-hidden="true"></div>
+  <div class="hero-fade-top" aria-hidden="true"></div>
   <div class="hero-fade" aria-hidden="true"></div>
   <section class="hero hero-panel"><h1>Nhà có Alex</h1><p class="muted">Góc riêng có Alex làm truyện</p>
   <div class="search"><input id="q" placeholder="Tìm truyện..." oninput="render()"><button onclick="render()">Tìm</button></div></section>
@@ -546,10 +605,34 @@ document.body.classList.add('gate-locked');
   <div class="home-more"><button id="moreStoriesBtn" onclick="toggleAllStories()">Xem thêm truyện</button></div>
 </section>
 <section id="reviewsPanel" class="home-panel">
-  <div id="reviewsFeed" class="community-feed"><div class="empty-feed">Chưa có review nào.</div></div>
+  <div class="demo-label">Dữ liệu minh họa để căn giao diện</div>
+<div class="community-feed">
+  <article class="community-card">
+    <div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">L</div><div class="community-meta"><strong>Linh Đan</strong><span class="community-sub">2 giờ trước · <span class="review-title-link">Mùa Hạ Có Em</span></span></div><button class="icon-btn" aria-label="Thêm">⋯</button></div>
+    <div class="community-body">Truyện thật sự rất dễ thương, đọc xong thấy ấm lòng. Mình thích cách những chuyện nhỏ trong nhà được kể rất tự nhiên.</div>
+    <div class="community-actions"><button class="heart-demo">♡ 12</button><button onclick="this.closest('.community-card').querySelector('.review-thread').hidden=!this.closest('.community-card').querySelector('.review-thread').hidden">💬 2 bình luận</button></div>
+    <div class="review-thread" hidden><div><strong>Minh Anh</strong> <span class="community-sub">· 1 giờ trước</span><div>Mình cũng thích đoạn bữa cơm tối nhất á 🥹</div></div><div class="review-reply"><strong>Linh Đan</strong> <span class="community-sub">· 45 phút trước</span><div>Đúng rồi, đọc rất có cảm giác ở nhà luôn.</div></div></div>
+  </article>
+  <article class="community-card">
+    <div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">H</div><div class="community-meta"><strong>Hải Yến</strong><span class="community-sub">1 ngày trước · <span class="review-title-link">Tiệm Hoa Mở Cửa Sau Nửa Đêm</span></span></div><button class="icon-btn" aria-label="Thêm">⋯</button></div>
+    <div class="community-body">Không khí truyện nhẹ nhàng mà có chút kỳ ảo rất vừa đủ. Mong tác giả ra thêm chương mới sớm nha.</div>
+    <div class="community-actions"><button class="heart-demo">♡ 8</button><button>💬 1 bình luận</button></div>
+  </article>
+  <article class="community-card">
+    <div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">N</div><div class="community-meta"><strong>Ngọc Trâm</strong><span class="community-sub">3 ngày trước · <span class="review-title-link">Chuyện Nhà Mình</span></span></div><button class="icon-btn" aria-label="Thêm">⋯</button></div>
+    <div class="community-body">Một câu chuyện rất đời thường nhưng đọc xong lại nhớ lâu. Mấy chi tiết nhỏ làm nhân vật có cảm giác gần gũi ghê.</div>
+    <div class="community-actions"><button class="heart-demo">♡ 21</button><button>💬 4 bình luận</button></div>
+  </article>
+</div>
 </section>
 <section id="commentsPanel" class="home-panel">
-  <div id="commentsFeed" class="community-feed"><div class="empty-feed">Chưa có bình luận nào.</div></div>
+  <div class="demo-label">Dữ liệu minh họa để căn giao diện</div>
+<div class="community-feed">
+  <article class="community-card"><div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">T</div><div class="community-meta"><strong>Tuệ Anh</strong><span class="community-sub">10 phút trước · <span class="comment-location">Chương 12 · Mùa Hạ Có Em</span></span></div><button class="icon-btn">⋯</button></div><div class="community-body">Đoạn này dễ thương quá trời, mình cười xỉu luôn áaaa 🥹💗</div><div class="community-actions"><button>♡ 5</button><button>Trả lời</button></div></article>
+  <article class="community-card"><div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">H</div><div class="community-meta"><strong>Hoàng Nam</strong><span class="community-sub">45 phút trước · <span class="comment-location">Chương 5 · Sau Cơn Mưa</span></span></div><button class="icon-btn">⋯</button></div><div class="community-body">Mình cũng nghĩ giống bạn, chi tiết này thật sự rất tinh tế.</div><div class="community-actions"><button>♡ 3</button><button>Trả lời</button></div></article>
+  <article class="community-card"><div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">K</div><div class="community-meta"><strong>Khánh Linh</strong><span class="community-sub">2 giờ trước · đã trả lời bình luận · <span class="comment-location">Chương 3 · Dưới Bầu Trời Đêm Ấy</span></span></div><button class="icon-btn">⋯</button></div><div class="community-body"><strong>@Phương Anh</strong> Đúng rồi, mình cũng thấy vậy nè! Cảm ơn bạn đã phân tích kỹ quá.</div><div class="community-actions"><button>♡ 7</button><button>Trả lời</button></div></article>
+  <article class="community-card"><div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">M</div><div class="community-meta"><strong>Minh Anh</strong><span class="community-sub">4 giờ trước · <span class="comment-location">Chương 8 · Chuyện Nhà Mình</span></span></div><button class="icon-btn">⋯</button></div><div class="community-body">Một chương nhẹ nhàng nhưng đọc xong thấy ấm lòng ghê. Thích cách tác giả viết về gia đình quá 💛</div><div class="community-actions"><button>♡ 9</button><button>Trả lời</button></div></article>
+</div>
 </section>
 </main>
 
@@ -586,11 +669,12 @@ document.body.classList.add('gate-locked');
 
 <div class="float-tools" aria-label="Tùy chỉnh giao diện" onmouseenter="cancelThemeClose()" onmouseleave="scheduleThemeClose()">
 <button id="themeBtn" onclick="toggleThemeMenu()" title="Chọn màu giao diện" aria-label="Chọn màu giao diện">
-      <svg class="ico palette-white" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M12 3.25a8.75 8.75 0 1 0 0 17.5h1.55a2.3 2.3 0 0 0 0-4.6h-1.3a4.35 4.35 0 0 1 0-8.7h1.15a2.1 2.1 0 0 0 0-4.2Z"/>
-        <circle cx="7.2" cy="10.2" r="1.15" fill="currentColor" stroke="none"/>
-        <circle cx="9.5" cy="6.8" r="1.15" fill="currentColor" stroke="none"/>
-        <circle cx="15.7" cy="7.2" r="1.15" fill="currentColor" stroke="none"/>
+      <svg class="ico palette-ico palette-white" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 3.1a8.9 8.9 0 1 0 0 17.8h1.7a2.3 2.3 0 0 0 0-4.6h-1.5a4.3 4.3 0 0 1 0-8.6h1.1a2.3 2.3 0 0 0 0-4.6Z"/>
+        <circle class="palette-dot" cx="7" cy="10.4" r="1.35"/>
+        <circle class="palette-dot" cx="9.2" cy="6.8" r="1.35"/>
+        <circle class="palette-dot" cx="15.7" cy="7.1" r="1.35"/>
+        <circle class="palette-dot" cx="17.2" cy="11.2" r="1.35"/>
       </svg>
     </button>
 <button id="fontFamilyBtn" class="text-btn" onclick="toggleFontMenu()" title="Chọn font">Aa</button>

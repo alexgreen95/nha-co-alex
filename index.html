@@ -320,6 +320,117 @@ body.smoky{
   #stories.grid{grid-template-columns:1fr!important}
 }
 
+
+/* ===== V14 approved refinements ===== */
+
+/* Smaller notification bell */
+.bell-btn{
+  width:34px!important;height:34px!important;padding:7px!important;
+}
+.bell-btn .ico{width:19px!important;height:19px!important;stroke-width:1.85!important}
+
+/* Familiar white palette silhouette; button background remains theme-controlled */
+#themeBtn .palette-white{
+  width:20px!important;height:20px!important;
+  color:#fff!important;stroke:#fff!important;fill:none!important;
+  stroke-width:1.8!important
+}
+
+/* Show more of the original 3:2 artwork so the sunrise/sun is not cropped away */
+.art-hero{height:390px!important;background:var(--bg)}
+.art-hero-image{
+  background-size:cover!important;
+  background-position:center 30%!important;
+}
+
+/* No large box around the title/copy: only search feels elevated */
+.hero-panel{
+  background:transparent!important;
+  box-shadow:none!important;
+  border:0!important;
+  width:min(620px,calc(100% - 36px))!important;
+  padding:18px 20px!important;
+}
+.hero-panel h1,.hero-panel .muted{
+  text-shadow:0 1px 8px rgba(255,255,255,.8);
+}
+.hero-panel .search{
+  width:min(520px,100%);margin-left:auto;margin-right:auto;
+  background:var(--card);padding:6px;border-radius:18px;
+  box-shadow:0 6px 18px rgba(55,45,60,.12)
+}
+
+/* Reading text: justify story prose only */
+.reader .para,
+.reader .paragraph,
+.chapter-content p,
+#chapterContent p,
+.reading-content p{
+  text-align:justify!important;
+  text-justify:inter-word;
+}
+
+/* Homepage tabs */
+.home-tabs{
+  width:min(1180px,calc(100% - 40px));margin:4px auto 18px;
+  display:flex;justify-content:center;gap:30px;
+  border-bottom:1px solid var(--line)
+}
+.home-tab{
+  appearance:none;border:0;background:transparent;color:var(--muted);
+  padding:12px 4px 10px;cursor:pointer;font:inherit;position:relative
+}
+.home-tab.active{color:var(--text);font-weight:700}
+.home-tab.active:after{
+  content:"";position:absolute;left:12%;right:12%;bottom:-1px;height:2px;
+  background:currentColor;border-radius:2px
+}
+.home-panel{display:none}
+.home-panel.active{display:block}
+
+/* library controls */
+.library-controls{
+  width:min(1180px,calc(100% - 40px));margin:0 auto 14px;
+  display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap
+}
+.library-controls select{
+  border:1px solid var(--line);background:var(--card);color:var(--text);
+  border-radius:12px;padding:8px 10px;font:inherit
+}
+.home-more{display:flex;justify-content:center;margin:20px auto 44px}
+.home-more button{border-radius:999px}
+
+/* Review/comment feed styling */
+.community-feed{
+  width:min(850px,calc(100% - 32px));margin:0 auto 44px;display:grid;gap:12px
+}
+.community-card{
+  background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:15px 17px;box-shadow:0 3px 12px rgba(55,45,60,.04)
+}
+.community-head{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+.community-avatar{width:34px;height:34px;border-radius:50%;object-fit:cover}
+.community-meta{min-width:0;flex:1}
+.community-meta strong{display:block}
+.community-sub{font-size:.85rem;color:var(--muted)}
+.community-body{line-height:1.65;margin:8px 0}
+.community-actions{display:flex;gap:14px;color:var(--muted);font-size:.9rem}
+.community-actions button{border:0;background:none;color:inherit;padding:0;cursor:pointer}
+.review-thread{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
+.review-reply{margin:8px 0 0 26px}
+.empty-feed{text-align:center;color:var(--muted);padding:42px 12px}
+
+/* Make dropdowns mutually exclusive visually and support pointer-leave closing */
+.account-menu,.notif-panel{transition:opacity .14s ease,transform .14s ease}
+
+@media(max-width:640px){
+  .art-hero{height:330px!important}
+  .art-hero-image{background-position:center 26%!important}
+  .home-tabs{width:calc(100% - 24px);gap:16px}
+  .home-tab{font-size:.92rem}
+  .library-controls{width:calc(100% - 24px);justify-content:flex-start}
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -417,10 +528,29 @@ document.body.classList.add('gate-locked');
 <section class="art-hero">
   <div class="art-hero-image" aria-hidden="true"></div>
   <div class="hero-fade" aria-hidden="true"></div>
-  <section class="hero hero-panel"><h1>Nhà có Alex</h1><p class="muted">Góc riêng có Alex làm truyện.</p>
+  <section class="hero hero-panel"><h1>Nhà có Alex</h1><p class="muted">Góc riêng có Alex làm truyện</p>
   <div class="search"><input id="q" placeholder="Tìm truyện..." oninput="render()"><button onclick="render()">Tìm</button></div></section>
 </section>
-<div id="stories" class="grid"></div>
+<div class="home-tabs" role="tablist">
+  <button class="home-tab active" data-home-tab="storiesPanel" onclick="switchHomeTab('storiesPanel',this)">Truyện</button>
+  <button class="home-tab" data-home-tab="reviewsPanel" onclick="switchHomeTab('reviewsPanel',this)">Review mới</button>
+  <button class="home-tab" data-home-tab="commentsPanel" onclick="switchHomeTab('commentsPanel',this)">Bình luận mới</button>
+</div>
+<section id="storiesPanel" class="home-panel active">
+  <div class="library-controls">
+    <select id="sortStories" onchange="render()"><option value="updated_desc">Cập nhật mới nhất</option><option value="updated_asc">Cập nhật cũ nhất</option></select>
+    <select id="genreFilter" onchange="render()"><option value="">Tất cả thể loại</option></select>
+    <select id="statusFilter" onchange="render()"><option value="">Tất cả tình trạng</option><option value="ongoing">Đang viết</option><option value="completed">Đã hoàn thành</option></select>
+  </div>
+  <div id="stories" class="grid"></div>
+  <div class="home-more"><button id="moreStoriesBtn" onclick="toggleAllStories()">Xem thêm truyện</button></div>
+</section>
+<section id="reviewsPanel" class="home-panel">
+  <div id="reviewsFeed" class="community-feed"><div class="empty-feed">Chưa có review nào.</div></div>
+</section>
+<section id="commentsPanel" class="home-panel">
+  <div id="commentsFeed" class="community-feed"><div class="empty-feed">Chưa có bình luận nào.</div></div>
+</section>
 </main>
 
 <main id="reader" class="container hidden">
@@ -819,4 +949,55 @@ let ff=localStorage.getItem('reader_font_family')||'Arial';setReadingFont(ff);
 theme(localStorage.getItem('reader_theme')||'pastel');
 render();
 </script>
+
+<script>
+let homeShowAllStories=false;
+function switchHomeTab(panelId,btn){
+  document.querySelectorAll('.home-panel').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.home-tab').forEach(x=>x.classList.remove('active'));
+  const p=document.getElementById(panelId); if(p)p.classList.add('active');
+  if(btn)btn.classList.add('active');
+}
+function applyStoryLimit(){
+  const grid=document.getElementById('stories'); if(!grid)return;
+  const cards=[...grid.children];
+  cards.forEach((c,i)=>c.style.display=(homeShowAllStories||i<6)?'':'none');
+  const b=document.getElementById('moreStoriesBtn');
+  if(b){b.style.display=cards.length>6?'':'none';b.textContent=homeShowAllStories?'Thu gọn':'Xem thêm truyện';}
+}
+function toggleAllStories(){homeShowAllStories=!homeShowAllStories;applyStoryLimit()}
+
+/* Close account/notification popovers when leaving them or clicking elsewhere.
+   Also prevent both from remaining open at once. */
+document.addEventListener('click',function(e){
+  const notif=document.querySelector('.notif-panel');
+  const acct=document.querySelector('.account-menu');
+  const bell=e.target.closest('.bell-btn');
+  const accountTrigger=e.target.closest('.account-trigger,.user-trigger,.profile-trigger');
+  if(notif && !bell && !e.target.closest('.notif-panel')) notif.classList.remove('open','show');
+  if(acct && !accountTrigger && !e.target.closest('.account-menu')) acct.classList.remove('open','show');
+  if(bell && acct) acct.classList.remove('open','show');
+  if(accountTrigger && notif) notif.classList.remove('open','show');
+});
+['.notif-panel','.account-menu'].forEach(sel=>{
+  document.addEventListener('mouseover',e=>{
+    const box=e.target.closest(sel); if(!box||box.dataset.leaveBound)return;
+    box.dataset.leaveBound='1';
+    box.addEventListener('mouseleave',()=>box.classList.remove('open','show'));
+  });
+});
+
+/* Keep homepage capped after the existing renderer changes the story grid. */
+const storyGridObserverTarget=()=>document.getElementById('stories');
+window.addEventListener('load',()=>{
+  const g=storyGridObserverTarget();
+  if(g){
+    let busy=false;
+    new MutationObserver(()=>{if(busy)return;busy=true;requestAnimationFrame(()=>{applyStoryLimit();busy=false})})
+      .observe(g,{childList:true});
+    applyStoryLimit();
+  }
+});
+</script>
+
 </body></html>

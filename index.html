@@ -94,7 +94,7 @@ body.night .status-ongoing{color:#dfbd80}
 body.gate-locked > :not(#secretGate){visibility:hidden}
 #secretGate{position:fixed;inset:0;z-index:99999;display:none;place-items:center;padding:24px;background:var(--bg,#fff);color:var(--fg,#2f2f2f)}
 body.gate-locked #secretGate{display:grid;visibility:visible}
-.gate-card{width:min(430px,100%);text-align:center;border:1px solid var(--line,#ddd);border-radius:18px;padding:32px 26px;background:var(--bg,#fff);box-shadow:0 18px 60px rgba(0,0,0,.12)}
+#secretGate{transition:opacity .7s ease,visibility .7s ease}#secretGate.gate-opening{opacity:0;visibility:hidden;pointer-events:none}.gate-card{width:min(430px,100%);text-align:center;border:1px solid var(--line,#ddd);border-radius:18px;padding:32px 26px;background:var(--bg,#fff);box-shadow:0 18px 60px rgba(0,0,0,.12)}
 .gate-card h1{margin:0 0 8px;font-size:28px}.gate-card p{margin:0 0 22px;color:var(--muted,#777)}
 .gate-form{display:flex;gap:8px}.gate-form input{min-width:0;flex:1;padding:12px 14px;border:1px solid var(--line,#ddd);border-radius:9px;background:var(--bg,#fff);color:var(--fg,#2f2f2f);font:inherit}
 .gate-form button{padding:12px 16px;border:0;border-radius:9px;background:var(--fg,#2f2f2f);color:var(--bg,#fff);font:inherit;cursor:pointer}
@@ -123,10 +123,20 @@ document.body.classList.add('gate-locked');
   }
   form.addEventListener('submit',async e=>{
     e.preventDefault(); const password=input.value; if(!password)return;
-    msg.textContent='Đang hỏi bức tranh…';
+    msg.textContent='Để kiểm tra coi...';
     try{
       const r=await fetch('/api/gate-login',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({password})});
-      if(r.ok){msg.textContent='Ừm… người nhà. Vào đi ✦';input.value='';document.body.classList.remove('gate-locked')}
+      if(r.ok){
+        msg.textContent='Ừm… người nhà. Mời vào ✦';
+        input.value='';
+        input.disabled=true;
+        const button=form.querySelector('button');
+        if(button) button.disabled=true;
+        await new Promise(resolve=>setTimeout(resolve,1000));
+        document.getElementById('secretGate').classList.add('gate-opening');
+        await new Promise(resolve=>setTimeout(resolve,700));
+        document.body.classList.remove('gate-locked');
+      }
       else{msg.textContent='Sai mật mã rồi. Nhà không quen người này 👀';input.select()}
     }catch(err){msg.textContent='Chưa hỏi được bức tranh. Thử lại một chút nha.'}
   });

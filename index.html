@@ -16,19 +16,26 @@ button{cursor:pointer}
 header{border-bottom:1px solid var(--line);position:sticky;top:0;background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(8px);z-index:5}
 .nav{max-width:900px;margin:auto;padding:14px 18px;display:flex;align-items:center;gap:12px}
 .logo{font-weight:700;font-size:22px;margin-right:auto;display:flex;align-items:center;gap:9px}.brand-icon{width:34px;height:34px;border-radius:10px;object-fit:cover;display:block}
-.nav button,.btn{border:1px solid var(--line);background:var(--bg);padding:8px 13px;border-radius:7px}
+.nav button,.btn{border:1px solid var(--line);background:var(--soft);padding:8px 13px;border-radius:9px;box-shadow:0 2px 7px rgba(40,30,30,.08),inset 0 1px rgba(255,255,255,.35);transition:transform .15s ease,box-shadow .15s ease,background .15s ease}.nav button:hover,.btn:hover{transform:translateY(-1px);box-shadow:0 4px 11px rgba(40,30,30,.11),inset 0 1px rgba(255,255,255,.42)}.nav button:active,.btn:active{transform:translateY(0);box-shadow:0 1px 3px rgba(40,30,30,.09)}
 .container{max-width:900px;margin:auto;padding:28px 18px}
 .hero{text-align:center;padding:62px 18px}
 .hero h1{font-size:40px;margin:0 0 8px}
 .muted{color:var(--muted)}
 .search{display:flex;max-width:550px;margin:24px auto}
 .search input{flex:1;border:1px solid var(--line);border-right:0;border-radius:8px 0 0 8px;padding:11px;background:var(--bg)}
-.search button{border:1px solid var(--line);border-radius:0 8px 8px 0;background:var(--panel)}
+.search button{border:1px solid var(--line);border-radius:0 8px 8px 0;background:var(--soft);box-shadow:0 2px 7px rgba(40,30,30,.07)}
 .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
-.card{border:1px solid var(--line);border-radius:16px;padding:16px;background:var(--card);box-shadow:0 5px 18px rgba(73,50,50,.05)}
-.story-card{display:grid;grid-template-columns:118px 1fr;gap:16px;align-items:stretch}
-.story-cover{width:118px;aspect-ratio:2/3;border-radius:12px;object-fit:cover;border:1px solid var(--line);background:linear-gradient(145deg,#ffd9e4,#e3dcff 52%,#d9f2e8);display:flex;align-items:center;justify-content:center;text-align:center;padding:12px;font-weight:800;color:#765963}
-.story-info{min-width:0}.story-actions{margin-top:13px}
+.card{border:1px solid var(--line);border-radius:16px;padding:16px;background:var(--card);box-shadow:0 6px 20px rgba(73,50,50,.06)}
+.story-card{display:grid;grid-template-columns:132px minmax(0,1fr);gap:18px;align-items:stretch;min-height:208px}
+.story-cover{width:132px;aspect-ratio:3/4;border-radius:12px;object-fit:cover;border:1px solid var(--line);background:linear-gradient(145deg,#ffd9e4,#e3dcff 52%,#d9f2e8);display:flex;align-items:center;justify-content:center;text-align:center;padding:12px;font-weight:800;color:#765963}
+
+.story-card:nth-child(6n+1) .story-cover{background:linear-gradient(145deg,#f7ccd8,#efe5c9)}
+.story-card:nth-child(6n+2) .story-cover{background:linear-gradient(145deg,#d8e9f2,#dcd5f3)}
+.story-card:nth-child(6n+3) .story-cover{background:linear-gradient(145deg,#d8eee6,#f3e5bb)}
+.story-card:nth-child(6n+4) .story-cover{background:linear-gradient(145deg,#eadcf2,#f4dbe2)}
+.story-card:nth-child(6n+5) .story-cover{background:linear-gradient(145deg,#f4e3bc,#dbe9dc)}
+.story-card:nth-child(6n) .story-cover{background:linear-gradient(145deg,#d9e2f1,#efd9e5)}
+.story-info{min-width:0;display:flex;flex-direction:column}.story-actions{margin-top:auto;padding-top:13px;display:flex;gap:7px;flex-wrap:wrap}
 .card h3{margin:0 0 8px}
 .genre{font-size:13px;color:var(--accent);margin-top:7px}
 .meta-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
@@ -50,7 +57,7 @@ header{border-bottom:1px solid var(--line);position:sticky;top:0;background:colo
 .comment{padding:7px 0;border-bottom:1px solid var(--line)}
 .comment:last-child{border-bottom:0}
 .chapter-nav{display:flex;justify-content:space-between;gap:10px;margin:38px 0 70px}
-.chapter-nav button{border:1px solid var(--line);background:var(--bg);border-radius:7px;padding:9px 13px}
+.chapter-nav button{border:1px solid var(--line);background:var(--soft);border-radius:9px;padding:9px 13px;box-shadow:0 2px 7px rgba(40,30,30,.08),inset 0 1px rgba(255,255,255,.3);transition:.15s ease}.chapter-nav button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 4px 11px rgba(40,30,30,.11)}
 .login{max-width:420px;margin:50px auto;text-align:center}
 .oauth{display:grid;gap:10px;margin-top:20px}
 .oauth button{padding:11px;border:1px solid var(--line);background:var(--bg);border-radius:7px}
@@ -58,7 +65,7 @@ header{border-bottom:1px solid var(--line);position:sticky;top:0;background:colo
 
 /* Fixed appearance toolbar */
 .float-tools{position:fixed;right:18px;top:50%;transform:translateY(-50%);z-index:20;display:flex;flex-direction:column;gap:7px;padding:7px;border:1px solid var(--line);border-radius:12px;background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(10px);box-shadow:0 4px 18px rgba(0,0,0,.08)}
-.float-tools button{width:42px;height:38px;border:1px solid var(--line);border-radius:8px;background:var(--bg);display:grid;place-items:center;padding:0}
+.float-tools button{width:42px;height:38px;border:1px solid var(--line);border-radius:9px;background:var(--soft);display:grid;place-items:center;padding:0;box-shadow:0 2px 7px rgba(40,30,30,.08),inset 0 1px rgba(255,255,255,.32);transition:.15s ease}.float-tools button:hover{transform:translateY(-1px);box-shadow:0 4px 11px rgba(40,30,30,.11)}
 .float-tools .text-btn{font-weight:600;font-size:13px}
 #topBtn{display:none}
 #tocBtn,#fontDown,#fontUp,#fontFamilyBtn{display:none}
@@ -94,12 +101,14 @@ body.pastel{--bg:#fff8e9;--fg:#554447;--muted:#88777a;--line:#eadfd1;--panel:#ff
 body.night{--bg:#171717;--fg:#f1f1f1;--muted:#b9b9b9;--line:#444;--panel:#242424;--card:#202020;--soft:#303030;--accent:#b9cde0}
 body.purplenight{--bg:#1d1928;--fg:#f3edf8;--muted:#bcb0c9;--line:#493f59;--panel:#2a2438;--card:#252031;--soft:#342d43;--accent:#c7a9e8}
 body.pastel .card:nth-child(4n+1){--accent:#e789a7;border-color:#f1cbd8}body.pastel .card:nth-child(4n+2){--accent:#9186db;border-color:#d9d2f5}body.pastel .card:nth-child(4n+3){--accent:#70aa9d;border-color:#cce7df}body.pastel .card:nth-child(4n){--accent:#d5a74f;border-color:#f0dfb9}
+body.pastel .float-tools button:nth-child(1){background:#f8dce5;border-color:#efc4d2}body.pastel .float-tools button:nth-child(2){background:#e5def8;border-color:#d2c8f1}body.pastel .float-tools button:nth-child(3){background:#dcefe9;border-color:#c6e3da}body.pastel .float-tools button:nth-child(4){background:#fff0c9;border-color:#f0dda9}body.pastel .float-tools button:nth-child(5){background:#dcebf4;border-color:#c6dfea}body.pastel .float-tools button:nth-child(6){background:#f8dce5;border-color:#efc4d2}body.pastel .float-tools button:nth-child(7){background:#e5def8;border-color:#d2c8f1}
+body.pastel .chapter-nav button:first-child{background:#f8dce5;border-color:#efc4d2}body.pastel .chapter-nav button:last-child{background:#dcebf4;border-color:#c6dfea}body.pastel .story-actions .btn:first-child{background:#e5def8;border-color:#d2c8f1}body.pastel .story-actions .btn:last-child{background:#dcefe9;border-color:#c6e3da}body.pastel .search button{background:#fff0c9;border-color:#f0dda9}
 body.night input,body.night textarea,body.night select{background:#1d1d1d}
 body.night .status-done{color:#91c9a1}
 body.night .status-ongoing{color:#dfbd80}
 
 @media(max-width:700px){
- .grid{grid-template-columns:1fr}.story-card{grid-template-columns:92px 1fr}.story-cover{width:92px}.hero h1{font-size:32px}.nav button{padding:7px 9px;font-size:13px}
+ .grid{grid-template-columns:1fr}.story-card{grid-template-columns:108px 1fr;min-height:160px}.story-cover{width:108px}.hero h1{font-size:32px}.nav button{padding:7px 9px;font-size:13px}
  .float-tools{right:10px;top:auto;bottom:16px;transform:none;flex-direction:row;max-width:calc(100vw - 20px)}
  .float-tools button{width:38px;height:36px}
  .para-wrap{padding-right:48px}
@@ -118,9 +127,9 @@ body.gate-locked #secretGate{display:grid;visibility:visible}
 /* ===== Tài khoản thành viên ===== */
 .account-area{margin-left:8px;display:flex;align-items:center;gap:7px;position:relative}
 .auth-login{white-space:nowrap}
-.bell-btn,.account-trigger{border:1px solid var(--line);background:var(--card);color:var(--fg);height:38px}
-.bell-btn{width:38px;padding:0;display:flex;align-items:center;justify-content:center;position:relative;border-radius:10px;line-height:1}
-.bell-btn .ico{width:18px;height:18px}
+.bell-btn,.account-trigger{border:1px solid var(--line);background:var(--soft);color:var(--fg);height:40px;box-shadow:0 2px 7px rgba(40,30,30,.08),inset 0 1px rgba(255,255,255,.3)}
+.bell-btn{width:40px;padding:0;display:flex;align-items:center;justify-content:center;position:relative;border-radius:10px;line-height:1}
+.bell-btn .ico{width:22px;height:22px;stroke-width:2}
 .notif-badge{position:absolute;right:-5px;top:-6px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#b54b5f;color:white;font-size:11px;display:none;align-items:center;justify-content:center}
 .notif-badge.show{display:flex}
 .account-wrap{position:relative}
@@ -312,27 +321,16 @@ document.body.classList.add('gate-locked');
 <aside id="toc" class="toc"><div class="toc-head"><h3>Mục lục</h3><button class="btn" style="width:auto;border:1px solid var(--line);padding:6px 10px" onclick="toggleToc(false)">Đóng</button></div><div id="tocList"></div></aside>
 
 <script>
-const seed=[{
- id:1,title:'Mùa Hạ Có Em',author:'Alex',genre:'Thanh xuân',status:'completed',saved:false,
- chapters:[
-  {title:'Chương 1: Cơn mưa đầu hạ',paras:[
-   'Có những mùa hè đi qua rất nhanh, nhưng có một mùa hè mà tôi nhớ mãi.',
-   'Ngày đầu tiên gặp cậu, trời đổ một cơn mưa rất lớn. Cậu đứng dưới mái hiên, tay ôm một chồng sách và cười với tôi như thể chúng ta đã quen nhau từ rất lâu.',
-   'Tôi không biết rằng khoảnh khắc ấy sẽ trở thành chương đầu tiên của câu chuyện dài nhất đời mình.'
-  ]},
-  {title:'Chương 2: Những ngày có nắng',paras:[
-   'Sau cơn mưa hôm ấy, chúng tôi bắt đầu gặp nhau nhiều hơn ở hành lang lớp học.',
-   'Có những câu chuyện chẳng cần điều gì quá lớn lao. Chỉ một lời chào mỗi sáng cũng đủ khiến ngày hè trở nên đáng nhớ.'
-  ]},
-  {title:'Chương 3: Lời chưa kịp nói',paras:[
-   'Mùa hè rồi cũng đi đến những ngày cuối cùng.',
-   'Tôi đã nghĩ mình còn rất nhiều thời gian, cho đến khi nhận ra có những lời nếu không nói hôm nay thì ngày mai có thể đã quá muộn.'
-  ]}
- ],
- views:0,likes:0
-}];
+const seed=[
+ {id:1,title:'Mùa Hạ Có Em',author:'Alex',genre:'Thanh xuân',status:'completed',chapters:[{title:'Chương 1: Cơn mưa đầu hạ',paras:['Có những mùa hè đi qua rất nhanh, nhưng có một mùa hè mà tôi nhớ mãi.','Ngày đầu tiên gặp cậu, trời đổ một cơn mưa rất lớn.','Tôi không biết rằng khoảnh khắc ấy sẽ trở thành chương đầu tiên của câu chuyện dài nhất đời mình.']}],views:128,likes:24},
+ {id:2,title:'Sau Cơn Mưa',author:'Alex',genre:'Chữa lành',status:'ongoing',chapters:[{title:'Chương 1: Trời vừa tạnh',paras:['Thành phố sau cơn mưa có mùi của đất ướt và những điều chưa kịp nói.','Cô đứng dưới mái hiên, nhìn những giọt nước cuối cùng rơi khỏi tán cây.']}],views:86,likes:17},
+ {id:3,title:'Chuyện Nhà Mình',author:'Alex',genre:'Đời thường',status:'completed',chapters:[{title:'Chương 1: Bữa cơm tối',paras:['Nhà không lớn, nhưng tối nào đèn bếp cũng sáng.','Có những câu chuyện chỉ cần một mâm cơm và vài người chịu ngồi lại cùng nhau.']}],views:241,likes:39},
+ {id:4,title:'Dưới Bầu Trời Đêm Ấy',author:'Alex',genre:'Lãng mạn',status:'ongoing',chapters:[{title:'Chương 1: Một vì sao muộn',paras:['Đêm ấy trời trong đến mức tưởng như chỉ cần đưa tay là chạm được một vì sao.','Chúng tôi ngồi cạnh nhau rất lâu mà chẳng ai muốn về trước.']}],views:153,likes:31},
+ {id:5,title:'Tiệm Hoa Mở Cửa Sau Nửa Đêm',author:'Alex',genre:'Kỳ ảo · Chữa lành',status:'ongoing',chapters:[{title:'Chương 1: Vị khách lúc 0 giờ',paras:['Chiếc chuông cửa reo đúng lúc kim đồng hồ chạm số mười hai.','Người khách đầu tiên của đêm mang theo một lá thư chưa từng được gửi.']}],views:64,likes:12},
+ {id:6,title:'Ngày Chúng Ta Vẫn Còn Là Những Đứa Trẻ',author:'Alex',genre:'Thanh xuân · Đời thường',status:'completed',chapters:[{title:'Chương 1: Con đường cũ',paras:['Con đường về nhà năm ấy ngắn hơn trong trí nhớ.','Chúng tôi từng nghĩ mùa hè sẽ chẳng bao giờ kết thúc.']}],views:319,likes:58}
+];
 
-const DATA_VERSION=2;
+const DATA_VERSION=3;
 let oldVersion=Number(localStorage.getItem('nha_data_version')||0);
 let stories;
 if(oldVersion<DATA_VERSION){

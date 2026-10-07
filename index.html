@@ -489,6 +489,70 @@ body.purplenight .hero-panel .search button{background:#e1d7ec!important;border-
 /* Restore the earlier, instantly recognizable palette drawing; keep it white. */
 #themeBtn .palette-white{width:24px!important;height:24px!important;stroke:#fff!important;fill:none!important;stroke-width:2.05!important}
 #themeBtn .palette-white .palette-dot{fill:#fff!important;stroke:none!important}
+
+
+/* ===== V14.3: actually compact story grid + unmistakable palette ===== */
+#stories{
+  width:min(1000px,calc(100% - 48px))!important;
+  max-width:1000px!important;
+  margin:0 auto!important;
+}
+#stories.grid{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:14px!important;
+}
+#stories .story-card{
+  grid-template-columns:108px minmax(0,1fr)!important;
+  gap:13px!important;
+  min-height:176px!important;
+  padding:12px!important;
+}
+#stories .story-cover{width:108px!important;border-radius:10px!important;padding:9px!important;font-size:13px!important}
+#stories .card h3{font-size:15px!important;margin-bottom:5px!important;line-height:1.25!important}
+#stories .story-info>.muted{font-size:13px!important}
+#stories .genre{margin-top:4px!important;font-size:12px!important}
+#stories .meta-row{margin-top:5px!important}
+#stories .meta-pill{font-size:11px!important;padding:3px 6px!important}
+#stories .stats{margin-top:8px!important;gap:10px!important;font-size:12px!important}
+#stories .story-actions{padding-top:8px!important}
+#stories .story-actions .btn{padding:6px 10px!important}
+@media(max-width:1050px){
+  #stories{width:min(760px,calc(100% - 36px))!important}
+  #stories.grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:640px){
+  #stories{width:calc(100% - 24px)!important}
+  #stories.grid{grid-template-columns:1fr!important}
+  #stories .story-card{grid-template-columns:96px minmax(0,1fr)!important;min-height:152px!important}
+  #stories .story-cover{width:96px!important}
+}
+#themeBtn .palette-white{width:24px!important;height:24px!important;overflow:visible!important}
+#themeBtn .palette-white .palette-board{fill:none!important;stroke:#fff!important;stroke-width:1.8!important}
+#themeBtn .palette-white .palette-hole{fill:none!important;stroke:#fff!important;stroke-width:1.7!important}
+#themeBtn .palette-white .palette-dot{fill:#fff!important;stroke:none!important}
+
+
+/* ===== V14.4: compact fades, nested sort menu, story intro & paragraph comments ===== */
+.hero-fade-top{height:42px!important;background:linear-gradient(to bottom,var(--bg) 0%,transparent 100%)!important}
+.hero-fade{height:92px!important;background:linear-gradient(to bottom,transparent 0%,var(--bg) 96%)!important}
+@media(max-width:700px){.hero-fade-top{height:34px!important}.hero-fade{height:76px!important}}
+.library-controls{position:relative;justify-content:flex-start!important}
+.sort-wrap{position:relative;display:inline-block}
+.sort-main{display:flex;align-items:center;gap:8px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--fg);font:inherit;cursor:pointer}
+.sort-main svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2}
+.sort-menu,.sort-submenu{display:none;position:absolute;z-index:40;min-width:190px;padding:6px;background:var(--card);border:1px solid var(--line);border-radius:11px;box-shadow:0 12px 28px rgba(0,0,0,.13)}
+.sort-menu.open{display:block;top:calc(100% + 7px);left:0}
+.sort-row{position:relative}
+.sort-row>button,.sort-submenu button{width:100%;display:flex;align-items:center;justify-content:space-between;border:0;background:transparent;color:var(--fg);padding:9px 10px;border-radius:8px;text-align:left;font:inherit;cursor:pointer}
+.sort-row>button:hover,.sort-submenu button:hover{background:var(--soft)}
+.sort-row.open>.sort-submenu{display:block;left:calc(100% + 6px);top:-6px}
+.sort-choice.active{font-weight:700;color:var(--accent)}
+@media(max-width:700px){.sort-row.open>.sort-submenu{position:static;box-shadow:none;border:0;border-top:1px solid var(--line);border-radius:0;margin-top:3px;padding-left:12px}}
+.story-intro{max-width:900px;margin:28px auto 70px}.story-intro-top{display:grid;grid-template-columns:180px 1fr;gap:28px;align-items:start}.intro-cover{aspect-ratio:3/4;border-radius:14px;background:var(--soft);border:1px solid var(--line);display:grid;place-items:center;text-align:center;padding:16px;overflow:hidden}.intro-cover img{width:100%;height:100%;object-fit:cover}.intro-title{margin:0 0 8px}.intro-tags{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}.intro-tag{padding:5px 9px;border-radius:999px;background:var(--soft);font-size:12px}.intro-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}.intro-tabs{display:flex;gap:18px;border-bottom:1px solid var(--line);margin-top:30px}.intro-tabs button{border:0;background:transparent;color:var(--muted);padding:12px 2px;border-bottom:2px solid transparent}.intro-tabs button.active{color:var(--fg);border-color:var(--accent);font-weight:700}.intro-pane{display:none;padding:20px 0}.intro-pane.active{display:block}.chapter-list button{width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--fg);padding:12px 4px}.all-comments .community-card{cursor:pointer}.chapter-comments{max-width:760px;margin:38px auto 10px;border-top:1px solid var(--line);padding-top:22px}.chapter-comments h3{margin:0 0 14px}.comment-compose{display:flex;gap:8px;margin-top:10px}.comment-compose input{flex:1;min-width:0;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:9px;padding:9px 10px}.comment-compose button{border:1px solid var(--line);background:var(--soft);color:var(--fg);border-radius:9px;padding:8px 12px}.para-wrap.jump-flash .para{animation:jumpFlash 1.6s ease}@keyframes jumpFlash{0%,100%{background:transparent}25%{background:color-mix(in srgb,var(--accent) 18%,transparent)}}
+.comments .comment-compose{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
+.community-card.demo-jump{cursor:pointer}
+@media(max-width:700px){.story-intro-top{grid-template-columns:110px 1fr;gap:16px}.story-intro{margin-top:18px}.intro-actions{grid-column:1/-1}}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -597,9 +661,14 @@ document.body.classList.add('gate-locked');
 </div>
 <section id="storiesPanel" class="home-panel active">
   <div class="library-controls">
-    <select id="sortStories" onchange="render()"><option value="updated_desc">Cập nhật mới nhất</option><option value="updated_asc">Cập nhật cũ nhất</option></select>
-    <select id="genreFilter" onchange="render()"><option value="">Tất cả thể loại</option></select>
-    <select id="statusFilter" onchange="render()"><option value="">Tất cả tình trạng</option><option value="ongoing">Đang viết</option><option value="completed">Đã hoàn thành</option></select>
+    <div class="sort-wrap">
+      <button class="sort-main" id="sortMain" onclick="toggleSortMenu(event)"><span id="sortLabel">Sắp xếp theo</span><svg viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></svg></button>
+      <div class="sort-menu" id="sortMenu">
+        <div class="sort-row"><button onclick="toggleSortSub(event,this)">Thời gian <span>›</span></button><div class="sort-submenu"><button class="sort-choice" data-sort="updated_desc" onclick="chooseSort(event,'time','updated_desc','Mới cập nhật nhất')">Mới cập nhật nhất</button><button class="sort-choice" data-sort="updated_asc" onclick="chooseSort(event,'time','updated_asc','Cũ nhất')">Cũ nhất</button></div></div>
+        <div class="sort-row"><button onclick="toggleSortSub(event,this)">Tình trạng <span>›</span></button><div class="sort-submenu"><button onclick="chooseSort(event,'status','','Tất cả tình trạng')">Tất cả</button><button onclick="chooseSort(event,'status','ongoing','Đang viết')">Đang viết</button><button onclick="chooseSort(event,'status','completed','Đã hoàn thành')">Đã hoàn thành</button></div></div>
+        <div class="sort-row"><button onclick="toggleSortSub(event,this)">Thể loại <span>›</span></button><div class="sort-submenu"><button onclick="chooseSort(event,'genre','','Tất cả thể loại')">Tất cả</button><button onclick="chooseSort(event,'genre','Hiện đại','Hiện đại')">Hiện đại</button><button onclick="chooseSort(event,'genre','Cổ đại','Cổ đại')">Cổ đại</button><button onclick="chooseSort(event,'genre','Tương lai','Tương lai')">Tương lai</button><button onclick="chooseSort(event,'genre','Tiên hiệp','Tiên hiệp')">Tiên hiệp</button></div></div>
+      </div>
+    </div>
   </div>
   <div id="stories" class="grid"></div>
   <div class="home-more"><button id="moreStoriesBtn" onclick="toggleAllStories()">Xem thêm truyện</button></div>
@@ -608,18 +677,18 @@ document.body.classList.add('gate-locked');
   <div class="demo-label">Dữ liệu minh họa để căn giao diện</div>
 <div class="community-feed">
   <article class="community-card">
-    <div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">L</div><div class="community-meta"><strong>Linh Đan</strong><span class="community-sub">2 giờ trước · <span class="review-title-link">Mùa Hạ Có Em</span></span></div><button class="icon-btn" aria-label="Thêm">⋯</button></div>
+    <div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">L</div><div class="community-meta"><strong>Linh Đan</strong><span class="community-sub">2 giờ trước · <span class="review-title-link" onclick="openStory(1)">Mùa Hạ Có Em</span></span></div></div>
     <div class="community-body">Truyện thật sự rất dễ thương, đọc xong thấy ấm lòng. Mình thích cách những chuyện nhỏ trong nhà được kể rất tự nhiên.</div>
     <div class="community-actions"><button class="heart-demo">♡ 12</button><button onclick="this.closest('.community-card').querySelector('.review-thread').hidden=!this.closest('.community-card').querySelector('.review-thread').hidden">💬 2 bình luận</button></div>
     <div class="review-thread" hidden><div><strong>Minh Anh</strong> <span class="community-sub">· 1 giờ trước</span><div>Mình cũng thích đoạn bữa cơm tối nhất á 🥹</div></div><div class="review-reply"><strong>Linh Đan</strong> <span class="community-sub">· 45 phút trước</span><div>Đúng rồi, đọc rất có cảm giác ở nhà luôn.</div></div></div>
   </article>
   <article class="community-card">
-    <div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">H</div><div class="community-meta"><strong>Hải Yến</strong><span class="community-sub">1 ngày trước · <span class="review-title-link">Tiệm Hoa Mở Cửa Sau Nửa Đêm</span></span></div><button class="icon-btn" aria-label="Thêm">⋯</button></div>
+    <div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">H</div><div class="community-meta"><strong>Hải Yến</strong><span class="community-sub">1 ngày trước · <span class="review-title-link" onclick="openStory(5)">Tiệm Hoa Mở Cửa Sau Nửa Đêm</span></span></div></div>
     <div class="community-body">Không khí truyện nhẹ nhàng mà có chút kỳ ảo rất vừa đủ. Mong tác giả ra thêm chương mới sớm nha.</div>
     <div class="community-actions"><button class="heart-demo">♡ 8</button><button>💬 1 bình luận</button></div>
   </article>
   <article class="community-card">
-    <div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">N</div><div class="community-meta"><strong>Ngọc Trâm</strong><span class="community-sub">3 ngày trước · <span class="review-title-link">Chuyện Nhà Mình</span></span></div><button class="icon-btn" aria-label="Thêm">⋯</button></div>
+    <div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">N</div><div class="community-meta"><strong>Ngọc Trâm</strong><span class="community-sub">3 ngày trước · <span class="review-title-link" onclick="openStory(3)">Chuyện Nhà Mình</span></span></div></div>
     <div class="community-body">Một câu chuyện rất đời thường nhưng đọc xong lại nhớ lâu. Mấy chi tiết nhỏ làm nhân vật có cảm giác gần gũi ghê.</div>
     <div class="community-actions"><button class="heart-demo">♡ 21</button><button>💬 4 bình luận</button></div>
   </article>
@@ -628,20 +697,26 @@ document.body.classList.add('gate-locked');
 <section id="commentsPanel" class="home-panel">
   <div class="demo-label">Dữ liệu minh họa để căn giao diện</div>
 <div class="community-feed">
-  <article class="community-card"><div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">T</div><div class="community-meta"><strong>Tuệ Anh</strong><span class="community-sub">10 phút trước · <span class="comment-location">Chương 12 · Mùa Hạ Có Em</span></span></div><button class="icon-btn">⋯</button></div><div class="community-body">Đoạn này dễ thương quá trời, mình cười xỉu luôn áaaa 🥹💗</div><div class="community-actions"><button>♡ 5</button><button>Trả lời</button></div></article>
-  <article class="community-card"><div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">H</div><div class="community-meta"><strong>Hoàng Nam</strong><span class="community-sub">45 phút trước · <span class="comment-location">Chương 5 · Sau Cơn Mưa</span></span></div><button class="icon-btn">⋯</button></div><div class="community-body">Mình cũng nghĩ giống bạn, chi tiết này thật sự rất tinh tế.</div><div class="community-actions"><button>♡ 3</button><button>Trả lời</button></div></article>
-  <article class="community-card"><div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">K</div><div class="community-meta"><strong>Khánh Linh</strong><span class="community-sub">2 giờ trước · đã trả lời bình luận · <span class="comment-location">Chương 3 · Dưới Bầu Trời Đêm Ấy</span></span></div><button class="icon-btn">⋯</button></div><div class="community-body"><strong>@Phương Anh</strong> Đúng rồi, mình cũng thấy vậy nè! Cảm ơn bạn đã phân tích kỹ quá.</div><div class="community-actions"><button>♡ 7</button><button>Trả lời</button></div></article>
-  <article class="community-card"><div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">M</div><div class="community-meta"><strong>Minh Anh</strong><span class="community-sub">4 giờ trước · <span class="comment-location">Chương 8 · Chuyện Nhà Mình</span></span></div><button class="icon-btn">⋯</button></div><div class="community-body">Một chương nhẹ nhàng nhưng đọc xong thấy ấm lòng ghê. Thích cách tác giả viết về gia đình quá 💛</div><div class="community-actions"><button>♡ 9</button><button>Trả lời</button></div></article>
+  <article class="community-card demo-jump" onclick="openCommentLocation(1,0,1)"><div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">T</div><div class="community-meta"><strong>Tuệ Anh</strong><span class="community-sub">10 phút trước · <span class="comment-location">Chương 12 · Mùa Hạ Có Em</span></span></div></div><div class="community-body">Đoạn này dễ thương quá trời, mình cười xỉu luôn áaaa 🥹💗</div><div class="community-actions"><button>♡ 5</button><button>Trả lời</button></div></article>
+  <article class="community-card demo-jump" onclick="openCommentLocation(2,0,0)"><div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">H</div><div class="community-meta"><strong>Hoàng Nam</strong><span class="community-sub">45 phút trước · <span class="comment-location">Chương 5 · Sau Cơn Mưa</span></span></div></div><div class="community-body">Mình cũng nghĩ giống bạn, chi tiết này thật sự rất tinh tế.</div><div class="community-actions"><button>♡ 3</button><button>Trả lời</button></div></article>
+  <article class="community-card demo-jump" onclick="openCommentLocation(4,0,1)"><div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">K</div><div class="community-meta"><strong>Khánh Linh</strong><span class="community-sub">2 giờ trước · đã trả lời bình luận · <span class="comment-location">Chương 3 · Dưới Bầu Trời Đêm Ấy</span></span></div></div><div class="community-body"><strong>@Phương Anh</strong> Đúng rồi, mình cũng thấy vậy nè! Cảm ơn bạn đã phân tích kỹ quá.</div><div class="community-actions"><button>♡ 7</button><button>Trả lời</button></div></article>
+  <article class="community-card demo-jump" onclick="openCommentLocation(3,0,0)"><div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">M</div><div class="community-meta"><strong>Minh Anh</strong><span class="community-sub">4 giờ trước · <span class="comment-location">Chương 8 · Chuyện Nhà Mình</span></span></div></div><div class="community-body">Một chương nhẹ nhàng nhưng đọc xong thấy ấm lòng ghê. Thích cách tác giả viết về gia đình quá 💛</div><div class="community-actions"><button>♡ 9</button><button>Trả lời</button></div></article>
 </div>
 </section>
 </main>
+
+<main id="storyIntro" class="container hidden"><div class="story-intro">
+  <div class="story-intro-top"><div class="intro-cover" id="introCover"></div><div><h1 class="intro-title" id="introTitle"></h1><div class="muted" id="introAuthor"></div><div class="intro-tags"><span class="intro-tag" id="introGenre"></span><span class="intro-tag" id="introStatus"></span></div><p id="introSummary" class="muted"></p><div class="stats" id="introStats"></div><div class="intro-actions"><button class="btn" id="introReadBtn" onclick="startFromIntro()">Bắt đầu đọc</button><button class="btn" id="introSaveBtn" onclick="toggleIntroSave()">☆ Lưu truyện</button></div></div></div>
+  <div class="intro-tabs"><button class="active" onclick="showIntroTab('chapters',this)">Danh sách chương</button><button onclick="showIntroTab('reviews',this)">Review</button><button onclick="showIntroTab('comments',this)">Bình luận</button></div>
+  <div id="introChapters" class="intro-pane active chapter-list"></div><div id="introReviews" class="intro-pane"><p class="muted">Review của độc giả sẽ xuất hiện ở đây.</p></div><div id="introComments" class="intro-pane all-comments"></div>
+</div></main>
 
 <main id="reader" class="container hidden">
 <div class="reader">
 <div class="reader-head"><h1 id="rtitle"></h1><div class="muted" id="rauthor"></div><div class="meta-row" style="justify-content:center"><span class="meta-pill" id="rstatus"></span></div></div>
 <h2 class="chapter-title" id="chapterTitle"></h2>
 <article id="chapter" class="chapter"></article>
-<div id="toBeContinued" class="to-be-continued hidden">Còn tiếp…</div>
+<div id="toBeContinued" class="to-be-continued hidden">Còn tiếp…</div><section class="chapter-comments"><h3>Bình luận chương này</h3><div id="chapterCommentsList"></div><div class="comment-compose"><input id="chapterCommentInput" placeholder="Viết bình luận cho chương này…"><button onclick="addChapterComment()">Gửi</button></div></section>
 <div class="chapter-nav"><button id="prevChapter" onclick="moveChapter(-1)">← Chương trước</button><button id="nextChapter" onclick="moveChapter(1)">Chương sau →</button></div>
 </div>
 </main>
@@ -669,13 +744,7 @@ document.body.classList.add('gate-locked');
 
 <div class="float-tools" aria-label="Tùy chỉnh giao diện" onmouseenter="cancelThemeClose()" onmouseleave="scheduleThemeClose()">
 <button id="themeBtn" onclick="toggleThemeMenu()" title="Chọn màu giao diện" aria-label="Chọn màu giao diện">
-      <svg class="ico palette-ico palette-white" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M12 3.1a8.9 8.9 0 1 0 0 17.8h1.7a2.3 2.3 0 0 0 0-4.6h-1.5a4.3 4.3 0 0 1 0-8.6h1.1a2.3 2.3 0 0 0 0-4.6Z"/>
-        <circle class="palette-dot" cx="7" cy="10.4" r="1.35"/>
-        <circle class="palette-dot" cx="9.2" cy="6.8" r="1.35"/>
-        <circle class="palette-dot" cx="15.7" cy="7.1" r="1.35"/>
-        <circle class="palette-dot" cx="17.2" cy="11.2" r="1.35"/>
-      </svg>
+      <svg class="ico palette-ico palette-white" viewBox="0 0 24 24" aria-hidden="true"><path class="palette-board" d="M12 3C6.8 3 2.8 6.7 2.8 11.3c0 4.2 3.4 7.7 7.7 7.7h1.3c1 0 1.6-.9 1.2-1.8-.5-1.1.3-2.3 1.5-2.3h2.2c2.6 0 4.5-2.1 4.5-4.7C21.2 6.2 17.2 3 12 3Z"/><circle class="palette-dot" cx="7.2" cy="10.1" r="1.15"/><circle class="palette-dot" cx="9.5" cy="6.8" r="1.15"/><circle class="palette-dot" cx="13.6" cy="6.5" r="1.15"/><circle class="palette-dot" cx="17" cy="8.9" r="1.15"/></svg>
     </button>
 <button id="fontFamilyBtn" class="text-btn" onclick="toggleFontMenu()" title="Chọn font">Aa</button>
 <button id="fontDown" class="text-btn" onclick="font(-1)" title="Giảm cỡ chữ">A−</button>
@@ -710,15 +779,15 @@ document.body.classList.add('gate-locked');
 
 <script>
 const seed=[
- {id:1,title:'Mùa Hạ Có Em',author:'Alex',genre:'Thanh xuân',status:'completed',chapters:[{title:'Chương 1: Cơn mưa đầu hạ',paras:['Có những mùa hè đi qua rất nhanh, nhưng có một mùa hè mà tôi nhớ mãi.','Ngày đầu tiên gặp cậu, trời đổ một cơn mưa rất lớn.','Tôi không biết rằng khoảnh khắc ấy sẽ trở thành chương đầu tiên của câu chuyện dài nhất đời mình.']}],views:128,likes:24},
- {id:2,title:'Sau Cơn Mưa',author:'Alex',genre:'Chữa lành',status:'ongoing',chapters:[{title:'Chương 1: Trời vừa tạnh',paras:['Thành phố sau cơn mưa có mùi của đất ướt và những điều chưa kịp nói.','Cô đứng dưới mái hiên, nhìn những giọt nước cuối cùng rơi khỏi tán cây.']}],views:86,likes:17},
- {id:3,title:'Chuyện Nhà Mình',author:'Alex',genre:'Đời thường',status:'completed',chapters:[{title:'Chương 1: Bữa cơm tối',paras:['Nhà không lớn, nhưng tối nào đèn bếp cũng sáng.','Có những câu chuyện chỉ cần một mâm cơm và vài người chịu ngồi lại cùng nhau.']}],views:241,likes:39},
- {id:4,title:'Dưới Bầu Trời Đêm Ấy',author:'Alex',genre:'Lãng mạn',status:'ongoing',chapters:[{title:'Chương 1: Một vì sao muộn',paras:['Đêm ấy trời trong đến mức tưởng như chỉ cần đưa tay là chạm được một vì sao.','Chúng tôi ngồi cạnh nhau rất lâu mà chẳng ai muốn về trước.']}],views:153,likes:31},
- {id:5,title:'Tiệm Hoa Mở Cửa Sau Nửa Đêm',author:'Alex',genre:'Kỳ ảo · Chữa lành',status:'ongoing',chapters:[{title:'Chương 1: Vị khách lúc 0 giờ',paras:['Chiếc chuông cửa reo đúng lúc kim đồng hồ chạm số mười hai.','Người khách đầu tiên của đêm mang theo một lá thư chưa từng được gửi.']}],views:64,likes:12},
- {id:6,title:'Ngày Chúng Ta Vẫn Còn Là Những Đứa Trẻ',author:'Alex',genre:'Thanh xuân · Đời thường',status:'completed',chapters:[{title:'Chương 1: Con đường cũ',paras:['Con đường về nhà năm ấy ngắn hơn trong trí nhớ.','Chúng tôi từng nghĩ mùa hè sẽ chẳng bao giờ kết thúc.']}],views:319,likes:58}
+ {id:1,title:'Mùa Hạ Có Em',author:'Alex',mainGenre:'Hiện đại',genre:'Thanh xuân',status:'completed',chapters:[{title:'Chương 1: Cơn mưa đầu hạ',paras:['Có những mùa hè đi qua rất nhanh, nhưng có một mùa hè mà tôi nhớ mãi.','Ngày đầu tiên gặp cậu, trời đổ một cơn mưa rất lớn.','Tôi không biết rằng khoảnh khắc ấy sẽ trở thành chương đầu tiên của câu chuyện dài nhất đời mình.']}],views:128,likes:24},
+ {id:2,title:'Sau Cơn Mưa',author:'Alex',mainGenre:'Hiện đại',genre:'Chữa lành',status:'ongoing',chapters:[{title:'Chương 1: Trời vừa tạnh',paras:['Thành phố sau cơn mưa có mùi của đất ướt và những điều chưa kịp nói.','Cô đứng dưới mái hiên, nhìn những giọt nước cuối cùng rơi khỏi tán cây.']}],views:86,likes:17},
+ {id:3,title:'Chuyện Nhà Mình',author:'Alex',mainGenre:'Hiện đại',genre:'Đời thường',status:'completed',chapters:[{title:'Chương 1: Bữa cơm tối',paras:['Nhà không lớn, nhưng tối nào đèn bếp cũng sáng.','Có những câu chuyện chỉ cần một mâm cơm và vài người chịu ngồi lại cùng nhau.']}],views:241,likes:39},
+ {id:4,title:'Dưới Bầu Trời Đêm Ấy',author:'Alex',mainGenre:'Hiện đại',genre:'Lãng mạn',status:'ongoing',chapters:[{title:'Chương 1: Một vì sao muộn',paras:['Đêm ấy trời trong đến mức tưởng như chỉ cần đưa tay là chạm được một vì sao.','Chúng tôi ngồi cạnh nhau rất lâu mà chẳng ai muốn về trước.']}],views:153,likes:31},
+ {id:5,title:'Tiệm Hoa Mở Cửa Sau Nửa Đêm',author:'Alex',mainGenre:'Tiên hiệp',genre:'Kỳ ảo · Chữa lành',status:'ongoing',chapters:[{title:'Chương 1: Vị khách lúc 0 giờ',paras:['Chiếc chuông cửa reo đúng lúc kim đồng hồ chạm số mười hai.','Người khách đầu tiên của đêm mang theo một lá thư chưa từng được gửi.']}],views:64,likes:12},
+ {id:6,title:'Ngày Chúng Ta Vẫn Còn Là Những Đứa Trẻ',author:'Alex',mainGenre:'Hiện đại',genre:'Thanh xuân · Đời thường',status:'completed',chapters:[{title:'Chương 1: Con đường cũ',paras:['Con đường về nhà năm ấy ngắn hơn trong trí nhớ.','Chúng tôi từng nghĩ mùa hè sẽ chẳng bao giờ kết thúc.']}],views:319,likes:58}
 ];
 
-const DATA_VERSION=3;
+const DATA_VERSION=4;
 let oldVersion=Number(localStorage.getItem('nha_data_version')||0);
 let stories;
 if(oldVersion<DATA_VERSION){
@@ -752,7 +821,7 @@ function storyCommentCount(s){
  return n;
 }
 function show(id){
- ['home','reader','library','login','profilePage'].forEach(x=>document.getElementById(x).classList.add('hidden'));
+ ['home','storyIntro','reader','library','login','profilePage'].forEach(x=>document.getElementById(x).classList.add('hidden'));
  document.getElementById(id).classList.remove('hidden');
  document.body.classList.toggle('reading',id==='reader');
  if(id!=='reader'){ currentStory=null; toggleFontMenu(false); }
@@ -765,14 +834,33 @@ function show(id){
 }
 function card(s){
  const hasProgress=progress[s.id] && (progress[s.id].chapter>0 || progress[s.id].scroll>80);
- return `<div class="card story-card"><div class="story-cover">${s.cover?`<img src="${esc(s.cover)}" alt="Bìa ${esc(s.title)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`:`Nhà có Alex<br>${esc(s.title)}`}</div><div class="story-info"><h3>${esc(s.title)}</h3><div class="muted">Tác giả: ${esc(s.author)}</div><div class="genre">${esc(s.genre)}</div><div class="meta-row"><span class="meta-pill ${s.status==='completed'?'status-done':'status-ongoing'}">${s.status==='completed'?'✓ Đã hoàn thành':'◷ Đang viết'}</span></div>
+ return `<div class="card story-card"><div class="story-cover">${s.cover?`<img src="${esc(s.cover)}" alt="Bìa ${esc(s.title)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`:`Nhà có Alex<br>${esc(s.title)}`}</div><div class="story-info"><h3>${esc(s.title)}</h3><div class="muted">Tác giả: ${esc(s.author)}</div><div class="genre">${esc(s.mainGenre||s.genre)}</div><div class="meta-row"><span class="meta-pill ${s.status==='completed'?'status-done':'status-ongoing'}">${s.status==='completed'?'✓ Đã hoàn thành':'◷ Đang viết'}</span></div>
  <div class="stats"><span class="stat">${icon('eye')} ${s.views||0}</span><button class="stat" style="border:0;background:transparent;padding:0;color:inherit" onclick="toggleLike(${s.id})">${icon('heart')} ${s.likes||0}</button><span class="stat">${icon('comment')} ${storyCommentCount(s)}</span></div>
- <div class="story-actions"><button class="btn" onclick="read(${s.id})">${hasProgress?'Đọc tiếp':'Đọc'}</button> <button class="btn" onclick="toggleSave(${s.id})">${saved.includes(s.id)?'★ Đã lưu':'☆ Lưu'}</button></div></div></div>`;
+ <div class="story-actions"><button class="btn" onclick="openStory(${s.id})">${hasProgress?'Đọc tiếp':'Đọc'}</button> <button class="btn" onclick="toggleSave(${s.id})">${saved.includes(s.id)?'★ Đã lưu':'☆ Lưu'}</button></div></div></div>`;
 }
 function render(){
  let q=(document.getElementById('q').value||'').toLowerCase();
- document.getElementById('stories').innerHTML=stories.filter(s=>(s.title+s.genre+s.author+s.status).toLowerCase().includes(q)).map(card).join('');
+ let arr=stories.filter(s=>(s.title+(s.mainGenre||s.genre)+s.author+s.status).toLowerCase().includes(q));
+ if(storyFilter.status)arr=arr.filter(s=>s.status===storyFilter.status);
+ if(storyFilter.genre)arr=arr.filter(s=>(s.mainGenre||s.genre)===storyFilter.genre);
+ if(storyFilter.time==='updated_asc')arr=[...arr].reverse();
+ document.getElementById('stories').innerHTML=arr.map(card).join('');
+ applyStoryLimit();
 }
+
+let storyFilter={time:'updated_desc',status:'',genre:''};
+function toggleSortMenu(e){e?.stopPropagation();document.getElementById('sortMenu')?.classList.toggle('open')}
+function toggleSortSub(e,btn){e.stopPropagation();let row=btn.closest('.sort-row');document.querySelectorAll('.sort-row').forEach(x=>{if(x!==row)x.classList.remove('open')});row.classList.toggle('open')}
+function chooseSort(e,type,value,label){e.stopPropagation();storyFilter[type]=value;document.getElementById('sortLabel').textContent='Sắp xếp theo: '+label;document.getElementById('sortMenu').classList.remove('open');document.querySelectorAll('.sort-row').forEach(x=>x.classList.remove('open'));render()}
+document.addEventListener('click',e=>{if(!e.target.closest('.sort-wrap'))document.getElementById('sortMenu')?.classList.remove('open')});
+let introStory=null;
+function openStory(id){let s=stories.find(x=>x.id===id);if(!s)return;introStory=s;['home','reader','library','login','profilePage'].forEach(x=>document.getElementById(x)?.classList.add('hidden'));document.getElementById('storyIntro').classList.remove('hidden');document.body.classList.remove('reading');document.getElementById('introTitle').textContent=s.title;document.getElementById('introAuthor').textContent='Tác giả: '+s.author;document.getElementById('introGenre').textContent=s.mainGenre||s.genre;document.getElementById('introStatus').textContent=s.status==='completed'?'Đã hoàn thành':'Đang viết';document.getElementById('introSummary').textContent=s.summary||'Một góc nhỏ để giới thiệu câu chuyện trước khi bắt đầu đọc.';document.getElementById('introStats').innerHTML=`<span class="stat">${icon('eye')} ${s.views||0}</span><span class="stat">${icon('heart')} ${s.likes||0}</span><span class="stat">${icon('comment')} ${storyCommentCount(s)}</span>`;document.getElementById('introCover').innerHTML=s.cover?`<img src="${esc(s.cover)}" alt="Bìa ${esc(s.title)}">`:`Nhà có Alex<br>${esc(s.title)}`;let pr=progress[id];document.getElementById('introReadBtn').textContent=pr?'Đọc tiếp · '+s.chapters[Math.min(pr.chapter||0,s.chapters.length-1)].title.split(':')[0]:'Bắt đầu đọc';document.getElementById('introSaveBtn').textContent=saved.includes(id)?'★ Đã lưu':'☆ Lưu truyện';document.getElementById('introChapters').innerHTML=s.chapters.map((c,i)=>`<button onclick="read(${s.id},${i})">${esc(c.title)}</button>`).join('');renderAllStoryComments();showIntroTab('chapters',document.querySelector('.intro-tabs button'));window.scrollTo(0,0)}
+function showIntroTab(name,btn){document.querySelectorAll('.intro-pane').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.intro-tabs button').forEach(x=>x.classList.remove('active'));document.getElementById('intro'+name[0].toUpperCase()+name.slice(1))?.classList.add('active');btn?.classList.add('active')}
+function startFromIntro(){if(!introStory)return;let pr=progress[introStory.id]||{chapter:0,scroll:0};read(introStory.id,pr.chapter||0);if(pr.scroll)setTimeout(()=>window.scrollTo(0,pr.scroll),30)}
+function toggleIntroSave(){if(!introStory)return;toggleSave(introStory.id);document.getElementById('introSaveBtn').textContent=saved.includes(introStory.id)?'★ Đã lưu':'☆ Lưu truyện'}
+function renderAllStoryComments(){let box=document.getElementById('introComments');if(!box||!introStory)return;let rows=[];introStory.chapters.forEach((ch,ci)=>{(comments[`chapter_${introStory.id}_${ci}`]||[]).forEach(x=>rows.push(`<article class="community-card" onclick="read(${introStory.id},${ci})"><div class="community-head"><div class="community-meta"><strong>${esc(x.name)}</strong><span class="community-sub">${esc(ch.title)}</span></div></div><div class="community-body">${esc(x.text)}</div></article>`));ch.paras.forEach((p,pi)=>{let k=`${introStory.id}_${ci}_${pi}`;(comments[k]||[]).forEach(x=>rows.push(`<article class="community-card" onclick="openCommentLocation(${introStory.id},${ci},${pi})"><div class="community-head"><div class="community-meta"><strong>${esc(x.name)}</strong><span class="community-sub">${esc(ch.title)}</span></div></div><div class="community-body">${esc(x.text)}</div></article>`))})});box.innerHTML=rows.join('')||'<p class="muted">Chưa có bình luận nào cho truyện này.</p>'}
+function openCommentLocation(storyId,chapterIndex,paraIndex){read(storyId,chapterIndex);let k=`${storyId}_${chapterIndex}_${paraIndex}`;setTimeout(()=>jumpToParagraph(k),80)}
+
 function read(id,chapterOverride=null){
  let s=stories.find(x=>x.id===id); if(!s)return;
  currentStory=s;
@@ -789,8 +877,9 @@ function renderChapter(restoreScroll=0){
  document.getElementById('chapterTitle').textContent=ch.title;
  document.getElementById('chapter').innerHTML=ch.paras.map((p,i)=>{
   let key=`${s.id}_${currentChapter}_${i}`,c=comments[key]||[];
-  return `<div class="para-wrap"><p class="para">${esc(p)}</p>${c.length?`<button class="comment-btn" onclick="toggleComments('${key}')" aria-label="Xem ${c.length} bình luận">${icon('comment')}<span>${c.length}</span></button>`:''}<div id="c_${key}" class="comments">${c.map(x=>`<div class="comment"><b>${esc(x.name)}</b>: ${esc(x.text)}</div>`).join('')}</div></div>`;
+  return `<div class="para-wrap" id="para_${key}" data-comment-key="${key}"><p class="para" ondblclick="openParagraphComposer('${key}')" onpointerdown="startLongPress(event,'${key}')" onpointerup="cancelLongPress()" onpointercancel="cancelLongPress()" onpointermove="cancelLongPress()">${esc(p)}</p>${c.length?`<button class="comment-btn" onclick="toggleComments('${key}',true)" aria-label="Xem ${c.length} bình luận">${icon('comment')}<span>${c.length}</span></button>`:''}<div id="c_${key}" class="comments">${renderParaComments(key,c)}</div></div>`;
  }).join('');
+ renderChapterComments();
  const prevChapter=document.getElementById('prevChapter');
  const nextChapter=document.getElementById('nextChapter');
  const isFirst=currentChapter===0;
@@ -802,7 +891,7 @@ function renderChapter(restoreScroll=0){
  const ongoing=s.status!=='completed';
  tbc.classList.toggle('hidden',!(isLast&&ongoing));
  renderToc();
- ['home','library','login','profilePage'].forEach(x=>document.getElementById(x).classList.add('hidden'));
+ ['home','storyIntro','library','login','profilePage'].forEach(x=>document.getElementById(x).classList.add('hidden'));
  document.getElementById('reader').classList.remove('hidden'); document.body.classList.add('reading');
  progress[s.id]={chapter:currentChapter,scroll:restoreScroll||0};save();
  requestAnimationFrame(()=>window.scrollTo(0,restoreScroll||0));
@@ -823,7 +912,15 @@ function toggleToc(force){toggleFontMenu(false);
  const open=typeof force==='boolean'?force:!t.classList.contains('open');
  t.classList.toggle('open',open);b.classList.toggle('open',open);
 }
-function toggleComments(k){let e=document.getElementById('c_'+k);if(e)e.classList.toggle('open')}
+function renderParaComments(key,c){return `${c.map(x=>`<div class="comment"><b>${esc(x.name)}</b>: ${esc(x.text)}</div>`).join('')}<div class="comment-compose"><input id="input_${key}" placeholder="Viết bình luận cho đoạn này…" onkeydown="if(event.key==='Enter')addParaComment('${key}')"><button onclick="addParaComment('${key}')">Gửi</button></div>`}
+function toggleComments(k,forceOpen=false){let e=document.getElementById('c_'+k);if(e)e.classList.toggle('open',forceOpen?true:!e.classList.contains('open'))}
+function openParagraphComposer(k){toggleComments(k,true);setTimeout(()=>document.getElementById('input_'+k)?.focus(),20)}
+let longPressTimer=null;function startLongPress(e,k){if(e.pointerType==='mouse')return;cancelLongPress();longPressTimer=setTimeout(()=>openParagraphComposer(k),520)}function cancelLongPress(){clearTimeout(longPressTimer);longPressTimer=null}
+function addParaComment(k){let input=document.getElementById('input_'+k);let text=(input?.value||'').trim();if(!text)return;(comments[k]||(comments[k]=[])).push({name:authUser?.user_metadata?.full_name||'Bạn',text});save();renderChapter(window.scrollY);setTimeout(()=>{document.getElementById('c_'+k)?.classList.add('open')},30)}
+function chapterGeneralKey(){return currentStory?`chapter_${currentStory.id}_${currentChapter}`:''}
+function renderChapterComments(){let box=document.getElementById('chapterCommentsList');if(!box||!currentStory)return;let rows=[];let g=comments[chapterGeneralKey()]||[];g.forEach(x=>rows.push(`<div class="comment"><b>${esc(x.name)}</b>: ${esc(x.text)}</div>`));currentStory.chapters[currentChapter].paras.forEach((p,pi)=>{let k=`${currentStory.id}_${currentChapter}_${pi}`;(comments[k]||[]).forEach(x=>rows.push(`<div class="comment" onclick="jumpToParagraph('${k}')" style="cursor:pointer"><b>${esc(x.name)}</b>: ${esc(x.text)}</div>`))});box.innerHTML=rows.join('')||'<p class="muted">Chưa có bình luận nào trong chương này.</p>'}
+function addChapterComment(){let input=document.getElementById('chapterCommentInput');let text=(input?.value||'').trim();if(!text)return;let k=chapterGeneralKey();(comments[k]||(comments[k]=[])).push({name:authUser?.user_metadata?.full_name||'Bạn',text});input.value='';save();renderChapterComments()}
+function jumpToParagraph(k){let el=document.getElementById('para_'+k);if(!el)return;el.scrollIntoView({behavior:'smooth',block:'center'});el.classList.add('jump-flash');toggleComments(k,true);setTimeout(()=>el.classList.remove('jump-flash'),1700)}
 function toggleSave(id){saved.includes(id)?saved=saved.filter(x=>x!==id):saved.push(id);save();render()}
 function toggleLike(id){
  let s=stories.find(x=>x.id===id);if(!s)return;

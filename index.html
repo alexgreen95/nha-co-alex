@@ -2153,15 +2153,63 @@ async function loadCloudReviews(){
   for(const r of rows){const p=prof[r.user_id]||{};(next[r.story_id]||(next[r.story_id]=[])).push({id:r.id,userId:r.user_id,username:slugify(p.display_name||'thanh-vien'),name:p.display_name||'Thành viên',avatar:p.avatar_url||'',text:r.content||'',html:r.content_html||'',createdAt:r.created_at,editedAt:r.edited_at,likes:0,comments:0});}
   reviews=next;localStorage.setItem('nha_co_alex_reviews',JSON.stringify(reviews));if(introStory)renderStoryReviews();
 }
+let cloudChapterMap={};
+async function loadCloudChapterMap(){
+  const {data,error}=await sb.from('chapters').select('id,story_id,chapter_number');
+  if(error){console.warn('chapter map sync',error);return}
+  cloudChapterMap={};
+  for(const c of (data||[])){
+    const idx=Math.max(0,Number(c.chapter_number||1)-1);
+    cloudChapterMap[`${Number(c.story_id)}_${idx}`]=Number(c.id);
+  }
+}
 async function loadCloudMemberState(){
-  if(!authUser)return; const {data,error}=await sb.from('member_state').select('saved_story_ids,reading_progress').eq('user_id',authUser.id).maybeSingle();
-  if(error){console.warn('member state sync',error);return}
-  if(data){saved=(data.saved_story_ids||[]).map(Number);progress=data.reading_progress||{};localStorage.setItem('nha_co_alex_saved',JSON.stringify(saved));localStorage.setItem('nha_co_alex_progress',JSON.stringify(progress));render();}
-  else await saveCloudMemberState();
+  if(!authUser)return;
+  await loadCloudChapterMap();
+  const [savedRes,progressRes]=await Promise.all([
+    sb.from('saved_stories').select('story_id').eq('user_id',authUser.id),
+    sb.from('reading_progress').select('story_id,chapter_id,scroll_position,updated_at').eq('user_id',authUser.id)
+  ]);
+  if(savedRes.error)console.warn('saved stories sync',savedRes.error);
+  else saved=(savedRes.data||[]).map(r=>Number(r.story_id)).filter(Number.isFinite);
+  if(progressRes.error)console.warn('reading progress sync',progressRes.error);
+  else{
+    const reverse=Object.fromEntries(Object.entries(cloudChapterMap).map(([k,v])=>[String(v),k]));
+    const next={};
+    for(const r of (progressRes.data||[])){
+      const sid=Number(r.story_id);
+      const key=reverse[String(r.chapter_id)]||'';
+      const ci=key?Number(key.split('_').pop()):0;
+      next[sid]={chapter:Number.isFinite(ci)?ci:0,scroll:Number(r.scroll_position)||0};
+    }
+    progress=next;
+  }
+  localStorage.setItem('nha_co_alex_saved',JSON.stringify(saved));
+  localStorage.setItem('nha_co_alex_progress',JSON.stringify(progress));
+  render();
 }
 async function saveCloudMemberState(){
-  if(!authUser)return; const payload={user_id:authUser.id,saved_story_ids:saved.map(Number).filter(Number.isFinite),reading_progress:progress,updated_at:new Date().toISOString()};
-  const {error}=await sb.from('member_state').upsert(payload,{onConflict:'user_id'}); if(error)console.warn('member state save',error);
+  if(!authUser)return;
+  if(!Object.keys(cloudChapterMap).length)await loadCloudChapterMap();
+  const wanted=[...new Set(saved.map(Number).filter(Number.isFinite))];
+  const currentRes=await sb.from('saved_stories').select('story_id').eq('user_id',authUser.id);
+  if(!currentRes.error){
+    const current=(currentRes.data||[]).map(r=>Number(r.story_id));
+    const add=wanted.filter(id=>!current.includes(id));
+    const remove=current.filter(id=>!wanted.includes(id));
+    if(add.length){const r=await sb.from('saved_stories').insert(add.map(story_id=>({story_id,user_id:authUser.id})));if(r.error)console.warn('save story insert',r.error)}
+    if(remove.length){const r=await sb.from('saved_stories').delete().eq('user_id',authUser.id).in('story_id',remove);if(r.error)console.warn('save story delete',r.error)}
+  }else console.warn('saved stories read',currentRes.error);
+  for(const [sidRaw,pr] of Object.entries(progress||{})){
+    const story_id=Number(sidRaw),chapterIndex=Math.max(0,Number(pr?.chapter)||0),chapter_id=cloudChapterMap[`${story_id}_${chapterIndex}`];
+    if(!Number.isFinite(story_id)||!chapter_id)continue;
+    const row={story_id,user_id:authUser.id,chapter_id,scroll_position:Math.max(0,Math.round(Number(pr?.scroll)||0)),updated_at:new Date().toISOString()};
+    const existing=await sb.from('reading_progress').select('story_id').eq('user_id',authUser.id).eq('story_id',story_id).maybeSingle();
+    let r;
+    if(existing.data)r=await sb.from('reading_progress').update(row).eq('user_id',authUser.id).eq('story_id',story_id);
+    else r=await sb.from('reading_progress').insert(row);
+    if(r.error)console.warn('reading progress save',r.error);
+  }
 }
 function queueCloudMemberState(){if(!authUser||!cloudSyncReady)return;clearTimeout(cloudStateTimer);cloudStateTimer=setTimeout(saveCloudMemberState,450)}
 const localSaveV179=save;
@@ -2181,6 +2229,7 @@ deleteStoryReview=async function(id){if(!introStory||!authUser||!confirm('Xóa r
 const toggleSaveV179=toggleSave;
 toggleSave=function(id){toggleSaveV179(id);queueCloudMemberState()};
 
+console.info('Nhà có Alex V20.1 · Supabase account sync');
 render();
 routeFromLocation();
 initAuth().catch(()=>updateAuthUI());

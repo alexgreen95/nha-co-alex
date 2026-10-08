@@ -970,6 +970,34 @@ body.pastel .chapter-end-nav #nextChapter{background:#dcebf4;border-color:#c6dfe
 .story-admin-editbar{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px}
 .story-admin-editbar button{border:1px solid var(--line);background:var(--soft);color:var(--fg);border-radius:10px;padding:9px 12px}
 @media(max-width:600px){.intro-tabs{gap:16px;padding-left:14px!important;padding-right:14px!important}.intro-tabs button{padding-left:4px;padding-right:4px}.chapter-center-actions{gap:5px}.chapter-home-btn{width:40px;height:40px;min-width:40px;padding:0!important}}
+
+/* ===== V21.11: SPA navigation + softer theme-aware shadows ===== */
+.nav button,.btn,.bell-btn,.account-trigger,
+.chapter-nav button,.chapter-end-nav button,.float-tools button{
+  box-shadow:0 2px 7px color-mix(in srgb,var(--accent) 10%,transparent),
+             inset 0 1px rgba(255,255,255,.28)!important;
+}
+.nav button:hover,.btn:hover,
+.chapter-nav button:not(:disabled):hover,.chapter-end-nav button:not(:disabled):hover,
+.float-tools button:hover{
+  box-shadow:0 4px 12px color-mix(in srgb,var(--accent) 14%,transparent),
+             inset 0 1px rgba(255,255,255,.34)!important;
+}
+.nav button:active,.btn:active{
+  box-shadow:0 1px 4px color-mix(in srgb,var(--accent) 10%,transparent)!important;
+}
+.account-menu,.notif-panel{
+  box-shadow:0 12px 30px color-mix(in srgb,var(--accent) 12%,transparent),
+             0 3px 10px rgba(40,30,35,.045)!important;
+}
+.story-composer-card,.font-menu,.theme-menu,#emojiPopup,.comment-menu-pop{
+  box-shadow:0 12px 32px color-mix(in srgb,var(--accent) 11%,transparent)!important;
+}
+body.night .account-menu,body.night .notif-panel,
+body.purplenight .account-menu,body.purplenight .notif-panel{
+  box-shadow:0 14px 34px rgba(0,0,0,.28)!important;
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Nhà có Alex V21.9 -->
@@ -1291,7 +1319,12 @@ function storyCommentCount(s){
 function slugify(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/đ/g,'d').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
 function storyPath(story){return '/truyen/'+slugify(story.title)}
 function chapterPath(story,ci){return storyPath(story)+'/chuong-'+(ci+1)}
-function setRoute(path,replace=false,state={}){if(location.pathname===path)return;replace?location.replace(path):location.assign(path)}
+function setRoute(path,replace=false,state={}){
+ if(location.pathname===path)return;
+ const nextState={...(history.state||{}),...(state||{})};
+ if(replace)history.replaceState(nextState,'',path);
+ else history.pushState(nextState,'',path);
+}
 function storyBySlug(slug){return stories.find(x=>slugify(x.title)===slug)}
 function profileUsername(){return slugify(userDisplayName(authUser)||String(authUser?.email||'thanh-vien').split('@')[0])||'thanh-vien'}
 function profilePath(){return '/user/'+profileUsername()}
@@ -1391,9 +1424,12 @@ function show(id,updateRoute=true){
  if(id!=='reader')window.scrollTo(0,0);
 }
 function goHome(){
- show('home');
- const storyTab=document.querySelector('[data-home-tab="storiesPanel"]');
- switchHomeTab('storiesPanel',storyTab);
+ // Trang chủ là nơi duy nhất chủ động tải lại toàn trang.
+ if(location.pathname==='/' || location.pathname===''){
+   location.reload();
+ }else{
+   location.assign('/');
+ }
 }
 function chapterLikeKey(storyId,chapterIndex){return `${storyId}_${chapterIndex}`}
 function storyLikeTotal(story){return (story.chapters||[]).reduce((sum,_,i)=>sum+(Number(chapterLikes[chapterLikeKey(story.id,i)])||0),0)}

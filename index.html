@@ -722,6 +722,31 @@ body.purplenight .hero-fade{height:118px!important;background:linear-gradient(to
 .comment-item a:focus-visible,.comment-meta button:focus-visible,#emojiPopup button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 @media(max-width:700px){.comment-replies,.reply-compose{margin-left:24px}.reply-compose,.chapter-comments .reply-compose{max-width:calc(100% - 24px)!important}}
 
+
+/* ===== V17: story-card rhythm + unified chapter comments ===== */
+#stories .story-info .story-title-link{height:2.55em!important;min-height:2.55em!important;margin:0 0 4px!important;display:flex!important;align-items:center!important;line-height:1.25!important}
+#stories .story-info .story-title-link>span{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;text-overflow:ellipsis;max-height:2.5em}
+#stories .stats{margin-top:auto!important;margin-bottom:2px!important}
+#stories .story-actions{margin-top:0!important;padding-top:2px!important}
+.chapter-comments{max-width:800px!important}
+.chapter-comments-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px}
+.chapter-comments-head h3{margin:0!important}
+.comment-sort-label{display:flex;align-items:center;gap:7px;color:var(--muted);font:12px/1.3 Arial,sans-serif}
+.comment-sort-label select{border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:10px;padding:7px 28px 7px 9px;font:13px Arial,sans-serif}
+.comment-author-line{display:flex;align-items:center;gap:7px;margin:0 4px 4px;min-height:20px}
+.comment-bubble{background:color-mix(in srgb,var(--soft) 58%,var(--card) 42%)!important;border-color:color-mix(in srgb,var(--line) 72%,transparent)!important;padding:9px 12px!important}
+body.pastel .comment-bubble{background:#fff8fb!important;border-color:#efdce5!important}
+body.night .comment-bubble{background:#202020!important}body.purplenight .comment-bubble{background:#272331!important}
+.comment-text{margin:0!important}
+.admin-badge{display:inline-flex;align-items:center;border-radius:999px;padding:2px 6px;background:color-mix(in srgb,var(--accent) 18%,var(--card));border:1px solid color-mix(in srgb,var(--accent) 38%,var(--line));color:var(--accent);font:700 9px/1 Arial,sans-serif;letter-spacing:.06em}
+.unified-comment-group>.comment-location{margin:0 0 4px 46px!important;font-size:11px!important;color:var(--muted)!important}
+.chapter-comments>#chapterCommentComposer{margin-left:46px;width:calc(100% - 46px)}
+.chapter-comments>#chapterCommentComposer .comment-compose{width:100%!important;max-width:none!important}
+.emoji-trigger{font-size:21px!important}
+#commentsPanel .comment-location{display:inline!important;margin:0!important;font-size:inherit!important}
+#commentsPanel .comment-time{font-size:inherit!important}
+@media(max-width:700px){.chapter-comments-head{align-items:flex-start;flex-direction:column}.chapter-comments>#chapterCommentComposer{margin-left:0;width:100%}.unified-comment-group>.comment-location{margin-left:40px!important}}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -809,7 +834,6 @@ document.body.classList.add('gate-locked');
         <button onclick="openProfile('activity')">Hoạt động</button>
         <button onclick="openProfile('saved')">Truyện đã lưu</button>
         <button onclick="openProfile('reading')">Đang đọc</button>
-        <button onclick="openProfile('edit')">Chỉnh sửa hồ sơ</button>
         <button class="logout" onclick="signOut()">Đăng xuất</button>
       </div>
     </div>
@@ -885,7 +909,7 @@ document.body.classList.add('gate-locked');
 <div class="reader-head"><h1 id="rtitle"></h1><div class="muted" id="rauthor"></div><div class="meta-row" style="justify-content:center"><span class="meta-pill" id="rstatus"></span></div></div>
 <h2 class="chapter-title" id="chapterTitle"></h2>
 <article id="chapter" class="chapter"></article>
-<div id="toBeContinued" class="to-be-continued hidden">Còn tiếp…</div><section class="chapter-comments"><h3>Bình luận chương này</h3><div id="chapterCommentsList"></div><div id="chapterCommentComposer"></div></section>
+<div id="toBeContinued" class="to-be-continued hidden">Còn tiếp…</div><section class="chapter-comments"><div class="chapter-comments-head"><h3>Bình luận</h3><label class="comment-sort-label">Sắp xếp <select id="chapterCommentSort" onchange="setChapterCommentSort(this.value)"><option value="newest">Mới nhất</option><option value="interaction">Tương tác nhiều nhất</option><option value="all">Tất cả bình luận</option></select></label></div><div id="chapterCommentsList"></div><div id="chapterCommentComposer"></div></section>
 <div class="chapter-nav"><button id="prevChapter" onclick="moveChapter(-1)">← Chương trước</button><button id="nextChapter" onclick="moveChapter(1)">Chương sau →</button></div>
 </div>
 </main>
@@ -1088,7 +1112,7 @@ function show(id,updateRoute=true){
 }
 function card(s){
  const hasProgress=progress[s.id] && (progress[s.id].chapter>0 || progress[s.id].scroll>80);
- return `<div class="card story-card clickable-story" onclick="openStory(${s.id})"><div class="story-cover">${s.cover?`<img src="${esc(s.cover)}" alt="Bìa ${esc(s.title)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`:`Nhà có Alex<br>${esc(s.title)}`}</div><div class="story-info"><h3 class="story-title-link" title="${esc(s.title)}">${esc(s.title)}</h3><div class="muted">Tác giả: ${esc(s.author)}</div><div class="genre">${esc(s.mainGenre||s.genre)}</div><div class="meta-row"><span class="meta-pill ${s.status==='completed'?'status-done':'status-ongoing'}">${s.status==='completed'?'✓ Đã hoàn thành':'◷ Đang viết'}</span></div>
+ return `<div class="card story-card clickable-story" onclick="openStory(${s.id})"><div class="story-cover">${s.cover?`<img src="${esc(s.cover)}" alt="Bìa ${esc(s.title)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`:`Nhà có Alex<br>${esc(s.title)}`}</div><div class="story-info"><h3 class="story-title-link" title="${esc(s.title)}"><span>${esc(s.title)}</span></h3><div class="muted">Tác giả: ${esc(s.author)}</div><div class="genre">${esc(s.mainGenre||s.genre)}</div><div class="meta-row"><span class="meta-pill ${s.status==='completed'?'status-done':'status-ongoing'}">${s.status==='completed'?'✓ Đã hoàn thành':'◷ Đang viết'}</span></div>
  <div class="stats"><span class="stat">${icon('eye')} ${s.views||0}</span><button class="stat" style="border:0;background:transparent;padding:0;color:inherit" onclick="toggleLike(${s.id})">${icon('heart')} ${s.likes||0}</button><span class="stat">${icon('comment')} ${storyCommentCount(s)}</span></div>
  <div class="story-actions"><button class="btn" onclick="event.stopPropagation();${hasProgress?`read(${s.id})`:`openStory(${s.id})`}">${hasProgress?'Đọc tiếp':'Đọc'}</button> <button class="btn" onclick="event.stopPropagation();toggleSave(${s.id})">${saved.includes(s.id)?'★ Đã lưu':'☆ Lưu'}</button></div></div></div>`;
 }
@@ -1210,7 +1234,14 @@ function commentTime(comment){
  if(comment.timeLabel)return `<span class="comment-time">${esc(comment.timeLabel)}</span>`;
  const date=new Date(comment.createdAt||'');
  if(Number.isNaN(date.getTime()))return '<span class="comment-time">Không rõ thời gian</span>';
- return `<time class="comment-time" datetime="${esc(date.toISOString())}" title="${esc(date.toLocaleString('vi-VN'))}">${esc(date.toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}))}</time>`;
+ const diff=Math.max(0,Date.now()-date.getTime()),minute=60000,hour=60*minute,day=24*hour;
+ let label='';
+ if(diff<minute)label='Vừa xong';
+ else if(diff<hour)label=Math.floor(diff/minute)+' phút trước';
+ else if(diff<day)label=Math.floor(diff/hour)+' giờ trước';
+ else if(diff<7*day)label=Math.floor(diff/day)+' ngày trước';
+ else label=date.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'});
+ return `<time class="comment-time" datetime="${esc(date.toISOString())}" title="${esc(date.toLocaleString('vi-VN'))}">${esc(label)}</time>`;
 }
 function commentLocationHTML(key){
  const demo=demoHomeComments.find(row=>row.key===key);
@@ -1220,6 +1251,7 @@ function commentLocationHTML(key){
  if(!chapter)return '';
  return `<button type="button" class="comment-location" data-comment-location="${esc(key)}">${esc(story.title)} · ${esc(chapter.title)}${key.startsWith('chapter_')?'':' · Đoạn '+(parts[2]+1)}</button>`;
 }
+function isAdminComment(comment){return (comment.username||slugify(comment.name||''))==='thao-tran'}
 function commentMarkup(comment,key,list){
  const username=slugify(comment.username||comment.name)||'thanh-vien';
  const profileLink='/user/'+username, liked=!!authUser&&(comment.likedBy||[]).includes(authUser.id);
@@ -1227,8 +1259,8 @@ function commentMarkup(comment,key,list){
  const avatar=comment.avatar?`<img src="${esc(comment.avatar)}" alt="" loading="lazy">`:`<span aria-hidden="true">${esc(Array.from(comment.name||'T')[0])}</span>`;
  return `<article class="comment-item" data-comment-id="${esc(comment.id)}">
   <a class="comment-avatar" href="${profileLink}" data-user-profile="${username}" aria-label="Hồ sơ ${esc(comment.name||'Thành viên')}">${avatar}</a>
-  <div class="comment-main"><div class="comment-bubble"><a class="comment-author" href="${profileLink}" data-user-profile="${username}">${esc(comment.name||'Thành viên')}</a>
-   ${target?`<span class="comment-reply-to">Trả lời ${esc(target.name)}</span>`:''}<p class="comment-text">${esc(comment.text)}</p></div>
+  <div class="comment-main"><div class="comment-author-line"><a class="comment-author" href="${profileLink}" data-user-profile="${username}">${esc(comment.name||'Thành viên')}</a>${isAdminComment(comment)?'<span class="admin-badge">ADMIN</span>':''}</div>
+   <div class="comment-bubble">${target?`<span class="comment-reply-to">Trả lời ${esc(target.name)}</span>`:''}<p class="comment-text">${esc(comment.text)}</p></div>
    <div class="comment-meta"><button type="button" data-comment-action="like" data-comment-id="${esc(comment.id)}" aria-pressed="${liked}" aria-label="Thả tim bình luận của ${esc(comment.name)}">${liked?'♥':'♡'} <span>${Math.max(0,Number(comment.likes)||0)}</span></button><button type="button" data-comment-action="reply" data-comment-id="${esc(comment.id)}">Trả lời</button>${commentTime(comment)}</div>
   </div></article>`;
 }
@@ -1250,9 +1282,16 @@ function newComment(text,extra={}){
 function renderHomeComments(){
  const panel=document.getElementById('commentsPanel');if(!panel)return;
  const keys=Object.keys(comments).filter(key=>!key.startsWith('demo_')&&comments[key].length);
- keys.sort((a,b)=>Math.max(...comments[b].map(row=>Date.parse(row.createdAt)||0))-Math.max(...comments[a].map(row=>Date.parse(row.createdAt)||0)));
+ const source=keys.length?keys:demoHomeComments.map(row=>row.key);
+ const rows=[];
+ source.forEach(key=>commentList(key).forEach(comment=>rows.push({key,comment})));
+ rows.sort((a,b)=>(Date.parse(b.comment.createdAt)||0)-(Date.parse(a.comment.createdAt)||0));
  panel.querySelector('.demo-label').classList.toggle('hidden',keys.length>0);
- panel.querySelector('.community-feed').innerHTML=(keys.length?keys:demoHomeComments.map(row=>row.key)).map(key=>`<div class="comment-group">${commentLocationHTML(key)}${commentThreadsHTML(key,'home')}</div>`).join('');
+ panel.querySelector('.community-feed').innerHTML=rows.slice(0,6).map(({key,comment})=>{
+   const username=slugify(comment.username||comment.name)||'thanh-vien';
+   const avatar=comment.avatar?`<img class="community-avatar" src="${esc(comment.avatar)}" alt="">`:`<div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">${esc(Array.from(comment.name||'T')[0])}</div>`;
+   return `<article class="community-card">${`<div class="community-head">${avatar}<div class="community-meta"><strong>${esc(comment.name||'Thành viên')}</strong><span class="community-sub">${commentTime(comment)} · ${commentLocationHTML(key)}</span></div></div>`}<div class="community-body">${esc(comment.text)}</div></article>`;
+ }).join('');
 }
 function refreshCommentViews(){
  const drafts=[...document.querySelectorAll('.comment-compose input')].map(input=>({id:input.id,value:input.value,start:input.selectionStart,end:input.selectionEnd,focused:document.activeElement===input}));
@@ -1338,12 +1377,31 @@ function addParaComment(key){
  (comments[key]||(comments[key]=[])).push(newComment(text));input.value='';save();refreshCommentViews();
 }
 
+let chapterCommentSort='newest';
 function chapterGeneralKey(){return currentStory?`chapter_${currentStory.id}_${currentChapter}`:''}
+function setChapterCommentSort(value){chapterCommentSort=value;renderChapterComments()}
+function chapterCommentEntries(){
+ if(!currentStory)return [];
+ const keys=[chapterGeneralKey(),...currentStory.chapters[currentChapter].paras.map((para,pi)=>`${currentStory.id}_${currentChapter}_${pi}`)];
+ const entries=[];
+ for(const key of keys){
+   const list=normalizedComments(key);
+   for(const root of list.filter(c=>rootComment(list,c).id===c.id)){
+     const replies=list.filter(c=>c.id!==root.id&&rootComment(list,c).id===root.id);
+     entries.push({key,list,root,replies,time:Date.parse(root.createdAt)||0,interaction:(Number(root.likes)||0)+replies.length});
+   }
+ }
+ if(chapterCommentSort==='interaction')entries.sort((a,b)=>b.interaction-a.interaction||b.time-a.time);
+ else if(chapterCommentSort==='all')entries.sort((a,b)=>Number(isAdminComment(b.root))-Number(isAdminComment(a.root))||a.time-b.time);
+ else entries.sort((a,b)=>b.time-a.time);
+ return entries;
+}
 function renderChapterComments(){
  const composer=document.getElementById('chapterCommentComposer');if(composer)composer.innerHTML=commentComposerHTML('bình luận');
+ const select=document.getElementById('chapterCommentSort');if(select)select.value=chapterCommentSort;
  const box=document.getElementById('chapterCommentsList');if(!box||!currentStory)return;
- const keys=[chapterGeneralKey(),...currentStory.chapters[currentChapter].paras.map((para,pi)=>`${currentStory.id}_${currentChapter}_${pi}`)];
- box.innerHTML=keys.filter(key=>commentList(key).length).map(key=>`<div class="comment-group">${key===chapterGeneralKey()?'':commentLocationHTML(key)}${commentThreadsHTML(key,'chapter')}</div>`).join('')||'<p class="muted">Chưa có bình luận nào trong chương này.</p>';
+ const entries=chapterCommentEntries();
+ box.innerHTML=entries.map(({key,list,root,replies})=>`<div class="comment-group unified-comment-group">${key===chapterGeneralKey()?'':commentLocationHTML(key)}<div class="comment-thread" data-comment-key="${esc(key)}" data-comment-surface="chapter">${commentMarkup(root,key,list)}${replies.length?`<div class="comment-replies">${replies.map(reply=>commentMarkup(reply,key,list)).join('')}</div>`:''}${replyComposerHTML(key,root,'chapter')}</div></div>`).join('')||'<p class="muted">Chưa có bình luận nào trong chương này.</p>';
 }
 
 function addChapterComment(){

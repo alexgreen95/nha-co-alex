@@ -90,7 +90,9 @@ body.reading #tocBtn,body.reading #fontDown,body.reading #fontUp,body.reading #f
 .toc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px}
 .toc-head h3{margin:0}
 .toc button{width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:transparent;padding:12px 4px}
-.toc button.active{font-weight:700;color:var(--accent)}
+.toc button.active{font-weight:700;color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);padding-left:10px;border-radius:8px}
+.toc #tocList button{transition:background .15s ease,color .15s ease,padding-left .15s ease,border-radius .15s ease}
+.toc #tocList button:hover{background:var(--soft);color:var(--accent);padding-left:10px;border-radius:8px}
 
 /* Themes */
 body.light{--bg:#fffaf5;--fg:#463a3a;--muted:#817575;--line:#eadfda;--panel:#fff3ef;--card:#fff;--soft:#f9ece8;--accent:#d87998}
@@ -1531,8 +1533,17 @@ function read(id,chapterOverride=null,updateRoute=true){
  s.views=(s.views||0)+1; save();
  renderChapter(chapterOverride===null ? (pr.scroll||0) : 0);
 }
-function formatImportedOpeningParagraph(text){
+function formatImportedOpeningParagraph(text,index=0){
  let clean=String(text||'').replace(/\r\n?/g,'\n').replace(/[ \t]{2,}/g,' ').trim();
+ // EPUB cũ có một dòng tiêu đề/tác giả/editor bị dính trước nội dung chương.
+ // Ở đoạn đầu, bỏ phần metadata đó và bắt đầu thẳng vào nội dung truyện.
+ if(index===0){
+   const marker=clean.match(/(?:Edit\s*:\s*Alex|Editor\s*:\s*Alex)[\s_—–-]*/i);
+   if(marker){clean=clean.slice(marker.index+marker[0].length).replace(/^[\s_—–-]+/,'').trim();}
+   else {
+     clean=clean.replace(/^.{0,220}?(?:Tác giả\s*:[^\n]{0,80})/i,'').replace(/^[\s_—–-]+/,'').trim();
+   }
+ }
  return renderInlineChapterFormatting(clean).replace(/\n+/g,'<br>');
 }
 function renderChapter(restoreScroll=0){
@@ -1544,7 +1555,7 @@ function renderChapter(restoreScroll=0){
  document.getElementById('chapterTitle').textContent=ch.title;
  document.getElementById('chapter').innerHTML=ch.paras.map((p,i)=>{
   let key=`${s.id}_${currentChapter}_${i}`,c=comments[key]||[];
-  return `<div class="para-wrap" id="para_${key}" data-comment-key="${key}"><p class="para" ondblclick="openParagraphComposer('${key}')" onpointerdown="startLongPress(event,'${key}')" onpointerup="cancelLongPress()" onpointercancel="cancelLongPress()" onpointermove="cancelLongPress()">${formatImportedOpeningParagraph(p)}</p>${c.length?`<button class="comment-btn" onclick="event.stopPropagation();toggleComments('${key}',true)" aria-label="Xem ${c.length} bình luận">${icon('comment')}<span>${c.length}</span></button>`:''}</div>`;
+  return `<div class="para-wrap" id="para_${key}" data-comment-key="${key}"><p class="para" ondblclick="openParagraphComposer('${key}')" onpointerdown="startLongPress(event,'${key}')" onpointerup="cancelLongPress()" onpointercancel="cancelLongPress()" onpointermove="cancelLongPress()">${formatImportedOpeningParagraph(p,i)}</p>${c.length?`<button class="comment-btn" onclick="event.stopPropagation();toggleComments('${key}',true)" aria-label="Xem ${c.length} bình luận">${icon('comment')}<span>${c.length}</span></button>`:''}</div>`;
  }).join('');
  renderChapterComments();
  renderChapterHeart();

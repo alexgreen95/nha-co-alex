@@ -1,12 +1,7 @@
 {
-  "rewrites": [
-    {
-      "source": "/truyen/:path*",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/user/:path*",
-      "destination": "/index.html"
-    }
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/.*", "dest": "/index.html" }
   ]
 }

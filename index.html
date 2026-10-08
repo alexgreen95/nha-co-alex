@@ -600,6 +600,31 @@ body.pastel .intro-tag:nth-child(2){background:#ffe9ae!important;color:#806025!i
 /* Keep tab body/panels neutral in Pastel; active tab itself carries the accent. */
 body.pastel .intro-tabs,body.pastel .intro-pane{background:#fffdf8!important}
 
+
+/* ===== V16.2 visual polish ===== */
+/* Tím khói stays lavender/grey-purple — never beige/yellow. */
+body.smoky{--bg:#efecf2!important;--fg:#47414c!important;--muted:#79717f!important;--line:#d8d1dc!important;--panel:#e7e1eb!important;--card:#f8f5fa!important;--soft:#e5dfea!important;--accent:#8c7597!important}
+body.smoky .story-intro-top .btn,body.smoky .story-actions .btn{background:#ded3e5!important;border-color:#cbbbd5!important;color:#51465a!important}
+body.smoky .intro-tag{background:#e2d9e7!important;border-color:#cec1d5!important;color:#62556a!important}
+/* Intro navigation is navigation, not a colored button. */
+.intro-tabs button,.intro-tabs button.active,body.light .intro-tabs button.active,body.smoky .intro-tabs button.active,body.dustyrose .intro-tabs button.active,body.mistblue .intro-tabs button.active,body.pastel .intro-tabs button.active{background:transparent!important;border-left:0!important;border-right:0!important;border-top:0!important;border-bottom:2px solid transparent!important;border-radius:0!important;box-shadow:none!important}
+.intro-tabs button.active{border-bottom-color:var(--accent)!important;color:var(--fg)!important;font-weight:700!important}
+/* Covers are always true 3:4, independent of card height. */
+#stories .story-cover{aspect-ratio:3/4!important;height:auto!important;align-self:start!important}
+/* Chapter composer: a little wider, but deliberately not full-column. */
+.chapter-comments .comment-compose{width:min(560px,82%)!important;max-width:100%!important}
+.chapter-comments .comment-compose-row{width:100%!important;align-items:center!important}
+.comment-compose-row>button:not(.emoji-trigger){height:36px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
+.emoji-trigger{display:inline-flex!important;align-items:center!important;justify-content:center!important;padding:0!important;font-size:17px!important;line-height:1!important}
+/* Emoji picker escapes the comment panel clipping and remains fully visible. */
+.emoji-picker{position:fixed!important;right:auto!important;bottom:auto!important;width:280px!important;max-height:260px!important;overflow-y:auto!important;overscroll-behavior:contain;z-index:10000!important}
+/* Smoother night fades: more stops, no visible grey band. */
+body.night .hero-fade-top{height:54px!important;background:linear-gradient(to bottom,#171717 0%,rgba(23,23,23,.92) 18%,rgba(23,23,23,.62) 48%,rgba(23,23,23,.25) 76%,rgba(23,23,23,0) 100%)!important}
+body.night .hero-fade{height:118px!important;background:linear-gradient(to bottom,rgba(23,23,23,0) 0%,rgba(23,23,23,.10) 20%,rgba(23,23,23,.30) 44%,rgba(23,23,23,.58) 66%,rgba(23,23,23,.82) 84%,#171717 100%)!important}
+body.purplenight .hero-fade-top{height:54px!important;background:linear-gradient(to bottom,#1d1928 0%,rgba(29,25,40,.92) 18%,rgba(29,25,40,.62) 48%,rgba(29,25,40,.25) 76%,rgba(29,25,40,0) 100%)!important}
+body.purplenight .hero-fade{height:118px!important;background:linear-gradient(to bottom,rgba(29,25,40,0) 0%,rgba(29,25,40,.10) 20%,rgba(29,25,40,.30) 44%,rgba(29,25,40,.58) 66%,rgba(29,25,40,.82) 84%,#1d1928 100%)!important}
+@media(max-width:700px){.chapter-comments .comment-compose{width:100%!important}.emoji-trigger,.emoji-picker{display:none!important}body.night .hero-fade,body.purplenight .hero-fade{height:96px!important}}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
 window.addEventListener('popstate',()=>routeFromLocation());
@@ -749,6 +774,9 @@ document.addEventListener('click',e=>{if(!e.target.closest('.emoji-trigger')&&!e
     <div class="community-body">Một câu chuyện rất đời thường nhưng đọc xong lại nhớ lâu. Mấy chi tiết nhỏ làm nhân vật có cảm giác gần gũi ghê.</div>
     <div class="community-actions"><button class="heart-demo">♡ 21</button><button>💬 4 bình luận</button></div>
   </article>
+  <article class="community-card"><div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">A</div><div class="community-meta"><strong>An Nhiên</strong><span class="community-sub">4 ngày trước · <span class="review-title-link" onclick="openStory(2)">Sau Cơn Mưa</span></span></div></div><div class="community-body">Nhịp truyện chậm vừa đủ, đọc rất dễ chịu. Mình thích cách cảm xúc được để tự nhiên chứ không cố làm quá.</div><div class="community-actions"><button class="heart-demo">♡ 6</button><button>💬 1 bình luận</button></div></article>
+  <article class="community-card"><div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">P</div><div class="community-meta"><strong>Phương Anh</strong><span class="community-sub">5 ngày trước · <span class="review-title-link" onclick="openStory(4)">Dưới Bầu Trời Đêm Ấy</span></span></div></div><div class="community-body">Không khí buổi tối trong truyện rất đẹp, có cảm giác yên yên mà vẫn khiến mình tò mò muốn đọc tiếp.</div><div class="community-actions"><button class="heart-demo">♡ 10</button><button>💬 3 bình luận</button></div></article>
+  <article class="community-card"><div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">M</div><div class="community-meta"><strong>Mai Chi</strong><span class="community-sub">6 ngày trước · <span class="review-title-link" onclick="openStory(6)">Ngày Chúng Ta Vẫn Còn Là Những Đứa Trẻ</span></span></div></div><div class="community-body">Đọc xong nhớ mấy chuyện hồi nhỏ ghê. Truyện có nhiều chi tiết rất bình thường mà lại dễ chạm cảm xúc.</div><div class="community-actions"><button class="heart-demo">♡ 14</button><button>💬 2 bình luận</button></div></article>
 </div>
 </section>
 <section id="commentsPanel" class="home-panel">
@@ -758,6 +786,8 @@ document.addEventListener('click',e=>{if(!e.target.closest('.emoji-trigger')&&!e
   <article class="community-card demo-jump" onclick="openCommentLocation(2,0,0)"><div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">H</div><div class="community-meta"><strong>Hoàng Nam</strong><span class="community-sub">45 phút trước · <span class="comment-location">Chương 5 · Sau Cơn Mưa</span></span></div></div><div class="community-body">Mình cũng nghĩ giống bạn, chi tiết này thật sự rất tinh tế.</div><div class="community-actions"><button>♡ 3</button><button>Trả lời</button></div></article>
   <article class="community-card demo-jump" onclick="openCommentLocation(4,0,1)"><div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">K</div><div class="community-meta"><strong>Khánh Linh</strong><span class="community-sub">2 giờ trước · đã trả lời bình luận · <span class="comment-location">Chương 3 · Dưới Bầu Trời Đêm Ấy</span></span></div></div><div class="community-body"><strong>@Phương Anh</strong> Đúng rồi, mình cũng thấy vậy nè! Cảm ơn bạn đã phân tích kỹ quá.</div><div class="community-actions"><button>♡ 7</button><button>Trả lời</button></div></article>
   <article class="community-card demo-jump" onclick="openCommentLocation(3,0,0)"><div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">M</div><div class="community-meta"><strong>Minh Anh</strong><span class="community-sub">4 giờ trước · <span class="comment-location">Chương 8 · Chuyện Nhà Mình</span></span></div></div><div class="community-body">Một chương nhẹ nhàng nhưng đọc xong thấy ấm lòng ghê. Thích cách tác giả viết về gia đình quá 💛</div><div class="community-actions"><button>♡ 9</button><button>Trả lời</button></div></article>
+  <article class="community-card demo-jump" onclick="openCommentLocation(5,0,0)"><div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">L</div><div class="community-meta"><strong>Lan Vy</strong><span class="community-sub">6 giờ trước · <span class="comment-location">Chương 2 · Tiệm Hoa Mở Cửa Sau Nửa Đêm</span></span></div></div><div class="community-body">Khúc này có không khí dễ thương ghê, mình đọc mà tưởng tượng ra cả mùi hoa luôn 🌷</div><div class="community-actions"><button>♡ 4</button><button>Trả lời</button></div></article>
+  <article class="community-card demo-jump" onclick="openCommentLocation(6,0,1)"><div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">D</div><div class="community-meta"><strong>Diệp Anh</strong><span class="community-sub">8 giờ trước · <span class="comment-location">Chương 4 · Ngày Chúng Ta Vẫn Còn Là Những Đứa Trẻ</span></span></div></div><div class="community-body">Câu này làm mình đứng lại đọc hai lần luôn á 🥹</div><div class="community-actions"><button>♡ 11</button><button>Trả lời</button></div></article>
 </div>
 </section>
 </main>
@@ -886,7 +916,22 @@ function routeFromLocation(){let p=location.pathname.split('/').filter(Boolean);
 function requestCommentLogin(kind='bình luận'){localStorage.setItem('nha_return_path',location.pathname);show('login');let m=document.getElementById('authMessage');if(m)m.textContent='Đăng nhập để '+kind+'.'}
 const EMOJIS='😀 😃 😄 😁 😂 🥹 😊 😍 🥰 😘 😭 🥺 😳 🤭 🤣 😌 😎 🤔 😴 😤 😡 🤍 ❤️ 🩷 🧡 💛 💚 🩵 💙 💜 🤎 🖤 💕 💖 💗 💓 💞 💘 💝 👍 👏 🙌 🫶 🤝 👀 ✨ ⭐ 🌙 ☀️ 🌷 🌸 🌼 🌿 🍀 🎀 🎉 🥳 ☕ 📚 🐰 🐱'.split(' ');
 function emojiPickerHTML(inputId){return `<button type="button" class="emoji-trigger" onclick="toggleEmojiPicker(event,this)" aria-label="Chọn emoji">☺</button><div class="emoji-picker">${EMOJIS.map(e=>`<button type="button" onclick="insertEmoji(event,'${inputId}','${e}')">${e}</button>`).join('')}</div>`}
-function toggleEmojiPicker(e,btn){e.stopPropagation();let p=btn.nextElementSibling;document.querySelectorAll('.emoji-picker.open').forEach(x=>{if(x!==p)x.classList.remove('open')});p?.classList.toggle('open')}
+function toggleEmojiPicker(e,btn){
+ e.stopPropagation();
+ const p=btn.nextElementSibling;if(!p)return;
+ const wasOpen=p.classList.contains('open');
+ document.querySelectorAll('.emoji-picker.open').forEach(x=>x.classList.remove('open'));
+ if(wasOpen)return;
+ p.classList.add('open');
+ requestAnimationFrame(()=>{
+   const r=btn.getBoundingClientRect(), w=p.offsetWidth||280, h=p.offsetHeight||260, gap=8, pad=10;
+   let left=Math.min(Math.max(pad,r.right-w),window.innerWidth-w-pad);
+   let top=r.top-h-gap;
+   if(top<pad) top=r.bottom+gap;
+   if(top+h>window.innerHeight-pad) top=Math.max(pad,window.innerHeight-h-pad);
+   p.style.left=left+'px';p.style.top=top+'px';
+ });
+}
 function insertEmoji(e,inputId,emoji){e.stopPropagation();let i=document.getElementById(inputId);if(!i)return;let a=i.selectionStart??i.value.length,b=i.selectionEnd??a;i.value=i.value.slice(0,a)+emoji+i.value.slice(b);i.focus();i.setSelectionRange(a+emoji.length,a+emoji.length)}
 function commentComposerHTML(kind,key=''){if(!authUser)return `<div class="comment-login-gate"><span>Đăng nhập để ${kind}</span><button onclick="requestCommentLogin('${kind}')">Đăng nhập</button></div>`;let id=key?'panelCommentInput':'chapterCommentInput';let action=key?`addParaComment('${key}')`:'addChapterComment()';let ph=key?'Viết bình luận cho đoạn này…':'Viết bình luận cho chương này…';return `<div class="comment-compose"><div class="comment-compose-row"><input id="${id}" placeholder="${ph}" onkeydown="if(event.key==='Enter')${action}">${emojiPickerHTML(id)}<button onclick="${action}">Gửi</button></div></div>`}
 function show(id){

@@ -932,6 +932,10 @@ body.pastel .chapter-end-nav #prevChapter{background:#f8dce5;border-color:#efc4d
 body.pastel .chapter-end-nav #nextChapter{background:#dcebf4;border-color:#c6dfea}
 .chapter .para:first-child{white-space:pre-line}
 @media(max-width:600px){.chapter-end-nav{grid-template-columns:1fr auto 1fr;gap:7px}.chapter-end-nav button{padding:8px 9px;font-size:12px}.chapter-heart-btn{padding:8px 11px}}
+/* V21.0 — align reading prose with chapter navigation/comments */
+.reader{max-width:800px}
+.chapter{width:100%}
+
 
 /* V20.7: keep the notification bell visually centered between Home and account */
 #memberArea{gap:10px!important}
@@ -940,6 +944,11 @@ body.pastel .chapter-end-nav #nextChapter{background:#dcebf4;border-color:#c6dfe
 
 .home-comment-card{cursor:pointer}
 .home-comment-card:active{transform:translateY(1px)}
+
+/* v21.1 — chapter editor + cover upload */
+.chapter-format-toolbar{display:flex;gap:7px;flex-wrap:wrap;margin:8px 0 8px}.chapter-format-toolbar button{min-width:36px;border:1px solid var(--line);background:var(--soft);color:var(--fg);border-radius:9px;padding:7px 10px;font:inherit;cursor:pointer}.chapter-format-toolbar button:hover{filter:brightness(.98)}
+.cover-edit-row{display:flex;align-items:center;gap:12px}.cover-edit-preview{width:64px;aspect-ratio:3/4;border:1px solid var(--line);border-radius:9px;background:var(--soft);overflow:hidden;display:grid;place-items:center;font-size:10px;text-align:center}.cover-edit-preview img{width:100%;height:100%;object-fit:cover}.cover-edit-file{flex:1}.cover-upload-note{font-size:11px;color:var(--muted);margin-top:4px}
+.para{white-space:pre-line}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1140,7 +1149,7 @@ document.body.classList.add('gate-locked');
 </main>
 
 <main id="storyAdmin" class="container hidden"><div class="story-admin-shell">
-  <div class="story-admin-top"><div><button class="linkish" onclick="openAdminLibrary()">← Quản lý thư viện</button><h2 id="storyAdminTitle">Quản lý truyện</h2><div id="storyAdminMeta" class="muted"></div></div><div class="story-admin-actions"><button class="btn" onclick="openStoryComposerFromAdmin()">Sửa thông tin</button><button id="storyVisibilityBtn" onclick="toggleStoryVisibility()">Ẩn truyện</button><button class="danger-btn" onclick="deleteManagedStory()">Xóa truyện</button></div></div>
+  <div class="story-admin-top"><div><button class="linkish" onclick="openAdminLibrary()">← Quản lý thư viện</button><h2 id="storyAdminTitle">Quản lý truyện</h2><div id="storyAdminMeta" class="muted"></div></div><div class="story-admin-actions"><button id="storyVisibilityBtn" onclick="toggleStoryVisibility()">Ẩn truyện</button><button class="danger-btn" onclick="deleteManagedStory()">Xóa truyện</button></div></div>
   <div id="storyAdminSummary" class="admin-summary"></div>
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h3 style="margin:0">Mục lục quản trị</h3><button class="btn" onclick="newManagedChapter()">＋ Chương mới</button></div>
   <div id="chapterAdminList" class="chapter-admin-list"></div>
@@ -1148,13 +1157,21 @@ document.body.classList.add('gate-locked');
 <main id="chapterAdmin" class="container hidden"><div class="chapter-editor-shell">
  <div class="chapter-editor-head"><div><button class="linkish" onclick="backToStoryAdmin()">← Mục lục quản trị</button><h2 id="chapterEditorHeading">Sửa chương</h2><div id="chapterAutosaveState" class="autosave-state">Chưa có thay đổi</div></div></div>
  <label style="display:block;margin-top:18px">Tên chương<input id="chapterEditTitle" placeholder="Tên chương"></label>
- <label style="display:block;margin-top:12px">Nội dung<textarea id="chapterEditBody" placeholder="Viết nội dung chương ở đây..."></textarea></label>
+ <label style="display:block;margin-top:12px">Nội dung</label>
+ <div class="chapter-format-toolbar" aria-label="Công cụ chỉnh văn bản">
+  <button type="button" title="In đậm" onclick="formatChapterSelection('bold')"><b>B</b></button>
+  <button type="button" title="In nghiêng" onclick="formatChapterSelection('italic')"><i>I</i></button>
+  <button type="button" title="Gạch chân" onclick="formatChapterSelection('underline')"><u>U</u></button>
+  <button type="button" title="Xuống dòng" onclick="formatChapterSelection('linebreak')">↵</button>
+  <button type="button" title="Xóa định dạng đoạn đang chọn" onclick="formatChapterSelection('clear')">Tx</button>
+ </div>
+ <textarea id="chapterEditBody" placeholder="Viết nội dung chương ở đây..."></textarea>
  <div class="chapter-editor-actions"><button onclick="saveChapterDraftNow()">Lưu bản thảo</button><button class="btn" onclick="publishManagedChapter()">Đăng chương</button></div>
 </div></main>
 
 <div id="storyComposerModal" class="story-composer-modal hidden" onclick="if(event.target===this)closeStoryComposer()"><div class="story-composer-card">
   <div class="story-composer-head"><h2 id="storyComposerTitle">Truyện mới</h2><button onclick="closeStoryComposer()">×</button></div>
-  <div class="story-form-grid"><label>Tên truyện<input id="manageTitle" placeholder="Tên truyện"></label><label>Thể loại chính<select id="manageGenre"><option>Hiện đại</option><option>Cổ đại</option><option>Tương lai</option><option>Huyền ảo</option></select></label><label>Tình trạng<select id="manageStatus"><option value="ongoing">Đang làm</option><option value="completed">Đã hoàn thành</option></select></label><label>Ảnh bìa<input id="manageCover" type="file" accept="image/*"></label></div>
+  <div class="story-form-grid"><label>Tên truyện<input id="manageTitle" placeholder="Tên truyện"></label><label>Thể loại chính<select id="manageGenre"><option>Hiện đại</option><option>Cổ đại</option><option>Tương lai</option><option>Huyền ảo</option></select></label><label>Tình trạng<select id="manageStatus"><option value="ongoing">Đang làm</option><option value="completed">Đã hoàn thành</option></select></label><label>Ảnh bìa<div class="cover-edit-row"><div id="manageCoverPreview" class="cover-edit-preview">Chưa có bìa</div><div class="cover-edit-file"><input id="manageCover" type="file" accept="image/*" onchange="previewManagedCover(this)"><div id="manageCoverNote" class="cover-upload-note">JPG, PNG, WEBP · ảnh sẽ lưu vào Supabase</div></div></div></label></div>
   <label>Giới thiệu<textarea id="manageSummary" rows="3" placeholder="Giới thiệu ngắn về truyện..."></textarea></label>
   <label>Tag phụ<input id="manageTags" placeholder="Tận thế, Nữ cường, Ngọt sủng, Sảng văn"></label>
   <div class="story-composer-actions"><button onclick="saveManagedStory('draft')">Lưu bản thảo</button><button class="btn" onclick="saveManagedStory('published')">Đăng truyện</button></div>
@@ -1495,11 +1512,9 @@ function read(id,chapterOverride=null,updateRoute=true){
  renderChapter(chapterOverride===null ? (pr.scroll||0) : 0);
 }
 function formatImportedOpeningParagraph(text){
- let out=esc(text||'');
+ let out=renderInlineChapterFormatting(text||'');
  // EPUB/Word imports sometimes flatten the title/credits into one paragraph.
- out=out.replace(/\s+(Tác giả\s*:)/i,'\n$1')
-        .replace(/\s+(Edit\s*:)/i,'\n$1')
-        .replace(/\s+(_{5,})\s*/g,'\n$1\n');
+ out=out.replace(/\s+(_{5,})\s*/g,'\n$1\n');
  return out;
 }
 function renderChapter(restoreScroll=0){
@@ -1958,7 +1973,7 @@ function ensureChapterStates(st){(st.chapters||[]).forEach(ch=>{if(!ch.publishSt
 function chapterCounts(st){ensureChapterStates(st);let pub=0,draft=0;(st.chapters||[]).forEach(ch=>ch.publishState==='draft'?draft++:pub++);return {pub,draft}}
 function openAdminLibrary(updateRoute=true){if(!isSiteAdmin()){goHome();return}if(updateRoute)setRoute('/quan-ly-thu-vien');displayPage('adminLibrary');adminLibraryTab='published';document.querySelectorAll('.admin-library-tabs button').forEach((b,i)=>b.classList.toggle('active',i===0));renderAdminLibrary();window.scrollTo(0,0)}
 function setAdminLibraryTab(tab,btn){adminLibraryTab=tab;document.querySelectorAll('.admin-library-tabs button').forEach(b=>b.classList.remove('active'));btn?.classList.add('active');renderAdminLibrary()}
-function renderAdminLibrary(){const el=document.getElementById('adminLibraryList');if(!el)return;const rows=adminLibraryTab==='published'?stories:managedDrafts;if(!rows.length){el.innerHTML=`<div class="profile-section"><p class="muted">${adminLibraryTab==='draft'?'Chưa có bản thảo nào.':'Chưa có truyện đã đăng.'}</p></div>`;return}el.innerHTML=rows.map(s=>{const c=chapterCounts(s);return `<div class="manage-story-row"><div class="manage-cover">${s.cover?`<img src="${esc(s.cover)}" alt="">`:`Nhà có Alex`}</div><div><h3>${esc(s.title)}</h3><div class="manage-meta">${esc(s.mainGenre||s.genre||'Hiện đại')} · ${s.status==='completed'?'Đã hoàn thành':'Đang làm'} · ${c.pub} chương đã đăng · ${c.draft} chương bản thảo</div><div class="manage-meta">${adminLibraryTab==='draft'?'Bản thảo / Ẩn':'Công khai'}</div></div><div class="manage-actions"><button onclick="openStoryAdmin('${encodeURIComponent(String(s.id))}','${adminLibraryTab}')">Sửa</button>${adminLibraryTab==='published'?`<button onclick="openStory(${Number(s.id)})">Xem truyện</button>`:`<button onclick="publishDraft('${esc(String(s.id))}')">Đăng</button>`}</div></div>`}).join('')}
+function renderAdminLibrary(){const el=document.getElementById('adminLibraryList');if(!el)return;const rows=adminLibraryTab==='published'?stories:managedDrafts;if(!rows.length){el.innerHTML=`<div class="profile-section"><p class="muted">${adminLibraryTab==='draft'?'Chưa có bản thảo nào.':'Chưa có truyện đã đăng.'}</p></div>`;return}el.innerHTML=rows.map(s=>{const c=chapterCounts(s);return `<div class="manage-story-row"><div class="manage-cover">${s.cover?`<img src="${esc(s.cover)}" alt="">`:`Nhà có Alex`}</div><div><h3>${esc(s.title)}</h3><div class="manage-meta">${esc(s.mainGenre||s.genre||'Hiện đại')} · ${s.status==='completed'?'Đã hoàn thành':'Đang làm'} · ${c.pub} chương đã đăng · ${c.draft} chương bản thảo</div><div class="manage-meta">${adminLibraryTab==='draft'?'Bản thảo / Ẩn':'Công khai'}</div></div><div class="manage-actions"><button class="btn" onclick="openStoryComposer('${encodeURIComponent(String(s.id))}','${adminLibraryTab}')">Sửa thông tin & bìa</button><button onclick="openStoryAdmin('${encodeURIComponent(String(s.id))}','${adminLibraryTab}')">Quản lý chương</button>${adminLibraryTab==='published'?`<button onclick="openStory(${Number(s.id)})">Xem truyện</button>`:`<button onclick="publishDraft('${esc(String(s.id))}')">Đăng</button>`}</div></div>`}).join('')}
 function getManagedStory(id,source='published'){return source==='draft'?managedDrafts.find(x=>String(x.id)===String(id)):stories.find(x=>String(x.id)===String(id))}
 function openStoryAdmin(id,source='published',updateRoute=true){if(!isSiteAdmin())return;id=decodeURIComponent(String(id));let st=getManagedStory(id,source);if(!st){st=getManagedStory(id,'draft');source='draft'}if(!st){openAdminLibrary();return}activeManagedStory=ensureChapterStates(st);activeManagedSource=source;if(updateRoute)setRoute(`/quan-ly-thu-vien/truyen/${encodeURIComponent(id)}`);displayPage('storyAdmin');renderStoryAdmin();window.scrollTo(0,0)}
 function renderStoryAdmin(){const st=activeManagedStory;if(!st)return;const c=chapterCounts(st);document.getElementById('storyAdminTitle').textContent=st.title;document.getElementById('storyAdminMeta').textContent=`${st.mainGenre||st.genre||'Hiện đại'} · ${st.status==='completed'?'Đã hoàn thành':'Đang làm'}`;document.getElementById('storyAdminSummary').innerHTML=`<span>${c.pub} chương đã đăng</span><span>${c.draft} chương bản thảo</span><span>${activeManagedSource==='draft'?'Truyện đang ẩn / bản thảo':'Truyện công khai'}</span>`;document.getElementById('storyVisibilityBtn').textContent=activeManagedSource==='draft'?'Công khai truyện':'Ẩn truyện';const el=document.getElementById('chapterAdminList');el.innerHTML=(st.chapters||[]).length?st.chapters.map((ch,i)=>`<div class="chapter-admin-row" draggable="true" data-index="${i}" ondragstart="chapterDragStart(event)" ondragover="event.preventDefault()" ondrop="chapterDrop(event)"><button class="chapter-drag" title="Kéo để sắp xếp">☰</button><div><h4>${esc(ch.title||`Chương ${i+1}`)}</h4><span class="chapter-state">${ch.publishState==='draft'?'Bản thảo':'Đã đăng'}</span></div><div class="chapter-admin-actions"><button onclick="openChapterAdmin('${encodeURIComponent(String(st.id))}',${i})">Sửa</button><button onclick="deleteManagedChapter(${i})">Xóa</button></div></div>`).join(''):`<div class="profile-section"><p class="muted">Chưa có chương nào. Bấm “＋ Chương mới” để bắt đầu.</p></div>`}
@@ -1966,6 +1981,34 @@ function openStoryComposerFromAdmin(){if(!activeManagedStory)return;openStoryCom
 function toggleStoryVisibility(){if(!activeManagedStory)return;if(activeManagedSource==='published'){if(!confirm('Ẩn truyện này? Độc giả sẽ không còn thấy truyện trong chế độ công khai.'))return;const idx=stories.findIndex(x=>String(x.id)===String(activeManagedStory.id));if(idx>=0)stories.splice(idx,1);managedDrafts.unshift(activeManagedStory);activeManagedSource='draft'}else{const idx=managedDrafts.findIndex(x=>String(x.id)===String(activeManagedStory.id));if(idx>=0)managedDrafts.splice(idx,1);stories.unshift(activeManagedStory);activeManagedSource='published'}persistManaged();renderStoryAdmin()}
 function deleteManagedStory(){if(!activeManagedStory||!confirm(`Xóa truyện “${activeManagedStory.title}” và toàn bộ chương? Thao tác này không thể hoàn tác.`))return;if(activeManagedSource==='published')stories=stories.filter(x=>String(x.id)!==String(activeManagedStory.id));else managedDrafts=managedDrafts.filter(x=>String(x.id)!==String(activeManagedStory.id));persistManaged();openAdminLibrary()}
 function newManagedChapter(){if(!activeManagedStory)return;activeManagedStory.chapters=activeManagedStory.chapters||[];activeManagedStory.chapters.push({title:`Chương ${activeManagedStory.chapters.length+1}`,paras:[],publishState:'draft'});persistManaged();openChapterAdmin(String(activeManagedStory.id),activeManagedStory.chapters.length-1)}
+function formatChapterSelection(action){
+ const el=document.getElementById('chapterEditBody');if(!el)return;
+ const a=el.selectionStart,b=el.selectionEnd,selected=el.value.slice(a,b);let replacement=selected;
+ if(action==='bold')replacement=`**${selected}**`;
+ else if(action==='italic')replacement=`*${selected}*`;
+ else if(action==='underline')replacement=`__${selected}__`;
+ else if(action==='linebreak')replacement='\n';
+ else if(action==='clear')replacement=selected.replace(/(\*\*|__|\*)/g,'');
+ el.setRangeText(replacement,a,b,'end');el.focus();scheduleChapterAutosave();
+}
+function previewManagedCover(input){const box=document.getElementById('manageCoverPreview');const f=input?.files?.[0];if(!box||!f)return;const u=URL.createObjectURL(f);box.innerHTML=`<img src="${u}" alt="Xem trước ảnh bìa">`}
+async function uploadManagedCover(storyId){
+ const input=document.getElementById('manageCover'),file=input?.files?.[0];if(!file)return null;
+ const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';
+ const safeId=String(storyId||Date.now()).replace(/[^a-zA-Z0-9_-]/g,'-');
+ const path=`${safeId}/cover-${Date.now()}.${ext}`;
+ const note=document.getElementById('manageCoverNote');if(note)note.textContent='Đang tải ảnh bìa…';
+ const {error}=await sb.storage.from('covers').upload(path,file,{cacheControl:'3600',upsert:false});
+ if(error){if(note)note.textContent='Chưa tải được ảnh bìa: '+error.message;throw error}
+ const {data}=sb.storage.from('covers').getPublicUrl(path);if(note)note.textContent='Đã tải ảnh bìa ✓';return data?.publicUrl||null;
+}
+function renderInlineChapterFormatting(text){
+ let out=esc(text||'');
+ out=out.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+        .replace(/__(.+?)__/g,'<u>$1</u>')
+        .replace(/\*([^*\n]+?)\*/g,'<em>$1</em>');
+ return out;
+}
 function openChapterAdmin(id,index,updateRoute=true){if(!isSiteAdmin())return;id=decodeURIComponent(String(id));let st=getManagedStory(id,'published'),source='published';if(!st){st=getManagedStory(id,'draft');source='draft'}if(!st||!st.chapters?.[index]){openAdminLibrary();return}activeManagedStory=ensureChapterStates(st);activeManagedSource=source;activeManagedChapter=index;const ch=st.chapters[index];if(updateRoute)setRoute(`/quan-ly-thu-vien/truyen/${encodeURIComponent(id)}/chuong/${index}`);displayPage('chapterAdmin');document.getElementById('chapterEditorHeading').textContent=`Sửa ${ch.title||'chương'}`;document.getElementById('chapterEditTitle').value=ch.title||'';document.getElementById('chapterEditBody').value=(ch.paras||[]).join('\n\n');document.getElementById('chapterAutosaveState').textContent=ch.publishState==='draft'?'Bản thảo · Đã tải nội dung':'Đã đăng · Autosave sẽ lưu thay đổi thành bản thảo';['chapterEditTitle','chapterEditBody'].forEach(id=>document.getElementById(id).oninput=scheduleChapterAutosave);window.scrollTo(0,0)}
 function scheduleChapterAutosave(){clearTimeout(chapterAutosaveTimer);document.getElementById('chapterAutosaveState').textContent='Đang chờ tự động lưu…';chapterAutosaveTimer=setTimeout(()=>saveChapterDraftNow(true),900)}
 function saveChapterDraftNow(auto=false){if(!activeManagedStory||activeManagedChapter<0)return;const ch=activeManagedStory.chapters[activeManagedChapter];ch.title=document.getElementById('chapterEditTitle').value.trim()||`Chương ${activeManagedChapter+1}`;ch.paras=document.getElementById('chapterEditBody').value.split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean);ch.publishState='draft';persistManaged();const t=new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});document.getElementById('chapterAutosaveState').textContent=`${auto?'Đã tự động lưu':'Đã lưu bản thảo'} lúc ${t}`}
@@ -1973,10 +2016,23 @@ function publishManagedChapter(){if(!activeManagedStory||activeManagedChapter<0)
 function backToStoryAdmin(){if(!activeManagedStory)return;openStoryAdmin(String(activeManagedStory.id),activeManagedSource)}
 function deleteManagedChapter(i){if(!activeManagedStory?.chapters?.[i]||!confirm(`Xóa “${activeManagedStory.chapters[i].title}”?`))return;activeManagedStory.chapters.splice(i,1);persistManaged();renderStoryAdmin()}
 let draggedChapterIndex=null;function chapterDragStart(e){draggedChapterIndex=Number(e.currentTarget.dataset.index);e.currentTarget.classList.add('dragging')}function chapterDrop(e){e.preventDefault();const to=Number(e.currentTarget.dataset.index);if(draggedChapterIndex===null||draggedChapterIndex===to)return;const [m]=activeManagedStory.chapters.splice(draggedChapterIndex,1);activeManagedStory.chapters.splice(to,0,m);draggedChapterIndex=null;persistManaged();renderStoryAdmin()}
-function openStoryComposer(id=null,source='draft'){if(!isSiteAdmin())return;editingManagedStoryId=id?{id:String(id),source}:null;let s=null;if(id)s=source==='published'?stories.find(x=>String(x.id)===String(id)):managedDrafts.find(x=>String(x.id)===String(id));document.getElementById('storyComposerTitle').textContent=s?'Sửa truyện':'Truyện mới';document.getElementById('manageTitle').value=s?.title||'';document.getElementById('manageGenre').value=s?.mainGenre||'Hiện đại';document.getElementById('manageStatus').value=s?.status||'ongoing';document.getElementById('manageSummary').value=s?.summary||'';document.getElementById('manageTags').value=(s?.subtags||[]).join(', ');document.getElementById('storyComposerModal').classList.remove('hidden')}
+function openStoryComposer(id=null,source='draft'){if(!isSiteAdmin())return;editingManagedStoryId=id?{id:String(id),source}:null;let s=null;if(id)s=source==='published'?stories.find(x=>String(x.id)===String(id)):managedDrafts.find(x=>String(x.id)===String(id));document.getElementById('storyComposerTitle').textContent=s?'Sửa thông tin truyện':'Truyện mới';document.getElementById('manageTitle').value=s?.title||'';document.getElementById('manageGenre').value=s?.mainGenre||'Hiện đại';document.getElementById('manageStatus').value=s?.status||'ongoing';document.getElementById('manageSummary').value=s?.summary||'';document.getElementById('manageTags').value=(s?.subtags||[]).join(', ');const cp=document.getElementById('manageCoverPreview');if(cp)cp.innerHTML=s?.cover?`<img src="${esc(s.cover)}" alt="Ảnh bìa hiện tại">`:'Chưa có bìa';const ci=document.getElementById('manageCover');if(ci)ci.value='';document.getElementById('storyComposerModal').classList.remove('hidden')}
 function closeStoryComposer(){document.getElementById('storyComposerModal').classList.add('hidden');editingManagedStoryId=null}
 function managedStoryFromForm(base={}){return {...base,title:document.getElementById('manageTitle').value.trim(),author:'Alex',mainGenre:document.getElementById('manageGenre').value,genre:document.getElementById('manageGenre').value,status:document.getElementById('manageStatus').value,summary:document.getElementById('manageSummary').value.trim(),subtags:document.getElementById('manageTags').value.split(',').map(x=>x.trim()).filter(Boolean),chapters:base.chapters||[],views:base.views||0,likes:base.likes||0}}
-function saveManagedStory(mode){if(!isSiteAdmin())return;const title=document.getElementById('manageTitle').value.trim();if(!title){alert('Nhập tên truyện trước nha bà.');return}let base={id:'draft-'+Date.now(),chapters:[]};if(editingManagedStoryId)base=getManagedStory(editingManagedStoryId.id,editingManagedStoryId.source)||base;const row=managedStoryFromForm(base);if(editingManagedStoryId){persistManaged();closeStoryComposer();activeManagedStory=row;renderStoryAdmin();return}if(mode==='published'){stories.unshift(row);activeManagedSource='published'}else{managedDrafts.unshift(row);activeManagedSource='draft'}persistManaged();closeStoryComposer();openStoryAdmin(String(row.id),activeManagedSource)}
+async function saveManagedStory(mode){
+ if(!isSiteAdmin())return;const title=document.getElementById('manageTitle').value.trim();if(!title){alert('Nhập tên truyện trước nha bà.');return}
+ let base={id:'draft-'+Date.now(),chapters:[]};if(editingManagedStoryId)base=getManagedStory(editingManagedStoryId.id,editingManagedStoryId.source)||base;
+ const row=managedStoryFromForm(base);const sourceBefore=editingManagedStoryId?.source||mode;
+ try{const coverUrl=await uploadManagedCover(row.id);if(coverUrl)row.cover=coverUrl}catch(e){console.warn('cover upload',e);alert('Ảnh bìa chưa tải lên được. Nội dung truyện chưa bị mất nha bà.');return}
+ if(editingManagedStoryId){
+   if(sourceBefore==='published' && /^\d+$/.test(String(row.id))){
+     const patch={title:row.title,genre:row.genre,status:row.status,summary:row.summary,cover_url:row.cover||null};
+     const {error}=await sb.from('stories').update(patch).eq('id',Number(row.id));if(error)console.warn('story update cloud',error);
+   }
+   persistManaged();closeStoryComposer();activeManagedStory=row;renderAdminLibrary();openAdminLibrary();render();return;
+ }
+ if(mode==='published'){stories.unshift(row);activeManagedSource='published'}else{managedDrafts.unshift(row);activeManagedSource='draft'}persistManaged();closeStoryComposer();openStoryAdmin(String(row.id),activeManagedSource)
+}
 function publishDraft(id){const st=managedDrafts.find(x=>String(x.id)===String(id));if(!st)return;managedDrafts=managedDrafts.filter(x=>String(x.id)!==String(id));stories.unshift(st);persistManaged();renderAdminLibrary()}
 function openAccountMenu(){cancelAccountClose();document.getElementById('accountMenu').classList.add('open')}
 function scheduleAccountClose(){accountCloseTimer=setTimeout(()=>document.getElementById('accountMenu').classList.remove('open'),180)}

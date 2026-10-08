@@ -1592,24 +1592,40 @@ function commentThreadsHTML(key,surface){
 function newComment(text,extra={}){
  return {id:crypto.randomUUID(),userId:authUser.id,username:profileUsername(),name:userDisplayName(authUser),avatar:userAvatar(authUser),text,createdAt:new Date().toISOString(),likes:0,likedBy:[],...extra};
 }
+
+function renderHomeReviews(){
+ const panel=document.getElementById('reviewsPanel');if(!panel)return;
+ const rows=[];
+ for(const [storyId,list] of Object.entries(reviews||{}))for(const review of (list||[]))rows.push({storyId:Number(storyId),review});
+ rows.sort((a,b)=>(Date.parse(b.review.createdAt)||0)-(Date.parse(a.review.createdAt)||0));
+ panel.querySelector('.demo-label')?.classList.add('hidden');
+ const feed=panel.querySelector('.community-feed');if(!feed)return;
+ feed.innerHTML=rows.length?rows.slice(0,6).map(({storyId,review})=>{
+   const story=stories.find(s=>Number(s.id)===Number(storyId));
+   const avatar=review.avatar?`<img class="community-avatar" src="${esc(review.avatar)}" alt="">`:`<div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">${esc(Array.from(review.name||'T')[0])}</div>`;
+   const admin=isAdminReview(review)?'<span class="admin-badge admin-badge-home">ADMIN</span>':'';
+   const storyLink=story?`<span class="review-title-link" onclick="openStory(${Number(story.id)})">${esc(story.title)}</span>`:'Truyện';
+   const body=review.html?safeReviewHTML(review.html):esc(review.text||'').replace(/\n/g,'<br>');
+   return `<article class="community-card"><div class="community-head">${avatar}<div class="community-meta"><strong>${esc(review.name||'Thành viên')}${admin}</strong><span class="community-sub">${commentTime(review)} · ${storyLink}</span></div></div><div class="community-body" onclick="if(event.target.classList.contains('review-spoiler'))toggleReviewSpoiler(event.target)">${body}</div></article>`;
+ }).join(''):'<p class="muted panel-empty">Chưa có review nào.</p>';
+}
 function renderHomeComments(){
  const panel=document.getElementById('commentsPanel');if(!panel)return;
  const keys=Object.keys(comments).filter(key=>!key.startsWith('demo_')&&comments[key].length);
- const source=keys.length?keys:demoHomeComments.map(row=>row.key);
  const rows=[];
- source.forEach(key=>commentList(key).forEach(comment=>rows.push({key,comment})));
+ keys.forEach(key=>commentList(key).forEach(comment=>rows.push({key,comment})));
  rows.sort((a,b)=>(Date.parse(b.comment.createdAt)||0)-(Date.parse(a.comment.createdAt)||0));
- panel.querySelector('.demo-label').classList.toggle('hidden',keys.length>0);
- panel.querySelector('.community-feed').innerHTML=rows.slice(0,6).map(({key,comment})=>{
+ panel.querySelector('.demo-label')?.classList.add('hidden');
+ panel.querySelector('.community-feed').innerHTML=rows.length?rows.slice(0,6).map(({key,comment})=>{
    const username=slugify(comment.username||comment.name)||'thanh-vien';
    const avatar=comment.avatar?`<img class="community-avatar" src="${esc(comment.avatar)}" alt="">`:`<div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">${esc(Array.from(comment.name||'T')[0])}</div>`;
    return `<article class="community-card">${`<div class="community-head">${avatar}<div class="community-meta"><strong>${esc(comment.name||'Thành viên')}${isAdminComment(comment)?'<span class="admin-badge admin-badge-home">ADMIN</span>':''}</strong><span class="community-sub">${commentTime(comment)} · ${commentLocationHTML(key)}</span></div></div>`}<div class="community-body">${esc(comment.text)}</div></article>`;
- }).join('');
+ }).join(''):'<p class="muted panel-empty">Chưa có bình luận nào.</p>';
 }
 function refreshCommentViews(){
  const drafts=[...document.querySelectorAll('.comment-compose input')].map(input=>({id:input.id,value:input.value,start:input.selectionStart,end:input.selectionEnd,focused:document.activeElement===input}));
  closeEmojiPicker();
- renderHomeComments();renderAllStoryComments();if(introStory)renderStoryReviews();
+ renderHomeComments();renderHomeReviews();renderAllStoryComments();if(introStory)renderStoryReviews();
  if(currentStory){
   renderChapterComments();
   currentStory.chapters[currentChapter].paras.forEach((para,index)=>{
@@ -1846,6 +1862,9 @@ async function initAuth(){
  authUser=data.session?.user||null;
  if(authUser)await syncProfile(authUser);
  updateAuthUI();
+ // Community feeds are public: always hydrate comments/reviews from Supabase,
+ // including visitors who are not signed in and devices with empty localStorage.
+ await Promise.allSettled([loadCloudComments(),loadCloudReviews()]);
  const returnPath=localStorage.getItem('nha_return_path');
  if(authUser&&returnPath){localStorage.removeItem('nha_return_path');if(/^\/(truyen|user)\//.test(returnPath)){setRoute(returnPath,true);routeFromLocation()}}
  else if(location.pathname.startsWith('/user/'))routeFromLocation();
@@ -2233,7 +2252,7 @@ async function loadCloudReviews(){
   if(error){console.warn('reviews sync',error);return}
   const rows=data||[],prof=await cloudProfiles(rows.map(r=>r.user_id)),next={};
   for(const r of rows){const p=prof[r.user_id]||{};(next[r.story_id]||(next[r.story_id]=[])).push({id:r.id,userId:r.user_id,username:slugify(p.display_name||'thanh-vien'),name:p.display_name||'Thành viên',avatar:p.avatar_url||'',text:r.content||'',html:r.content_html||'',createdAt:r.created_at,editedAt:r.edited_at,likes:0,comments:0});}
-  reviews=next;localStorage.setItem('nha_co_alex_reviews',JSON.stringify(reviews));if(introStory)renderStoryReviews();
+  reviews=next;localStorage.setItem('nha_co_alex_reviews',JSON.stringify(reviews));renderHomeReviews();if(introStory)renderStoryReviews();
 }
 let cloudChapterMap={};
 async function loadCloudChapterMap(){
@@ -2311,7 +2330,7 @@ deleteStoryReview=async function(id){if(!introStory||!authUser||!confirm('Xóa r
 const toggleSaveV179=toggleSave;
 toggleSave=function(id){toggleSaveV179(id);queueCloudMemberState()};
 
-console.info('Nhà có Alex V20.1 · Supabase account sync');
+console.info('Nhà có Alex V20.3 · public comments + reviews sync');
 render();
 routeFromLocation();
 initAuth().catch(()=>updateAuthUI());

@@ -3,6 +3,10 @@
     {
       "source": "/truyen/:path*",
       "destination": "/index.html"
+    },
+    {
+      "source": "/user/:path*",
+      "destination": "/index.html"
     }
   ]
 }

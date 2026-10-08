@@ -1895,9 +1895,29 @@ async function saveProfileChanges(){
    if(upErr){msg.textContent='Chưa tải được avatar. Cần bật bucket avatars trong Supabase trước.';return}
    const {data:pub}=sb.storage.from('avatars').getPublicUrl(path); avatar_url=pub.publicUrl;
  }
- const {data,error}=await sb.from('profiles').upsert({id:authUser.id,display_name,bio,avatar_url},{onConflict:'id'}).select().maybeSingle();
- if(error){msg.textContent='Chưa lưu được hồ sơ, thử lại nha.';return}
- memberProfile=data||{...(memberProfile||{}),display_name,bio,avatar_url};pendingAvatarFile=null;updateAuthUI();openProfile('profile');
+ // Prefer UPDATE for an existing profile. If the row does not exist yet, create it.
+ let {data,error}=await sb.from('profiles')
+   .update({display_name,bio,avatar_url})
+   .eq('id',authUser.id)
+   .select('id,display_name,avatar_url,bio,saved_stories_public')
+   .maybeSingle();
+ if(!error && !data){
+   const inserted=await sb.from('profiles')
+     .insert({id:authUser.id,display_name,bio,avatar_url})
+     .select('id,display_name,avatar_url,bio,saved_stories_public')
+     .maybeSingle();
+   data=inserted.data; error=inserted.error;
+ }
+ if(error){
+   console.error('Profile save failed:',error);
+   msg.textContent='Chưa lưu được hồ sơ. Kiểm tra quyền profiles trong Supabase nha.';
+   return;
+ }
+ memberProfile=data||{...(memberProfile||{}),id:authUser.id,display_name,bio,avatar_url};
+ pendingAvatarFile=null;
+ updateAuthUI();
+ msg.textContent='Đã lưu ✓';
+ setTimeout(()=>openProfile('profile'),350);
 }
 let profileRequestId=0;
 function setProfileHeader(profile,own=false){

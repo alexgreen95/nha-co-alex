@@ -930,11 +930,11 @@ body.pastel .profile-tabs button:nth-child(4){background:#fff0c9!important;borde
 .chapter-end-nav button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 4px 11px rgba(40,30,30,.11)}
 body.pastel .chapter-end-nav #prevChapter{background:#f8dce5;border-color:#efc4d2}
 body.pastel .chapter-end-nav #nextChapter{background:#dcebf4;border-color:#c6dfea}
-.chapter .para:first-child{white-space:pre-line}
+.chapter .para:first-child{white-space:normal}
 @media(max-width:600px){.chapter-end-nav{grid-template-columns:1fr auto 1fr;gap:7px}.chapter-end-nav button{padding:8px 9px;font-size:12px}.chapter-heart-btn{padding:8px 11px}}
 /* V21.0 — align reading prose with chapter navigation/comments */
-.reader{max-width:800px}
-.chapter{width:100%}
+.reader{max-width:760px;width:100%;margin-left:auto;margin-right:auto}
+.chapter,.chapter-end-nav,.chapter-comments{width:100%;max-width:760px;margin-left:auto;margin-right:auto;box-sizing:border-box}
 
 
 /* V20.7: keep the notification bell visually centered between Home and account */
@@ -945,10 +945,11 @@ body.pastel .chapter-end-nav #nextChapter{background:#dcebf4;border-color:#c6dfe
 .home-comment-card{cursor:pointer}
 .home-comment-card:active{transform:translateY(1px)}
 
+/* v21.3 — cloud homepage + reader alignment + paragraph normalization */
 /* v21.1 — chapter editor + cover upload */
 .chapter-format-toolbar{display:flex;gap:7px;flex-wrap:wrap;margin:8px 0 8px}.chapter-format-toolbar button{min-width:36px;border:1px solid var(--line);background:var(--soft);color:var(--fg);border-radius:9px;padding:7px 10px;font:inherit;cursor:pointer}.chapter-format-toolbar button:hover{filter:brightness(.98)}
 .cover-edit-row{display:flex;align-items:center;gap:12px}.cover-edit-preview{width:64px;aspect-ratio:3/4;border:1px solid var(--line);border-radius:9px;background:var(--soft);overflow:hidden;display:grid;place-items:center;font-size:10px;text-align:center}.cover-edit-preview img{width:100%;height:100%;object-fit:cover}.cover-edit-file{flex:1}.cover-upload-note{font-size:11px;color:var(--muted);margin-top:4px}
-.para{white-space:pre-line}
+.para{white-space:normal}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1512,10 +1513,8 @@ function read(id,chapterOverride=null,updateRoute=true){
  renderChapter(chapterOverride===null ? (pr.scroll||0) : 0);
 }
 function formatImportedOpeningParagraph(text){
- let out=renderInlineChapterFormatting(text||'');
- // EPUB/Word imports sometimes flatten the title/credits into one paragraph.
- out=out.replace(/\s+(_{5,})\s*/g,'\n$1\n');
- return out;
+ let clean=String(text||'').replace(/\r\n?/g,'\n').replace(/[ \t]*\n[ \t]*/g,' ').replace(/[ \t]{2,}/g,' ').trim();
+ return renderInlineChapterFormatting(clean);
 }
 function renderChapter(restoreScroll=0){
  let s=currentStory,ch=s.chapters[currentChapter];
@@ -1943,7 +1942,7 @@ function updateAuthUI(){
  if(activeCommentKey&&document.getElementById('paragraphCommentPanel')?.classList.contains('open'))toggleComments(activeCommentKey,true);
 }
 async function fetchAllRows(table,orderCol){const out=[];for(let from=0;;from+=1000){let q=sb.from(table).select('*').range(from,from+999);if(orderCol)q=q.order(orderCol,{ascending:true});const {data,error}=await q;if(error)throw error;out.push(...(data||[]));if(!data||data.length<1000)break;}return out}
-async function loadCloudStories(){try{const [storyRows,chapterRows,paragraphRows]=await Promise.all([fetchAllRows('stories','id'),fetchAllRows('chapters','id'),fetchAllRows('paragraphs','id')]);if(!storyRows.length){console.warn('Không đọc được truyện công khai từ Supabase hoặc bảng stories đang trống.');return false;}const parasByChapter={};for(const p of paragraphRows){(parasByChapter[p.chapter_id]||(parasByChapter[p.chapter_id]=[])).push(p)}Object.values(parasByChapter).forEach(a=>a.sort((x,y)=>(Number(x.paragraph_number)||0)-(Number(y.paragraph_number)||0)));const chaptersByStory={};for(const c of chapterRows){if(c.published===false)continue;(chaptersByStory[c.story_id]||(chaptersByStory[c.story_id]=[])).push(c)}Object.values(chaptersByStory).forEach(a=>a.sort((x,y)=>(Number(x.chapter_number)||0)-(Number(y.chapter_number)||0)));const mapped=storyRows.filter(r=>r.published!==false).map(r=>({id:Number(r.id),title:r.title||r.name||`Truyện ${r.id}`,author:r.author||'Alex',mainGenre:r.main_genre||r.genre||'Hiện đại',genre:r.genre||r.main_genre||'Hiện đại',subtags:Array.isArray(r.subtags)?r.subtags:[],status:['completed','complete','done','Đã hoàn thành'].includes(r.status)?'completed':'ongoing',summary:r.summary||r.description||r.introduction||'',cover:r.cover_url||r.cover||'',views:Number(r.views)||0,likes:Number(r.likes)||0,updatedAt:r.updated_at||r.created_at||'',chapters:(chaptersByStory[r.id]||[]).map(c=>({id:Number(c.id),title:c.title||`Chương ${c.chapter_number||''}`,publishState:'published',paras:(parasByChapter[c.id]||[]).map(p=>p.content||'')}))}));if(mapped.length){stories=mapped.sort((a,b)=>(Date.parse(b.updatedAt)||0)-(Date.parse(a.updatedAt)||0));localStorage.setItem('nha_co_alex_stories',JSON.stringify(stories));render();if(introStory){const fresh=stories.find(x=>Number(x.id)===Number(introStory.id));if(fresh)introStory=fresh}return true;}return false;}catch(e){console.warn('story cloud sync',e);return false;}}
+async function loadCloudStories(){try{const results=await Promise.allSettled([fetchAllRows('stories','id'),fetchAllRows('chapters','id'),fetchAllRows('paragraphs','id')]);const storyRows=results[0].status==='fulfilled'?results[0].value:[];const chapterRows=results[1].status==='fulfilled'?results[1].value:[];const paragraphRows=results[2].status==='fulfilled'?results[2].value:[];if(results[1].status==='rejected')console.warn('chapter cloud read',results[1].reason);if(results[2].status==='rejected')console.warn('paragraph cloud read',results[2].reason);if(!storyRows.length){console.warn('Không đọc được truyện công khai từ Supabase hoặc bảng stories đang trống.');return false;}const parasByChapter={};for(const p of paragraphRows){(parasByChapter[p.chapter_id]||(parasByChapter[p.chapter_id]=[])).push(p)}Object.values(parasByChapter).forEach(a=>a.sort((x,y)=>(Number(x.paragraph_number)||0)-(Number(y.paragraph_number)||0)));const chaptersByStory={};for(const c of chapterRows){if(c.published===false)continue;(chaptersByStory[c.story_id]||(chaptersByStory[c.story_id]=[])).push(c)}Object.values(chaptersByStory).forEach(a=>a.sort((x,y)=>(Number(x.chapter_number)||0)-(Number(y.chapter_number)||0)));const mapped=storyRows.filter(r=>r.published!==false).map(r=>({id:Number(r.id),title:r.title||r.name||`Truyện ${r.id}`,author:r.author||'Alex',mainGenre:r.main_genre||r.genre||'Hiện đại',genre:r.genre||r.main_genre||'Hiện đại',subtags:Array.isArray(r.subtags)?r.subtags:[],status:['completed','complete','done','Đã hoàn thành'].includes(r.status)?'completed':'ongoing',summary:r.summary||r.description||r.introduction||'',cover:r.cover_url||r.cover||'',views:Number(r.views)||0,likes:Number(r.likes)||0,updatedAt:r.updated_at||r.created_at||'',chapters:(chaptersByStory[r.id]||[]).map(c=>({id:Number(c.id),title:c.title||`Chương ${c.chapter_number||''}`,publishState:'published',paras:(parasByChapter[c.id]||[]).map(p=>p.content||'')}))}));if(mapped.length){stories=mapped.sort((a,b)=>(Date.parse(b.updatedAt)||0)-(Date.parse(a.updatedAt)||0));localStorage.setItem('nha_co_alex_stories',JSON.stringify(stories));render();if(introStory){const fresh=stories.find(x=>Number(x.id)===Number(introStory.id));if(fresh)introStory=fresh}return true;}return false;}catch(e){console.warn('story cloud sync',e);return false;}}
 async function initAuth(){
  const {data}=await sb.auth.getSession();
  authUser=data.session?.user||null;
@@ -2011,7 +2010,7 @@ function renderInlineChapterFormatting(text){
 }
 function openChapterAdmin(id,index,updateRoute=true){if(!isSiteAdmin())return;id=decodeURIComponent(String(id));let st=getManagedStory(id,'published'),source='published';if(!st){st=getManagedStory(id,'draft');source='draft'}if(!st||!st.chapters?.[index]){openAdminLibrary();return}activeManagedStory=ensureChapterStates(st);activeManagedSource=source;activeManagedChapter=index;const ch=st.chapters[index];if(updateRoute)setRoute(`/quan-ly-thu-vien/truyen/${encodeURIComponent(id)}/chuong/${index}`);displayPage('chapterAdmin');document.getElementById('chapterEditorHeading').textContent=`Sửa ${ch.title||'chương'}`;document.getElementById('chapterEditTitle').value=ch.title||'';document.getElementById('chapterEditBody').value=(ch.paras||[]).join('\n\n');document.getElementById('chapterAutosaveState').textContent=ch.publishState==='draft'?'Bản thảo · Đã tải nội dung':'Đã đăng · Autosave sẽ lưu thay đổi thành bản thảo';['chapterEditTitle','chapterEditBody'].forEach(id=>document.getElementById(id).oninput=scheduleChapterAutosave);window.scrollTo(0,0)}
 function scheduleChapterAutosave(){clearTimeout(chapterAutosaveTimer);document.getElementById('chapterAutosaveState').textContent='Đang chờ tự động lưu…';chapterAutosaveTimer=setTimeout(()=>saveChapterDraftNow(true),900)}
-function saveChapterDraftNow(auto=false){if(!activeManagedStory||activeManagedChapter<0)return;const ch=activeManagedStory.chapters[activeManagedChapter];ch.title=document.getElementById('chapterEditTitle').value.trim()||`Chương ${activeManagedChapter+1}`;ch.paras=document.getElementById('chapterEditBody').value.split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean);ch.publishState='draft';persistManaged();const t=new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});document.getElementById('chapterAutosaveState').textContent=`${auto?'Đã tự động lưu':'Đã lưu bản thảo'} lúc ${t}`}
+function saveChapterDraftNow(auto=false){if(!activeManagedStory||activeManagedChapter<0)return;const ch=activeManagedStory.chapters[activeManagedChapter];ch.title=document.getElementById('chapterEditTitle').value.trim()||`Chương ${activeManagedChapter+1}`;ch.paras=document.getElementById('chapterEditBody').value.replace(/\r\n?/g,'\n').split(/\n+/).map(x=>x.trim()).filter(Boolean);ch.publishState='draft';persistManaged();const t=new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});document.getElementById('chapterAutosaveState').textContent=`${auto?'Đã tự động lưu':'Đã lưu bản thảo'} lúc ${t}`}
 function publishManagedChapter(){if(!activeManagedStory||activeManagedChapter<0)return;saveChapterDraftNow(false);activeManagedStory.chapters[activeManagedChapter].publishState='published';persistManaged();document.getElementById('chapterAutosaveState').textContent='Đã đăng chương · thay đổi đã được lưu';}
 function backToStoryAdmin(){if(!activeManagedStory)return;openStoryAdmin(String(activeManagedStory.id),activeManagedSource)}
 function deleteManagedChapter(i){if(!activeManagedStory?.chapters?.[i]||!confirm(`Xóa “${activeManagedStory.chapters[i].title}”?`))return;activeManagedStory.chapters.splice(i,1);persistManaged();renderStoryAdmin()}

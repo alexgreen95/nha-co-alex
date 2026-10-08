@@ -278,7 +278,7 @@ body.smoky{
 }
 .art-hero-image{
   position:absolute;inset:0;
-  background-image:url("alex-banner.jpg");
+  background-image:url("/alex-banner.jpg");
   background-size:cover;background-position:center 54%;background-repeat:no-repeat
 }
 .hero-fade{
@@ -577,6 +577,29 @@ body.pastel .story-intro-top{background:linear-gradient(135deg,#fff4f7 0%,#f3eff
 .emoji-picker.open{display:grid}.emoji-picker button{border:0;background:transparent;border-radius:7px;padding:5px;font-size:21px;cursor:pointer}.emoji-picker button:hover{background:var(--soft)}
 @media(max-width:700px){.emoji-trigger,.emoji-picker{display:none!important}}
 
+
+/* ===== V16.1 bugfix polish ===== */
+/* Pastel: keep large surfaces calm; use color only as small accents. */
+body.pastel .story-intro-top{
+  background:#fffdf8!important;
+  border-color:#eadfd1!important;
+}
+/* Slightly stronger controls on light themes (night themes intentionally unchanged). */
+body.light .story-intro-top .btn, body.light .intro-tag, body.light .intro-tabs button.active,
+body.light .story-actions .btn{background:#f5dedf;border-color:#e8c6cb}
+body.smoky .story-intro-top .btn, body.smoky .intro-tag, body.smoky .intro-tabs button.active,
+body.smoky .story-actions .btn{background:#e5cfaa;border-color:#cfb785}
+body.dustyrose .story-intro-top .btn, body.dustyrose .intro-tag, body.dustyrose .intro-tabs button.active,
+body.dustyrose .story-actions .btn{background:#e9cfd7;border-color:#d9b3bf}
+body.mistblue .story-intro-top .btn, body.mistblue .intro-tag, body.mistblue .intro-tabs button.active,
+body.mistblue .story-actions .btn{background:#d3e5e8;border-color:#b9d3d8}
+body.pastel #introReadBtn{background:#ddd4f7!important;border-color:#c9bdec!important}
+body.pastel #introSaveBtn{background:#d4eee6!important;border-color:#b8ded2!important}
+body.pastel .intro-tag:nth-child(1){background:#d5eee6!important;color:#426f65!important}
+body.pastel .intro-tag:nth-child(2){background:#ffe9ae!important;color:#806025!important}
+/* Keep tab body/panels neutral in Pastel; active tab itself carries the accent. */
+body.pastel .intro-tabs,body.pastel .intro-pane{background:#fffdf8!important}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
 window.addEventListener('popstate',()=>routeFromLocation());
@@ -867,6 +890,7 @@ function toggleEmojiPicker(e,btn){e.stopPropagation();let p=btn.nextElementSibli
 function insertEmoji(e,inputId,emoji){e.stopPropagation();let i=document.getElementById(inputId);if(!i)return;let a=i.selectionStart??i.value.length,b=i.selectionEnd??a;i.value=i.value.slice(0,a)+emoji+i.value.slice(b);i.focus();i.setSelectionRange(a+emoji.length,a+emoji.length)}
 function commentComposerHTML(kind,key=''){if(!authUser)return `<div class="comment-login-gate"><span>Đăng nhập để ${kind}</span><button onclick="requestCommentLogin('${kind}')">Đăng nhập</button></div>`;let id=key?'panelCommentInput':'chapterCommentInput';let action=key?`addParaComment('${key}')`:'addChapterComment()';let ph=key?'Viết bình luận cho đoạn này…':'Viết bình luận cho chương này…';return `<div class="comment-compose"><div class="comment-compose-row"><input id="${id}" placeholder="${ph}" onkeydown="if(event.key==='Enter')${action}">${emojiPickerHTML(id)}<button onclick="${action}">Gửi</button></div></div>`}
 function show(id){
+ if(id==='home')setRoute('/');
  ['home','storyIntro','reader','library','login','profilePage'].forEach(x=>document.getElementById(x).classList.add('hidden'));
  document.getElementById(id).classList.remove('hidden');
  document.body.classList.toggle('reading',id==='reader');

@@ -847,6 +847,16 @@ body.purplenight .danger-btn,body.purplenight .chapter-admin-actions button:last
 .intro-subtag{background:color-mix(in srgb,#8d7ca8 12%,var(--card))!important;border-color:color-mix(in srgb,#8d7ca8 28%,var(--line))!important;color:color-mix(in srgb,#746486 75%,var(--fg))!important}
 body.night .intro-subtag{background:#2c2931!important;border-color:#4b4454!important;color:#d2c6df!important}
 body.purplenight .intro-subtag{background:#302a3b!important;border-color:#554866!important;color:#d8c8e8!important}
+
+.profile-meta-in-card{margin-top:18px;padding-top:16px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+.profile-meta-in-card .profile-meta-link{font:inherit;color:inherit}
+
+/* V20.3 — same primary tag = same color on every story card. */
+#stories .genre.genre-hien-dai{color:color-mix(in srgb,#8b72c8 78%,var(--fg))!important}
+#stories .genre.genre-huyen-ao{color:color-mix(in srgb,#b06aa3 80%,var(--fg))!important}
+#stories .genre.genre-co-dai{color:color-mix(in srgb,#a4774f 82%,var(--fg))!important}
+#stories .genre.genre-tuong-lai{color:color-mix(in srgb,#568b9d 82%,var(--fg))!important}
+#stories .genre.genre-other{color:var(--accent)!important}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -962,7 +972,7 @@ document.body.classList.add('gate-locked');
         <div class="sort-row"><button onclick="toggleSortSub(event,this)">Thời gian <span>›</span></button><div class="sort-submenu"><button class="sort-choice" data-sort="updated_desc" onclick="chooseSort(event,'time','updated_desc','Mới cập nhật nhất')">Mới cập nhật nhất</button><button class="sort-choice" data-sort="updated_asc" onclick="chooseSort(event,'time','updated_asc','Cũ nhất')">Cũ nhất</button></div></div>
         <div class="sort-row"><button onclick="toggleSortSub(event,this)">Tình trạng <span>›</span></button><div class="sort-submenu"><button onclick="chooseSort(event,'status','','Tất cả tình trạng')">Tất cả</button><button onclick="chooseSort(event,'status','ongoing','Đang viết')">Đang viết</button><button onclick="chooseSort(event,'status','completed','Đã hoàn thành')">Đã hoàn thành</button></div></div>
         <div class="sort-row"><button onclick="toggleSortSub(event,this)">Lượt đọc <span>›</span></button><div class="sort-submenu"><button onclick="chooseSort(event,'views','views_desc','Lượt đọc nhiều nhất')">Nhiều nhất → ít nhất</button><button onclick="chooseSort(event,'views','views_asc','Lượt đọc ít nhất')">Ít nhất → nhiều nhất</button></div></div>
-        <div class="sort-row"><button onclick="toggleSortSub(event,this)">Thể loại <span>›</span></button><div class="sort-submenu"><button onclick="chooseSort(event,'genre','','Tất cả thể loại')">Tất cả</button><button onclick="chooseSort(event,'genre','Hiện đại','Hiện đại')">Hiện đại</button><button onclick="chooseSort(event,'genre','Cổ đại','Cổ đại')">Cổ đại</button><button onclick="chooseSort(event,'genre','Tương lai','Tương lai')">Tương lai</button><button onclick="chooseSort(event,'genre','Tiên hiệp','Tiên hiệp')">Tiên hiệp</button></div></div>
+        <div class="sort-row"><button onclick="toggleSortSub(event,this)">Thể loại <span>›</span></button><div class="sort-submenu"><button onclick="chooseSort(event,'genre','','Tất cả thể loại')">Tất cả</button><button onclick="chooseSort(event,'genre','Hiện đại','Hiện đại')">Hiện đại</button><button onclick="chooseSort(event,'genre','Cổ đại','Cổ đại')">Cổ đại</button><button onclick="chooseSort(event,'genre','Tương lai','Tương lai')">Tương lai</button><button onclick="chooseSort(event,'genre','Huyền ảo','Huyền ảo')">Huyền ảo</button></div></div>
       </div>
     </div>
   </div>
@@ -1060,7 +1070,7 @@ document.body.classList.add('gate-locked');
 
 <div id="storyComposerModal" class="story-composer-modal hidden" onclick="if(event.target===this)closeStoryComposer()"><div class="story-composer-card">
   <div class="story-composer-head"><h2 id="storyComposerTitle">Truyện mới</h2><button onclick="closeStoryComposer()">×</button></div>
-  <div class="story-form-grid"><label>Tên truyện<input id="manageTitle" placeholder="Tên truyện"></label><label>Thể loại chính<select id="manageGenre"><option>Hiện đại</option><option>Cổ đại</option><option>Tương lai</option><option>Tiên hiệp</option></select></label><label>Tình trạng<select id="manageStatus"><option value="ongoing">Đang viết</option><option value="completed">Đã hoàn thành</option></select></label><label>Ảnh bìa<input id="manageCover" type="file" accept="image/*"></label></div>
+  <div class="story-form-grid"><label>Tên truyện<input id="manageTitle" placeholder="Tên truyện"></label><label>Thể loại chính<select id="manageGenre"><option>Hiện đại</option><option>Cổ đại</option><option>Tương lai</option><option>Huyền ảo</option></select></label><label>Tình trạng<select id="manageStatus"><option value="ongoing">Đang viết</option><option value="completed">Đã hoàn thành</option></select></label><label>Ảnh bìa<input id="manageCover" type="file" accept="image/*"></label></div>
   <label>Giới thiệu<textarea id="manageSummary" rows="3" placeholder="Giới thiệu ngắn về truyện..."></textarea></label>
   <label>Tag phụ<input id="manageTags" placeholder="Tận thế, Nữ cường, Ngọt sủng, Sảng văn"></label>
   <div class="story-composer-actions"><button onclick="saveManagedStory('draft')">Lưu bản thảo</button><button class="btn" onclick="saveManagedStory('published')">Đăng truyện</button></div>
@@ -1107,7 +1117,7 @@ const seed=[
  {id:2,title:'Sau Cơn Mưa',author:'Alex',mainGenre:'Hiện đại',genre:'Chữa lành',status:'ongoing',chapters:[{title:'Chương 1: Trời vừa tạnh',paras:['Thành phố sau cơn mưa có mùi của đất ướt và những điều chưa kịp nói.','Cô đứng dưới mái hiên, nhìn những giọt nước cuối cùng rơi khỏi tán cây.']}],views:86,likes:17},
  {id:3,title:'Chuyện Nhà Mình',author:'Alex',mainGenre:'Hiện đại',genre:'Đời thường',status:'completed',chapters:[{title:'Chương 1: Bữa cơm tối',paras:['Nhà không lớn, nhưng tối nào đèn bếp cũng sáng.','Có những câu chuyện chỉ cần một mâm cơm và vài người chịu ngồi lại cùng nhau.']}],views:241,likes:39},
  {id:4,title:'Dưới Bầu Trời Đêm Ấy',author:'Alex',mainGenre:'Hiện đại',genre:'Lãng mạn',status:'ongoing',chapters:[{title:'Chương 1: Một vì sao muộn',paras:['Đêm ấy trời trong đến mức tưởng như chỉ cần đưa tay là chạm được một vì sao.','Chúng tôi ngồi cạnh nhau rất lâu mà chẳng ai muốn về trước.']}],views:153,likes:31},
- {id:5,title:'Tiệm Hoa Mở Cửa Sau Nửa Đêm',author:'Alex',mainGenre:'Tiên hiệp',genre:'Kỳ ảo · Chữa lành',status:'ongoing',chapters:[{title:'Chương 1: Vị khách lúc 0 giờ',paras:['Chiếc chuông cửa reo đúng lúc kim đồng hồ chạm số mười hai.','Người khách đầu tiên của đêm mang theo một lá thư chưa từng được gửi.']}],views:64,likes:12},
+ {id:5,title:'Tiệm Hoa Mở Cửa Sau Nửa Đêm',author:'Alex',mainGenre:'Huyền ảo',genre:'Kỳ ảo · Chữa lành',status:'ongoing',chapters:[{title:'Chương 1: Vị khách lúc 0 giờ',paras:['Chiếc chuông cửa reo đúng lúc kim đồng hồ chạm số mười hai.','Người khách đầu tiên của đêm mang theo một lá thư chưa từng được gửi.']}],views:64,likes:12},
  {id:6,title:'Ngày Chúng Ta Vẫn Còn Là Những Đứa Trẻ',author:'Alex',mainGenre:'Hiện đại',genre:'Thanh xuân · Đời thường',status:'completed',chapters:[{title:'Chương 1: Con đường cũ',paras:['Con đường về nhà năm ấy ngắn hơn trong trí nhớ.','Chúng tôi từng nghĩ mùa hè sẽ chẳng bao giờ kết thúc.']}],views:319,likes:58}
 ];
 
@@ -1121,6 +1131,9 @@ if(oldVersion<DATA_VERSION){
 }else{
  stories=JSON.parse(localStorage.getItem('nha_co_alex_stories')||'null')||seed;
 }
+// V20.3: migrate old genre labels without resetting any story data.
+stories.forEach(st=>{if(st.mainGenre==='Tiên hiệp'||st.mainGenre==='Huyền huyễn')st.mainGenre='Huyền ảo'});
+localStorage.setItem('nha_co_alex_stories',JSON.stringify(stories));
 let comments=JSON.parse(localStorage.getItem('nha_co_alex_comments')||'{}');
 let reviews=JSON.parse(localStorage.getItem('nha_co_alex_reviews')||'{}');
 let chapterLikes=JSON.parse(localStorage.getItem('nha_co_alex_chapter_likes')||'{}');
@@ -1264,9 +1277,17 @@ function chapterLikeKey(storyId,chapterIndex){return `${storyId}_${chapterIndex}
 function storyLikeTotal(story){return (story.chapters||[]).reduce((sum,_,i)=>sum+(Number(chapterLikes[chapterLikeKey(story.id,i)])||0),0)}
 function renderChapterHeart(){const box=document.getElementById('chapterHeartRow');if(!box||!currentStory)return;const key=chapterLikeKey(currentStory.id,currentChapter),count=Number(chapterLikes[key])||0,on=likedChapters.includes(key);box.innerHTML=`<button class="chapter-heart-btn ${on?'liked':''}" type="button" onclick="toggleChapterLike()" aria-label="${on?'Bỏ tim':'Thả tim'} chương này">${on?'♥':'♡'} <span>${count}</span></button>`}
 function toggleChapterLike(){if(!currentStory)return;if(!authUser){requestCommentLogin('thả tim chương');return}const key=chapterLikeKey(currentStory.id,currentChapter);if(likedChapters.includes(key)){likedChapters=likedChapters.filter(x=>x!==key);chapterLikes[key]=Math.max(0,(Number(chapterLikes[key])||0)-1)}else{likedChapters.push(key);chapterLikes[key]=(Number(chapterLikes[key])||0)+1}save();renderChapterHeart();render()}
+function primaryGenreClass(name){
+ const g=String(name||'').trim().toLowerCase();
+ if(g==='hiện đại')return 'genre-hien-dai';
+ if(g==='huyền ảo'||g==='tiên hiệp'||g==='huyền huyễn')return 'genre-huyen-ao';
+ if(g==='cổ đại')return 'genre-co-dai';
+ if(g==='tương lai')return 'genre-tuong-lai';
+ return 'genre-other';
+}
 function card(s){
  const hasProgress=progress[s.id] && (progress[s.id].chapter>0 || progress[s.id].scroll>80);
- return `<div class="card story-card clickable-story" onclick="openStory(${s.id})"><div class="story-cover">${s.cover?`<img src="${esc(s.cover)}" alt="Bìa ${esc(s.title)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`:`Nhà có Alex<br>${esc(s.title)}`}</div><div class="story-info"><h3 class="story-title-link" title="${esc(s.title)}"><span>${esc(s.title)}</span></h3><div class="muted">Tác giả: ${esc(s.author)}</div><div class="genre">${esc(s.mainGenre||s.genre)}</div><div class="meta-row"><span class="meta-pill ${s.status==='completed'?'status-done':'status-ongoing'}">${s.status==='completed'?'✓ Đã hoàn thành':'◷ Đang viết'}</span></div>
+ return `<div class="card story-card clickable-story" onclick="openStory(${s.id})"><div class="story-cover">${s.cover?`<img src="${esc(s.cover)}" alt="Bìa ${esc(s.title)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`:`Nhà có Alex<br>${esc(s.title)}`}</div><div class="story-info"><h3 class="story-title-link" title="${esc(s.title)}"><span>${esc(s.title)}</span></h3><div class="muted">Tác giả: ${esc(s.author)}</div><div class="genre ${primaryGenreClass(s.mainGenre||s.genre)}">${esc(s.mainGenre||s.genre)}</div><div class="meta-row"><span class="meta-pill ${s.status==='completed'?'status-done':'status-ongoing'}">${s.status==='completed'?'✓ Đã hoàn thành':'◷ Đang viết'}</span></div>
  <div class="stats"><span class="stat">${icon('eye')} ${s.views||0}</span><span class="stat">${icon('heart')} ${storyLikeTotal(s)}</span><span class="stat">${icon('comment')} ${storyCommentCount(s)}</span></div>
  <div class="story-actions"><button class="btn" onclick="event.stopPropagation();${hasProgress?`read(${s.id})`:`openStory(${s.id})`}">${hasProgress?'Đọc tiếp':'Đọc'}</button> <button class="btn" onclick="event.stopPropagation();toggleSave(${s.id})">${saved.includes(s.id)?'★ Đã lưu':'☆ Lưu'}</button></div></div></div>`;
 }
@@ -1780,6 +1801,8 @@ async function initAuth(){
 }
 function isSiteAdmin(){return !!authUser && (profileUsername()==='thao-tran'||slugify(authUser?.user_metadata?.full_name||authUser?.user_metadata?.name||'')==='thao-tran')}
 let adminLibraryTab='published',managedDrafts=JSON.parse(localStorage.getItem('nha_managed_drafts')||'[]'),editingManagedStoryId=null,activeManagedStory=null,activeManagedSource='published',activeManagedChapter=-1,chapterAutosaveTimer=null;
+managedDrafts.forEach(st=>{if(st.mainGenre==='Tiên hiệp'||st.mainGenre==='Huyền huyễn')st.mainGenre='Huyền ảo'});
+localStorage.setItem('nha_managed_drafts',JSON.stringify(managedDrafts));
 function persistManaged(){localStorage.setItem('nha_managed_drafts',JSON.stringify(managedDrafts));save()}
 function ensureChapterStates(st){(st.chapters||[]).forEach(ch=>{if(!ch.publishState)ch.publishState='published'});return st}
 function chapterCounts(st){ensureChapterStates(st);let pub=0,draft=0;(st.chapters||[]).forEach(ch=>ch.publishState==='draft'?draft++:pub++);return {pub,draft}}
@@ -1940,14 +1963,16 @@ function profileJoinDate(profile,own){
  const d=new Date(raw);if(Number.isNaN(d.getTime()))return '';
  return d.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'});
 }
-function renderProfileMeta(profile,own){
- const el=document.getElementById('profileMeta');if(!el)return;
+function profileMetaHTML(profile,own){
  const id=profile?.id||(own?authUser?.id:null),counts=profileLocalCounts(id),joined=profileJoinDate(profile,own),parts=[];
  if(joined)parts.push(`<span>📅 Tham gia từ ${esc(joined)}</span>`);
  if(own)parts.push(`<button class="profile-meta-link" type="button" onclick="openProfile('reading')">📚 Đã đọc ${counts.readingCount||0} truyện</button>`);
  parts.push(`<button class="profile-meta-link" type="button" onclick="openProfileActivity('comments')">💬 ${counts.commentCount} bình luận</button>`);
  parts.push(`<button class="profile-meta-link" type="button" onclick="openProfileActivity('reviews')">📝 ${counts.reviewCount} review</button>`);
- el.innerHTML=parts.join('<span>·</span>');
+ return `<div class="profile-meta-row profile-meta-in-card">${parts.join('<span>·</span>')}</div>`;
+}
+function renderProfileMeta(profile,own){
+ const el=document.getElementById('profileMeta');if(el)el.innerHTML='';
 }
 function openProfileActivity(kind){openProfile('activity');renderProfileActivity(kind)}
 function renderProfileActivity(kind='all'){
@@ -2005,7 +2030,7 @@ async function openUserProfile(username,updateRoute=true,section='profile'){
   profile=profile||known;
   if(!profile){content.innerHTML='<h3>Hồ sơ</h3><p class="muted">Chưa tìm thấy hồ sơ này.</p>';return}
   setProfileHeader(profile,false);
-  content.innerHTML='<h3>Hồ sơ</h3>'+(profile.bio?`<p>${esc(profile.bio)}</p>`:'<p class="muted">Thành viên chưa viết giới thiệu.</p>');
+  content.innerHTML='<h3>Hồ sơ</h3>'+(profile.bio?`<p>${esc(profile.bio)}</p>`:'<p class="muted">Thành viên chưa viết giới thiệu.</p>')+profileMetaHTML(profile,false);
  }catch{
   if(request!==profileRequestId||location.pathname!=='/user/'+username)return;
   content.innerHTML='<h3>Hồ sơ</h3><p class="muted">Chưa tải được hồ sơ. Vui lòng thử lại sau.</p>';
@@ -2019,7 +2044,7 @@ function openProfile(section='profile',updateRoute=true){
  setProfileHeader({id:authUser.id,display_name:userDisplayName(authUser),avatar_url:userAvatar(authUser),created_at:authUser.created_at},true);
  document.querySelectorAll('[data-profile-tab]').forEach(b=>b.classList.toggle('active',b.dataset.profileTab===section));
  const c=document.getElementById('profileContent');
- if(section==='profile')c.innerHTML=`<h3>Hồ sơ</h3>${memberProfile?.bio?`<p>${esc(memberProfile.bio)}</p>`:'<p class="muted">Đây là góc riêng của bạn trong Nhà có Alex.</p>'}`;
+ if(section==='profile')c.innerHTML=`<h3>Hồ sơ</h3>${memberProfile?.bio?`<p>${esc(memberProfile.bio)}</p>`:'<p class="muted">Đây là góc riêng của bạn trong Nhà có Alex.</p>'}${profileMetaHTML(memberProfile||{},true)}`;
  if(section==='activity')renderProfileActivity('all');
  if(section==='saved')c.innerHTML='<h3>Truyện đã lưu</h3><p class="muted">Kệ truyện của bạn sẽ nằm ở đây. Kệ có thể đặt Công khai hoặc Riêng tư ngay tại trang này.</p>';
  if(section==='reading')c.innerHTML='<h3>Đang đọc</h3><p class="muted">Những truyện đang đọc dở sẽ xuất hiện ở đây.</p>';

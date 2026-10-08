@@ -1298,7 +1298,7 @@ function profilePath(){return '/user/'+profileUsername()}
 function routeFromLocation(){
  const p=location.pathname.split('/').filter(Boolean);
  if(p[0]==='quan-ly-thu-vien'&&p[1]==='truyen'&&p[2]&&p[3]==='chuong'&&p[4]){openChapterAdmin(decodeURIComponent(p[2]),Number(p[4]),false);return}
- if(p[0]==='quan-ly-thu-vien'&&p[1]==='truyen'&&p[2]){openStoryAdmin(decodeURIComponent(p[2]),false);return}
+ if(p[0]==='quan-ly-thu-vien'&&p[1]==='truyen'&&p[2]){openStoryAdmin(decodeURIComponent(p[2]),'published',false);return}
  if(p[0]==='quan-ly-thu-vien'){openAdminLibrary(false);return}
  if(p[0]==='user'&&p[1]){
   let username;try{username=slugify(decodeURIComponent(p[1]))}catch{show('home',false);return}
@@ -2027,7 +2027,8 @@ async function initAuth(){
  const cloudStoriesReady=await loadCloudStories();
  await refreshPublicStoryCloudFields();
   await Promise.allSettled([loadCloudComments(),loadCloudReviews()]);
-  if(cloudStoriesReady && location.pathname.startsWith('/truyen/')) routeFromLocation();
+  // Route only after Supabase has restored the session. This is required for admin pages after a full reload.
+  if(location.pathname!=='/') routeFromLocation();
  const returnPath=localStorage.getItem('nha_return_path');
  if(authUser&&returnPath){localStorage.removeItem('nha_return_path');if(/^\/(truyen|user)\//.test(returnPath)){setRoute(returnPath,true);routeFromLocation()}}
  else if(location.pathname.startsWith('/user/'))routeFromLocation();
@@ -2560,8 +2561,8 @@ toggleSave=function(id){toggleSaveV179(id);queueCloudMemberState()};
 
 console.info('Nhà có Alex V20.9 · Preserve chapter line breaks + Đang làm');
 render();
-routeFromLocation();
-initAuth().catch(()=>updateAuthUI());
+// Do not resolve protected routes before auth session restoration.
+initAuth().catch(()=>{updateAuthUI(); if(!location.pathname.startsWith('/quan-ly-thu-vien')) routeFromLocation();});
 </script>
 
 </body></html>

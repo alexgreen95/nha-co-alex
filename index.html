@@ -2232,8 +2232,8 @@ async function cloudProfiles(ids){
   return Object.fromEntries((data||[]).map(p=>[p.id,p]));
 }
 async function loadCloudComments(){
-  const {data,error}=await sb.from('comments').select('id,user_id,content,created_at,edited_at,parent_id,reply_to_user_id,scope,story_id,chapter_index,paragraph_index').order('created_at',{ascending:true});
-  if(error){console.warn('comments sync',error);return}
+  const {data,error}=await sb.from('comments').select('*').order('created_at',{ascending:true});
+  if(error){console.warn('comments sync',error.message||error,error);return}
   const rows=data||[], prof=await cloudProfiles(rows.map(r=>r.user_id));
   let likes=[]; const lr=await sb.from('comment_likes').select('comment_id,user_id'); if(!lr.error)likes=lr.data||[];
   const likeMap={}; for(const x of likes)(likeMap[x.comment_id]||(likeMap[x.comment_id]=[])).push(x.user_id);
@@ -2243,13 +2243,13 @@ async function loadCloudComments(){
 }
 async function insertCloudComment(key,text,extra={}){
   const c=cloudCommentContext(key), payload={user_id:authUser.id,content:text,scope:c.scope,story_id:c.story_id,chapter_index:c.chapter_index,paragraph_index:c.paragraph_index,parent_id:extra.parentId||null,reply_to_user_id:extra.replyToUserId||null};
-  const {data,error}=await sb.from('comments').insert(payload).select('id,user_id,content,created_at,edited_at,parent_id,reply_to_user_id,scope,story_id,chapter_index,paragraph_index').single();
+  const {data,error}=await sb.from('comments').insert(payload).select('*').single();
   if(error){console.error(error);alert('Chưa lưu được bình luận lên tài khoản. Thử lại nha.');return null}
   await loadCloudComments(); return data;
 }
 async function loadCloudReviews(){
-  const {data,error}=await sb.from('reviews').select('id,story_id,user_id,content,content_html,created_at,edited_at').order('created_at',{ascending:true});
-  if(error){console.warn('reviews sync',error);return}
+  const {data,error}=await sb.from('reviews').select('*').order('created_at',{ascending:true});
+  if(error){console.warn('reviews sync',error.message||error,error);return}
   const rows=data||[],prof=await cloudProfiles(rows.map(r=>r.user_id)),next={};
   for(const r of rows){const p=prof[r.user_id]||{};(next[r.story_id]||(next[r.story_id]=[])).push({id:r.id,userId:r.user_id,username:slugify(p.display_name||'thanh-vien'),name:p.display_name||'Thành viên',avatar:p.avatar_url||'',text:r.content||'',html:r.content_html||'',createdAt:r.created_at,editedAt:r.edited_at,likes:0,comments:0});}
   reviews=next;localStorage.setItem('nha_co_alex_reviews',JSON.stringify(reviews));renderHomeReviews();if(introStory)renderStoryReviews();
@@ -2330,7 +2330,7 @@ deleteStoryReview=async function(id){if(!introStory||!authUser||!confirm('Xóa r
 const toggleSaveV179=toggleSave;
 toggleSave=function(id){toggleSaveV179(id);queueCloudMemberState()};
 
-console.info('Nhà có Alex V20.3 · public comments + reviews sync');
+console.info('Nhà có Alex V20.4 · Supabase comments + reviews sync');
 render();
 routeFromLocation();
 initAuth().catch(()=>updateAuthUI());

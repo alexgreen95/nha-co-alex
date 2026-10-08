@@ -945,6 +945,13 @@ body.pastel .chapter-end-nav #nextChapter{background:#dcebf4;border-color:#c6dfe
 .home-comment-card{cursor:pointer}
 .home-comment-card:active{transform:translateY(1px)}
 
+/* v21.4 — reader paragraph spacing + exact shared reading column */
+#reader .reader{width:min(760px,100%)!important;max-width:760px!important;margin-inline:auto!important}
+#reader .chapter,#reader .chapter-end-nav,#reader .chapter-comments{width:100%!important;max-width:none!important;margin-left:0!important;margin-right:0!important;box-sizing:border-box!important}
+#reader .para-wrap{width:100%!important;box-sizing:border-box!important;padding-right:0!important;margin:0 0 1.45em!important}
+#reader .para{width:100%!important;box-sizing:border-box!important;margin:0!important}
+#reader .para-wrap .comment-btn{right:-42px!important}
+@media(max-width:860px){#reader .para-wrap .comment-btn{right:4px!important;transform:translateY(-50%);background:var(--bg)}#reader .para-wrap:has(.comment-btn) .para{padding-right:42px!important}}
 /* v21.3 — cloud homepage + reader alignment + paragraph normalization */
 /* v21.1 — chapter editor + cover upload */
 .chapter-format-toolbar{display:flex;gap:7px;flex-wrap:wrap;margin:8px 0 8px}.chapter-format-toolbar button{min-width:36px;border:1px solid var(--line);background:var(--soft);color:var(--fg);border-radius:9px;padding:7px 10px;font:inherit;cursor:pointer}.chapter-format-toolbar button:hover{filter:brightness(.98)}
@@ -1513,8 +1520,8 @@ function read(id,chapterOverride=null,updateRoute=true){
  renderChapter(chapterOverride===null ? (pr.scroll||0) : 0);
 }
 function formatImportedOpeningParagraph(text){
- let clean=String(text||'').replace(/\r\n?/g,'\n').replace(/[ \t]*\n[ \t]*/g,' ').replace(/[ \t]{2,}/g,' ').trim();
- return renderInlineChapterFormatting(clean);
+ let clean=String(text||'').replace(/\r\n?/g,'\n').replace(/[ \t]{2,}/g,' ').trim();
+ return renderInlineChapterFormatting(clean).replace(/\n+/g,'<br>');
 }
 function renderChapter(restoreScroll=0){
  let s=currentStory,ch=s.chapters[currentChapter];

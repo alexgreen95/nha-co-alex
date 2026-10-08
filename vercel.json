@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/truyen/:path*",
+      "destination": "/index.html"
+    }
+  ]
+}

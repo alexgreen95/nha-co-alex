@@ -1534,17 +1534,14 @@ function read(id,chapterOverride=null,updateRoute=true){
  renderChapter(chapterOverride===null ? (pr.scroll||0) : 0);
 }
 function formatImportedOpeningParagraph(text,index=0){
- let clean=String(text||'').replace(/\r\n?/g,'\n').replace(/[ \t]{2,}/g,' ').trim();
- // EPUB cũ có một dòng tiêu đề/tác giả/editor bị dính trước nội dung chương.
- // Ở đoạn đầu, bỏ phần metadata đó và bắt đầu thẳng vào nội dung truyện.
- if(index===0){
-   const marker=clean.match(/(?:Edit\s*:\s*Alex|Editor\s*:\s*Alex)[\s_—–-]*/i);
-   if(marker){clean=clean.slice(marker.index+marker[0].length).replace(/^[\s_—–-]+/,'').trim();}
-   else {
-     clean=clean.replace(/^.{0,220}?(?:Tác giả\s*:[^\n]{0,80})/i,'').replace(/^[\s_—–-]+/,'').trim();
-   }
- }
+ // V21.7: tuyệt đối không cắt/xóa nội dung chương ở bước hiển thị.
+ // Việc dọn metadata EPUB sẽ xử lý riêng khi import để tránh mất nội dung trên mobile.
+ const clean=String(text||'').replace(/\r\n?/g,'\n').trim();
  return renderInlineChapterFormatting(clean).replace(/\n+/g,'<br>');
+}
+function backToCurrentStory(){
+ if(!currentStory)return;
+ openStory(currentStory.id,true);
 }
 function renderChapter(restoreScroll=0){
  let s=currentStory,ch=s.chapters[currentChapter];
@@ -2060,7 +2057,25 @@ async function saveManagedStory(mode){
  }
  if(editingManagedStoryId){
    const target=sourceBefore==='published'?stories:managedDrafts,idx=target.findIndex(x=>String(x.id)===String(row.id));if(idx>=0)target[idx]=row;
-   if(sourceBefore==='published' && /^\d+$/.test(String(row.id))){const patch={title:row.title,genre:row.genre,status:row.status,summary:row.summary,cover_url:row.cover||null};const {error}=await sb.from('stories').update(patch).eq('id',Number(row.id));if(error){console.warn('story update cloud',error);alert('Chưa áp dụng được thay đổi lên Supabase.');return}}
+   if(sourceBefore==='published' && /^\d+$/.test(String(row.id))){
+     // Cập nhật các cột nền trước; ảnh bìa thử cover_url rồi fallback sang cover
+     // để tương thích schema hiện tại của dự án.
+     const basePatch={title:row.title,genre:row.genre,status:row.status};
+     let baseResult=await sb.from('stories').update(basePatch).eq('id',Number(row.id));
+     if(baseResult.error){console.warn('story base update cloud',baseResult.error);alert('Chưa áp dụng được thông tin truyện: '+(baseResult.error.message||'Supabase từ chối cập nhật.'));return}
+     if(row.summary!==undefined){
+       const summaryResult=await sb.from('stories').update({summary:row.summary}).eq('id',Number(row.id));
+       if(summaryResult.error)console.warn('summary column update skipped',summaryResult.error);
+     }
+     if(row.cover){
+       let coverResult=await sb.from('stories').update({cover_url:row.cover}).eq('id',Number(row.id));
+       if(coverResult.error){
+         console.warn('cover_url update failed; trying cover',coverResult.error);
+         coverResult=await sb.from('stories').update({cover:row.cover}).eq('id',Number(row.id));
+       }
+       if(coverResult.error){console.warn('cover update cloud',coverResult.error);alert('Ảnh đã tải lên Storage nhưng bảng stories chưa có cột lưu ảnh bìa phù hợp. Gửi tui ảnh lỗi này nha: '+(coverResult.error.message||'Supabase từ chối cập nhật.'));return}
+     }
+   }
  }else{stories.unshift(row);activeManagedSource='published'}
  const drafts=JSON.parse(localStorage.getItem('nca_story_edit_drafts')||'{}');delete drafts[String(row.id)];localStorage.setItem('nca_story_edit_drafts',JSON.stringify(drafts));
  persistManaged();closeStoryComposer();activeManagedStory=row;render();openStoryAdmin(String(row.id),editingManagedStoryId?.source||'published');

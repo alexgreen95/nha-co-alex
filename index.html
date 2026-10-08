@@ -919,6 +919,23 @@ body.pastel .profile-tabs button:nth-child(4){background:#fff0c9!important;borde
 .story-about-text{white-space:normal;line-height:1.8;padding:4px 2px 14px;max-width:820px}
 .story-about-editor{width:100%;min-height:220px;resize:vertical;border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--fg);padding:14px;font:15px/1.7 Arial,sans-serif;box-sizing:border-box}
 .story-about-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}.story-about-edit-btn{margin-top:8px}
+
+/* V20.6: chapter navigation sits beside the chapter heart */
+.chapter-end-nav{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:14px;margin:26px 0 28px}
+.chapter-end-nav .chapter-heart-row{margin:0;grid-column:2}
+.chapter-end-nav #prevChapter{grid-column:1;justify-self:start}
+.chapter-end-nav #nextChapter{grid-column:3;justify-self:end}
+.chapter-end-nav button{border:1px solid var(--line);background:var(--soft);color:var(--fg);border-radius:9px;padding:9px 13px;box-shadow:0 2px 7px rgba(40,30,30,.08),inset 0 1px rgba(255,255,255,.3);transition:.15s ease}
+.chapter-end-nav button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 4px 11px rgba(40,30,30,.11)}
+body.pastel .chapter-end-nav #prevChapter{background:#f8dce5;border-color:#efc4d2}
+body.pastel .chapter-end-nav #nextChapter{background:#dcebf4;border-color:#c6dfea}
+.chapter .para:first-child{white-space:pre-line}
+@media(max-width:600px){.chapter-end-nav{grid-template-columns:1fr auto 1fr;gap:7px}.chapter-end-nav button{padding:8px 9px;font-size:12px}.chapter-heart-btn{padding:8px 11px}}
+
+/* V20.7: keep the notification bell visually centered between Home and account */
+#memberArea{gap:10px!important}
+#memberArea .notif-wrap{margin-left:-2px;margin-right:1px}
+@media(max-width:640px){#memberArea .notif-wrap{margin-left:0;margin-right:0}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1083,9 +1100,9 @@ document.body.classList.add('gate-locked');
 <div class="reader-head"><h1 id="rtitle"></h1><div class="muted" id="rauthor"></div><div class="meta-row" style="justify-content:center"><span class="meta-pill" id="rstatus"></span></div></div>
 <h2 class="chapter-title" id="chapterTitle"></h2>
 <article id="chapter" class="chapter"></article>
-<div id="chapterHeartRow" class="chapter-heart-row"></div>
-<div id="toBeContinued" class="to-be-continued hidden">Còn tiếp…</div><section class="chapter-comments"><div class="chapter-comments-head"><h3>Bình luận</h3><label class="comment-sort-label">Sắp xếp <select id="chapterCommentSort" onchange="setChapterCommentSort(this.value)"><option value="newest">Mới nhất</option><option value="interaction">Tương tác nhiều nhất</option><option value="all">Tất cả bình luận</option></select></label></div><div id="chapterCommentsList"></div><div id="chapterCommentComposer"></div></section>
-<div class="chapter-nav"><button id="prevChapter" onclick="moveChapter(-1)">← Chương trước</button><button id="nextChapter" onclick="moveChapter(1)">Chương sau →</button></div>
+<div id="toBeContinued" class="to-be-continued hidden">Còn tiếp…</div>
+<div class="chapter-end-nav"><button id="prevChapter" onclick="moveChapter(-1)">← Chương trước</button><div id="chapterHeartRow" class="chapter-heart-row"></div><button id="nextChapter" onclick="moveChapter(1)">Chương sau →</button></div>
+<section class="chapter-comments"><div class="chapter-comments-head"><h3>Bình luận</h3><label class="comment-sort-label">Sắp xếp <select id="chapterCommentSort" onchange="setChapterCommentSort(this.value)"><option value="newest">Mới nhất</option><option value="interaction">Tương tác nhiều nhất</option><option value="all">Tất cả bình luận</option></select></label></div><div id="chapterCommentsList"></div><div id="chapterCommentComposer"></div></section>
 </div>
 </main>
 
@@ -1452,6 +1469,14 @@ function read(id,chapterOverride=null,updateRoute=true){
  s.views=(s.views||0)+1; save();
  renderChapter(chapterOverride===null ? (pr.scroll||0) : 0);
 }
+function formatImportedOpeningParagraph(text){
+ let out=esc(text||'');
+ // EPUB/Word imports sometimes flatten the title/credits into one paragraph.
+ out=out.replace(/\s+(Tác giả\s*:)/i,'\n$1')
+        .replace(/\s+(Edit\s*:)/i,'\n$1')
+        .replace(/\s+(_{5,})\s*/g,'\n$1\n');
+ return out;
+}
 function renderChapter(restoreScroll=0){
  let s=currentStory,ch=s.chapters[currentChapter];
  displayPage('reader');
@@ -1461,7 +1486,7 @@ function renderChapter(restoreScroll=0){
  document.getElementById('chapterTitle').textContent=ch.title;
  document.getElementById('chapter').innerHTML=ch.paras.map((p,i)=>{
   let key=`${s.id}_${currentChapter}_${i}`,c=comments[key]||[];
-  return `<div class="para-wrap" id="para_${key}" data-comment-key="${key}"><p class="para" ondblclick="openParagraphComposer('${key}')" onpointerdown="startLongPress(event,'${key}')" onpointerup="cancelLongPress()" onpointercancel="cancelLongPress()" onpointermove="cancelLongPress()">${esc(p)}</p>${c.length?`<button class="comment-btn" onclick="event.stopPropagation();toggleComments('${key}',true)" aria-label="Xem ${c.length} bình luận">${icon('comment')}<span>${c.length}</span></button>`:''}</div>`;
+  return `<div class="para-wrap" id="para_${key}" data-comment-key="${key}"><p class="para" ondblclick="openParagraphComposer('${key}')" onpointerdown="startLongPress(event,'${key}')" onpointerup="cancelLongPress()" onpointercancel="cancelLongPress()" onpointermove="cancelLongPress()">${i===0?formatImportedOpeningParagraph(p):esc(p)}</p>${c.length?`<button class="comment-btn" onclick="event.stopPropagation();toggleComments('${key}',true)" aria-label="Xem ${c.length} bình luận">${icon('comment')}<span>${c.length}</span></button>`:''}</div>`;
  }).join('');
  renderChapterComments();
  renderChapterHeart();
@@ -1550,7 +1575,7 @@ function commentLocationHTML(key){
  if(!chapter)return '';
  return `<button type="button" class="comment-location" data-comment-location="${esc(key)}">${esc(story.title)} · ${esc(chapter.title)}${key.startsWith('chapter_')?'':' · Đoạn '+(parts[2]+1)}</button>`;
 }
-function isAdminComment(comment){return (comment.username||slugify(comment.name||''))==='thao-tran'}
+function isAdminComment(comment){return (!!authUser && String(comment.userId||comment.user_id||'')===String(authUser.id) && isSiteAdmin()) || ['alex','thao-tran'].includes(comment.username||slugify(comment.name||''))}
 function isOwnComment(comment){return !!authUser&&!!comment.userId&&comment.userId===authUser.id}
 function canDeleteComment(comment){return isOwnComment(comment)||profileUsername()==='thao-tran'}
 function commentOwnerMenu(comment){
@@ -1888,7 +1913,7 @@ async function initAuth(){
    if(location.pathname.startsWith('/user/'))routeFromLocation();
  });
 }
-function isSiteAdmin(){return !!authUser && (profileUsername()==='thao-tran'||slugify(authUser?.user_metadata?.full_name||authUser?.user_metadata?.name||'')==='thao-tran')}
+function isSiteAdmin(){const u=profileUsername(),n=slugify(authUser?.user_metadata?.full_name||authUser?.user_metadata?.name||'');return !!authUser && (u==='alex'||u==='thao-tran'||n==='alex'||n==='thao-tran')}
 let adminLibraryTab='published',managedDrafts=JSON.parse(localStorage.getItem('nha_managed_drafts')||'[]'),editingManagedStoryId=null,activeManagedStory=null,activeManagedSource='published',activeManagedChapter=-1,chapterAutosaveTimer=null;
 managedDrafts.forEach(st=>{if(st.mainGenre==='Tiên hiệp'||st.mainGenre==='Huyền huyễn')st.mainGenre='Huyền ảo'});
 localStorage.setItem('nha_managed_drafts',JSON.stringify(managedDrafts));

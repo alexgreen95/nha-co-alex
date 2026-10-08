@@ -809,6 +809,10 @@ body.pastel .notif-filters button:nth-child(6){background:#f9e5df;border-color:#
 .review-list{display:grid;gap:10px}.review-card{position:relative;border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--card)}
 .review-head{display:flex;align-items:center;gap:9px;margin-bottom:8px}.review-avatar{width:34px;height:34px;border-radius:50%;object-fit:cover;background:var(--soft);display:grid;place-items:center;overflow:hidden}.review-avatar img{width:100%;height:100%;object-fit:cover}.review-meta{display:flex;flex-direction:column;gap:2px}.review-body{line-height:1.6;white-space:pre-wrap}.review-actions{display:flex;gap:12px;margin-top:9px;color:var(--muted);font-size:12px}.review-actions button{border:0;background:transparent;color:inherit;padding:0;cursor:pointer}.review-more{margin-left:auto}
 
+
+/* V17.5 admin library + secondary story tags */
+.intro-subtags{display:flex;gap:6px;flex-wrap:wrap;margin:7px 0 2px}.intro-subtag{font-size:11px;padding:3px 8px;border-radius:999px;background:color-mix(in srgb,var(--accent) 10%,var(--card));border:1px solid color-mix(in srgb,var(--accent) 22%,var(--line));color:var(--muted)}
+.admin-library-shell{max-width:900px;margin:30px auto}.admin-library-head{display:flex;justify-content:space-between;align-items:center;gap:16px}.admin-library-head h2{margin-bottom:4px}.admin-library-tabs{display:flex;gap:8px;border-bottom:1px solid var(--line);margin:22px 0 16px}.admin-library-tabs button{border:0;background:transparent;color:var(--muted);padding:10px 14px}.admin-library-tabs button.active{color:var(--fg);border-bottom:2px solid var(--accent)}.admin-library-list{display:grid;gap:12px}.manage-story-row{display:grid;grid-template-columns:64px 1fr auto;gap:14px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}.manage-cover{width:64px;aspect-ratio:3/4;border-radius:8px;background:var(--soft);display:grid;place-items:center;text-align:center;font-size:10px;overflow:hidden}.manage-cover img{width:100%;height:100%;object-fit:cover}.manage-story-row h3{margin:0 0 5px;font-size:15px}.manage-meta{font-size:12px;color:var(--muted)}.manage-actions{display:flex;gap:7px;flex-wrap:wrap}.manage-actions button{border:1px solid var(--line);background:var(--soft);color:var(--fg);border-radius:9px;padding:7px 10px}.story-composer-modal{position:fixed;inset:0;background:rgba(0,0,0,.28);z-index:80;display:grid;place-items:center;padding:20px}.story-composer-modal.hidden{display:none}.story-composer-card{width:min(680px,100%);max-height:88vh;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.18)}.story-composer-head{display:flex;justify-content:space-between;align-items:center}.story-composer-head h2{margin:0}.story-composer-head>button{border:0;background:transparent;color:var(--fg);font-size:24px}.story-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}.story-composer-card label{display:grid;gap:6px;font-size:12px;color:var(--muted);margin:10px 0}.story-composer-card input,.story-composer-card select,.story-composer-card textarea{width:100%;box-sizing:border-box;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:10px;padding:10px;font:inherit}.story-composer-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:16px}.story-composer-actions button{border:1px solid var(--line);background:var(--soft);color:var(--fg);border-radius:10px;padding:9px 13px}@media(max-width:640px){.story-form-grid{grid-template-columns:1fr}.manage-story-row{grid-template-columns:52px 1fr}.manage-cover{width:52px}.manage-actions{grid-column:1/-1}.admin-library-head{align-items:flex-start}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -895,6 +899,7 @@ document.body.classList.add('gate-locked');
         <button onclick="openProfile('activity')">Hoạt động</button>
         <button onclick="openProfile('saved')">Truyện đã lưu</button>
         <button onclick="openProfile('reading')">Đang đọc</button>
+        <button id="adminLibraryMenuBtn" style="display:none" onclick="openAdminLibrary()">Quản lý thư viện</button>
         <button class="logout" onclick="signOut()">Đăng xuất</button>
       </div>
     </div>
@@ -961,7 +966,7 @@ document.body.classList.add('gate-locked');
 </main>
 
 <main id="storyIntro" class="container hidden"><div class="story-intro">
-  <div class="story-intro-top"><div class="intro-cover" id="introCover"></div><div><h1 class="intro-title" id="introTitle"></h1><div class="muted" id="introAuthor"></div><div class="intro-tags"><span class="intro-tag" id="introGenre"></span><span class="intro-tag" id="introStatus"></span></div><p id="introSummary" class="muted"></p><div class="stats" id="introStats"></div><div class="intro-actions"><button class="btn" id="introReadBtn" onclick="startFromIntro()">Bắt đầu đọc</button><button class="btn" id="introSaveBtn" onclick="toggleIntroSave()">☆ Lưu truyện</button></div></div></div>
+  <div class="story-intro-top"><div class="intro-cover" id="introCover"></div><div><h1 class="intro-title" id="introTitle"></h1><div class="muted" id="introAuthor"></div><div class="intro-tags"><span class="intro-tag" id="introGenre"></span><span class="intro-tag" id="introStatus"></span></div><div id="introSubtags" class="intro-subtags"></div><p id="introSummary" class="muted"></p><div class="stats" id="introStats"></div><div class="intro-actions"><button class="btn" id="introReadBtn" onclick="startFromIntro()">Bắt đầu đọc</button><button class="btn" id="introSaveBtn" onclick="toggleIntroSave()">☆ Lưu truyện</button></div></div></div>
   <div class="intro-tabs"><button class="active" onclick="showIntroTab('chapters',this)">Danh sách chương</button><button onclick="showIntroTab('reviews',this)">Review</button><button onclick="showIntroTab('comments',this)">Bình luận</button></div>
   <div id="introChapters" class="intro-pane active chapter-list"></div><div id="introReviews" class="intro-pane"><div class="intro-community-toolbar"><strong>Review</strong><button class="btn" type="button" onclick="toggleReviewComposer()">✎ <span id="reviewComposerLabel">Viết review</span></button></div><div id="reviewComposer"></div><div id="introReviewList" class="review-list"></div></div><div id="introComments" class="intro-pane all-comments"><div class="intro-community-toolbar"><strong>Bình luận về truyện</strong></div><div id="storyCommentComposer"></div><div id="storyCommentList" class="story-comment-page"></div><div id="storyCommentPagination" class="story-comment-pagination"></div></div>
 </div></main>
@@ -997,6 +1002,21 @@ document.body.classList.add('gate-locked');
     <div id="profileContent" class="profile-section"></div>
   </div>
 </main>
+
+<main id="adminLibrary" class="container hidden">
+  <div class="admin-library-shell">
+    <div class="admin-library-head"><div><h2>Quản lý thư viện</h2><p class="muted">Quản lý truyện đã đăng và bản thảo của Nhà có Alex.</p></div><button class="btn" onclick="openStoryComposer()">＋ Truyện mới</button></div>
+    <div class="admin-library-tabs"><button class="active" onclick="setAdminLibraryTab('published',this)">Đã đăng</button><button onclick="setAdminLibraryTab('draft',this)">Bản thảo</button></div>
+    <div id="adminLibraryList" class="admin-library-list"></div>
+  </div>
+</main>
+<div id="storyComposerModal" class="story-composer-modal hidden" onclick="if(event.target===this)closeStoryComposer()"><div class="story-composer-card">
+  <div class="story-composer-head"><h2 id="storyComposerTitle">Truyện mới</h2><button onclick="closeStoryComposer()">×</button></div>
+  <div class="story-form-grid"><label>Tên truyện<input id="manageTitle" placeholder="Tên truyện"></label><label>Thể loại chính<select id="manageGenre"><option>Hiện đại</option><option>Cổ đại</option><option>Tương lai</option><option>Tiên hiệp</option></select></label><label>Tình trạng<select id="manageStatus"><option value="ongoing">Đang viết</option><option value="completed">Đã hoàn thành</option></select></label><label>Ảnh bìa<input id="manageCover" type="file" accept="image/*"></label></div>
+  <label>Giới thiệu<textarea id="manageSummary" rows="3" placeholder="Giới thiệu ngắn về truyện..."></textarea></label>
+  <label>Tag phụ<input id="manageTags" placeholder="Tận thế, Nữ cường, Ngọt sủng, Sảng văn"></label>
+  <div class="story-composer-actions"><button onclick="saveManagedStory('draft')">Lưu bản thảo</button><button class="btn" onclick="saveManagedStory('published')">Đăng truyện</button></div>
+</div></div>
 
 <div class="float-tools" aria-label="Tùy chỉnh giao diện" onmouseenter="cancelThemeClose()" onmouseleave="scheduleThemeClose()">
 <button id="themeBtn" onclick="toggleThemeMenu()" title="Chọn màu giao diện" aria-label="Chọn màu giao diện">
@@ -1035,7 +1055,7 @@ document.body.classList.add('gate-locked');
 
 <script>
 const seed=[
- {id:1,title:'Mùa Hạ Có Em',author:'Alex',mainGenre:'Hiện đại',genre:'Thanh xuân',status:'completed',chapters:[{title:'Chương 1: Cơn mưa đầu hạ',paras:['Có những mùa hè đi qua rất nhanh, nhưng có một mùa hè mà tôi nhớ mãi.','Ngày đầu tiên gặp cậu, trời đổ một cơn mưa rất lớn.','Tôi không biết rằng khoảnh khắc ấy sẽ trở thành chương đầu tiên của câu chuyện dài nhất đời mình.']}],views:128,likes:24},
+ {id:1,title:'Mùa Hạ Có Em',author:'Alex',mainGenre:'Hiện đại',genre:'Thanh xuân',subtags:['Tận thế','Nữ cường','Ngọt sủng','Sảng văn'],status:'completed',chapters:[{title:'Chương 1: Cơn mưa đầu hạ',paras:['Có những mùa hè đi qua rất nhanh, nhưng có một mùa hè mà tôi nhớ mãi.','Ngày đầu tiên gặp cậu, trời đổ một cơn mưa rất lớn.','Tôi không biết rằng khoảnh khắc ấy sẽ trở thành chương đầu tiên của câu chuyện dài nhất đời mình.']}],views:128,likes:24},
  {id:2,title:'Sau Cơn Mưa',author:'Alex',mainGenre:'Hiện đại',genre:'Chữa lành',status:'ongoing',chapters:[{title:'Chương 1: Trời vừa tạnh',paras:['Thành phố sau cơn mưa có mùi của đất ướt và những điều chưa kịp nói.','Cô đứng dưới mái hiên, nhìn những giọt nước cuối cùng rơi khỏi tán cây.']}],views:86,likes:17},
  {id:3,title:'Chuyện Nhà Mình',author:'Alex',mainGenre:'Hiện đại',genre:'Đời thường',status:'completed',chapters:[{title:'Chương 1: Bữa cơm tối',paras:['Nhà không lớn, nhưng tối nào đèn bếp cũng sáng.','Có những câu chuyện chỉ cần một mâm cơm và vài người chịu ngồi lại cùng nhau.']}],views:241,likes:39},
  {id:4,title:'Dưới Bầu Trời Đêm Ấy',author:'Alex',mainGenre:'Hiện đại',genre:'Lãng mạn',status:'ongoing',chapters:[{title:'Chương 1: Một vì sao muộn',paras:['Đêm ấy trời trong đến mức tưởng như chỉ cần đưa tay là chạm được một vì sao.','Chúng tôi ngồi cạnh nhau rất lâu mà chẳng ai muốn về trước.']}],views:153,likes:31},
@@ -1094,6 +1114,7 @@ function profileUsername(){return slugify(userDisplayName(authUser)||String(auth
 function profilePath(){return '/user/'+profileUsername()}
 function routeFromLocation(){
  const p=location.pathname.split('/').filter(Boolean);
+ if(p[0]==='quan-ly-thu-vien'){openAdminLibrary(false);return}
  if(p[0]==='user'&&p[1]){
   let username;try{username=slugify(decodeURIComponent(p[1]))}catch{show('home',false);return}
   if(!username){show('home',false);return}
@@ -1107,7 +1128,7 @@ function routeFromLocation(){
  if(chapter){read(st.id,Math.max(0,Math.min(st.chapters.length-1,Number(chapter[1])-1)),false);return}
  openStory(st.id,false);
 }
-const pageIds=['home','storyIntro','reader','library','login','profilePage'];
+const pageIds=['home','storyIntro','reader','library','login','profilePage','adminLibrary'];
 function displayPage(id){
  if(id!=='profilePage')++profileRequestId;
  activeReply=null;
@@ -1216,7 +1237,7 @@ function toggleSortSub(e,btn){e.stopPropagation();let row=btn.closest('.sort-row
 function chooseSort(e,type,value,label){e.stopPropagation();storyFilter[type]=value;document.getElementById('sortLabel').textContent='Sắp xếp theo: '+label;document.getElementById('sortMenu').classList.remove('open');document.querySelectorAll('.sort-row').forEach(x=>x.classList.remove('open'));render()}
 document.addEventListener('click',e=>{if(!e.target.closest('.sort-wrap'))document.getElementById('sortMenu')?.classList.remove('open')});
 let introStory=null;
-function openStory(id,updateRoute=true){let s=stories.find(x=>x.id===id);if(!s)return;if(updateRoute)setRoute(storyPath(s));introStory=s;displayPage('storyIntro');document.getElementById('introTitle').textContent=s.title;document.getElementById('introAuthor').textContent='Tác giả: '+s.author;document.getElementById('introGenre').textContent=s.mainGenre||s.genre;document.getElementById('introStatus').textContent=s.status==='completed'?'Đã hoàn thành':'Đang viết';document.getElementById('introSummary').textContent=s.summary||'Một góc nhỏ để giới thiệu câu chuyện trước khi bắt đầu đọc.';document.getElementById('introStats').innerHTML=`<span class="stat">${icon('eye')} ${s.views||0}</span><span class="stat">${icon('heart')} ${storyLikeTotal(s)}</span><span class="stat">${icon('comment')} ${storyCommentCount(s)}</span>`;document.getElementById('introCover').innerHTML=s.cover?`<img src="${esc(s.cover)}" alt="Bìa ${esc(s.title)}">`:`Nhà có Alex<br>${esc(s.title)}`;let pr=progress[id];document.getElementById('introReadBtn').textContent=pr?'Đọc tiếp · '+s.chapters[Math.min(pr.chapter||0,s.chapters.length-1)].title.split(':')[0]:'Bắt đầu đọc';document.getElementById('introSaveBtn').textContent=saved.includes(id)?'★ Đã lưu':'☆ Lưu truyện';document.getElementById('introChapters').innerHTML=s.chapters.map((c,i)=>`<button onclick="read(${s.id},${i})">${esc(c.title)}</button>`).join('');storyCommentPage=1;reviewComposerOpen=false;renderStoryReviews();renderAllStoryComments();showIntroTab('chapters',document.querySelector('.intro-tabs button'));window.scrollTo(0,0)}
+function openStory(id,updateRoute=true){let s=stories.find(x=>x.id===id);if(!s)return;if(updateRoute)setRoute(storyPath(s));introStory=s;displayPage('storyIntro');document.getElementById('introTitle').textContent=s.title;document.getElementById('introAuthor').textContent='Tác giả: '+s.author;document.getElementById('introGenre').textContent=s.mainGenre||s.genre;document.getElementById('introStatus').textContent=s.status==='completed'?'Đã hoàn thành':'Đang viết';document.getElementById('introSubtags').innerHTML=(s.subtags||[]).map(t=>`<span class="intro-subtag">${esc(t)}</span>`).join('');document.getElementById('introSummary').textContent=s.summary||'Một góc nhỏ để giới thiệu câu chuyện trước khi bắt đầu đọc.';document.getElementById('introStats').innerHTML=`<span class="stat">${icon('eye')} ${s.views||0}</span><span class="stat">${icon('heart')} ${storyLikeTotal(s)}</span><span class="stat">${icon('comment')} ${storyCommentCount(s)}</span>`;document.getElementById('introCover').innerHTML=s.cover?`<img src="${esc(s.cover)}" alt="Bìa ${esc(s.title)}">`:`Nhà có Alex<br>${esc(s.title)}`;let pr=progress[id];document.getElementById('introReadBtn').textContent=pr?'Đọc tiếp · '+s.chapters[Math.min(pr.chapter||0,s.chapters.length-1)].title.split(':')[0]:'Bắt đầu đọc';document.getElementById('introSaveBtn').textContent=saved.includes(id)?'★ Đã lưu':'☆ Lưu truyện';document.getElementById('introChapters').innerHTML=s.chapters.map((c,i)=>`<button onclick="read(${s.id},${i})">${esc(c.title)}</button>`).join('');storyCommentPage=1;reviewComposerOpen=false;renderStoryReviews();renderAllStoryComments();showIntroTab('chapters',document.querySelector('.intro-tabs button'));window.scrollTo(0,0)}
 function showIntroTab(name,btn){document.querySelectorAll('.intro-pane').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.intro-tabs button').forEach(x=>x.classList.remove('active'));document.getElementById('intro'+name[0].toUpperCase()+name.slice(1))?.classList.add('active');btn?.classList.add('active')}
 function startFromIntro(){if(!introStory)return;let pr=progress[introStory.id]||{chapter:0,scroll:0};read(introStory.id,pr.chapter||0);if(pr.scroll)setTimeout(()=>window.scrollTo(0,pr.scroll),30)}
 function toggleIntroSave(){if(!introStory)return;toggleSave(introStory.id);document.getElementById('introSaveBtn').textContent=saved.includes(introStory.id)?'★ Đã lưu':'☆ Lưu truyện'}
@@ -1685,6 +1706,7 @@ function updateAuthUI(){
  document.getElementById('accountName').textContent=name;
  document.getElementById('accountAvatar').src=avatar;
  document.getElementById('accountAvatar').style.visibility=avatar?'visible':'hidden';
+ const adminLibraryBtn=document.getElementById('adminLibraryMenuBtn');if(adminLibraryBtn)adminLibraryBtn.style.display=isSiteAdmin()?'block':'none';
  loadNotifications();
  if(currentStory)renderChapterComments();
  if(activeCommentKey&&document.getElementById('paragraphCommentPanel')?.classList.contains('open'))toggleComments(activeCommentKey,true);
@@ -1704,6 +1726,16 @@ async function initAuth(){
    if(location.pathname.startsWith('/user/'))routeFromLocation();
  });
 }
+function isSiteAdmin(){return !!authUser && profileUsername()==='thao-tran'}
+let adminLibraryTab='published',managedDrafts=JSON.parse(localStorage.getItem('nha_managed_drafts')||'[]'),editingManagedStoryId=null;
+function openAdminLibrary(updateRoute=true){if(!isSiteAdmin()){goHome();return}if(updateRoute)setRoute('/quan-ly-thu-vien');displayPage('adminLibrary');adminLibraryTab='published';document.querySelectorAll('.admin-library-tabs button').forEach((b,i)=>b.classList.toggle('active',i===0));renderAdminLibrary();window.scrollTo(0,0)}
+function setAdminLibraryTab(tab,btn){adminLibraryTab=tab;document.querySelectorAll('.admin-library-tabs button').forEach(b=>b.classList.remove('active'));btn?.classList.add('active');renderAdminLibrary()}
+function renderAdminLibrary(){const el=document.getElementById('adminLibraryList');if(!el)return;const rows=adminLibraryTab==='published'?stories:managedDrafts;if(!rows.length){el.innerHTML=`<div class="profile-section"><p class="muted">${adminLibraryTab==='draft'?'Chưa có bản thảo nào.':'Chưa có truyện đã đăng.'}</p></div>`;return}el.innerHTML=rows.map(s=>`<div class="manage-story-row"><div class="manage-cover">${s.cover?`<img src="${esc(s.cover)}" alt="">`:`Nhà có Alex`}</div><div><h3>${esc(s.title)}</h3><div class="manage-meta">${esc(s.mainGenre||s.genre||'Hiện đại')} · ${s.status==='completed'?'Đã hoàn thành':'Đang viết'} · ${(s.chapters||[]).length} chương</div><div class="manage-meta">${adminLibraryTab==='draft'?'Bản thảo':'Đã đăng'}</div></div><div class="manage-actions"><button onclick="openStoryComposer(${JSON.stringify(String(s.id))},'${adminLibraryTab}')">Sửa</button>${adminLibraryTab==='published'?`<button onclick="openStory(${Number(s.id)})">Xem truyện</button>`:`<button onclick="publishDraft('${esc(String(s.id))}')">Đăng</button>`}</div></div>`).join('')}
+function openStoryComposer(id=null,source='draft'){if(!isSiteAdmin())return;editingManagedStoryId=id?{id:String(id),source}:null;let s=null;if(id)s=source==='published'?stories.find(x=>String(x.id)===String(id)):managedDrafts.find(x=>String(x.id)===String(id));document.getElementById('storyComposerTitle').textContent=s?'Sửa truyện':'Truyện mới';document.getElementById('manageTitle').value=s?.title||'';document.getElementById('manageGenre').value=s?.mainGenre||'Hiện đại';document.getElementById('manageStatus').value=s?.status||'ongoing';document.getElementById('manageSummary').value=s?.summary||'';document.getElementById('manageTags').value=(s?.subtags||[]).join(', ');document.getElementById('storyComposerModal').classList.remove('hidden')}
+function closeStoryComposer(){document.getElementById('storyComposerModal').classList.add('hidden');editingManagedStoryId=null}
+function managedStoryFromForm(base={}){return {...base,title:document.getElementById('manageTitle').value.trim(),author:'Alex',mainGenre:document.getElementById('manageGenre').value,genre:document.getElementById('manageGenre').value,status:document.getElementById('manageStatus').value,summary:document.getElementById('manageSummary').value.trim(),subtags:document.getElementById('manageTags').value.split(',').map(x=>x.trim()).filter(Boolean),chapters:base.chapters||[],views:base.views||0,likes:base.likes||0}}
+function saveManagedStory(mode){if(!isSiteAdmin())return;const title=document.getElementById('manageTitle').value.trim();if(!title){alert('Nhập tên truyện trước nha bà.');return}if(mode==='published'){alert('Khung Quản lý thư viện đã sẵn sàng. Để đăng truyện thật cho mọi người thấy, bước kế tiếp mình sẽ nối form này với Supabase/RLS.');return}let base={id:'draft-'+Date.now()};if(editingManagedStoryId?.source==='draft')base=managedDrafts.find(x=>String(x.id)===editingManagedStoryId.id)||base;const row=managedStoryFromForm(base);const idx=managedDrafts.findIndex(x=>String(x.id)===String(row.id));if(idx>=0)managedDrafts[idx]=row;else managedDrafts.unshift(row);localStorage.setItem('nha_managed_drafts',JSON.stringify(managedDrafts));closeStoryComposer();adminLibraryTab='draft';document.querySelectorAll('.admin-library-tabs button').forEach((b,i)=>b.classList.toggle('active',i===1));renderAdminLibrary()}
+function publishDraft(id){alert('Bản thảo này đang lưu riêng trên trình duyệt. Khi nối Supabase, nút Đăng sẽ đưa truyện lên web thật.')}
 function openAccountMenu(){cancelAccountClose();document.getElementById('accountMenu').classList.add('open')}
 function scheduleAccountClose(){accountCloseTimer=setTimeout(()=>document.getElementById('accountMenu').classList.remove('open'),180)}
 function cancelAccountClose(){clearTimeout(accountCloseTimer)}

@@ -966,10 +966,10 @@ body.pastel .chapter-end-nav #nextChapter{background:#dcebf4;border-color:#c6dfe
 .intro-tabs button.active::after{content:"";position:absolute;left:2px;right:2px;bottom:-1px;height:3px;border-radius:3px;background:var(--accent)}
 .reader .para-wrap{display:block;width:100%;clear:both;margin-bottom:1.45em}
 .chapter-center-actions{display:flex;align-items:center;gap:7px;grid-column:2}
-.chapter-home-btn{display:inline-grid;place-items:center;min-width:40px}
+.chapter-home-btn{display:inline-grid;place-items:center;width:42px;height:42px;min-width:42px;padding:0!important}.chapter-home-btn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .story-admin-editbar{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px}
 .story-admin-editbar button{border:1px solid var(--line);background:var(--soft);color:var(--fg);border-radius:10px;padding:9px 12px}
-@media(max-width:600px){.intro-tabs{gap:16px;padding-left:14px!important;padding-right:14px!important}.intro-tabs button{padding-left:4px;padding-right:4px}.chapter-center-actions{gap:5px}.chapter-home-btn{min-width:36px;padding-left:9px!important;padding-right:9px!important}}
+@media(max-width:600px){.intro-tabs{gap:16px;padding-left:14px!important;padding-right:14px!important}.intro-tabs button{padding-left:4px;padding-right:4px}.chapter-center-actions{gap:5px}.chapter-home-btn{width:40px;height:40px;min-width:40px;padding:0!important}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1135,7 +1135,7 @@ document.body.classList.add('gate-locked');
 <h2 class="chapter-title" id="chapterTitle"></h2>
 <article id="chapter" class="chapter"></article>
 <div id="toBeContinued" class="to-be-continued hidden">Còn tiếp…</div>
-<div class="chapter-end-nav"><button id="prevChapter" onclick="moveChapter(-1)">← Chương trước</button><div class="chapter-center-actions"><div id="chapterHeartRow" class="chapter-heart-row"></div><button class="chapter-home-btn" type="button" onclick="backToCurrentStory()" title="Về trang truyện" aria-label="Về trang truyện">⌂</button></div><button id="nextChapter" onclick="moveChapter(1)">Chương sau →</button></div>
+<div class="chapter-end-nav"><button id="prevChapter" onclick="moveChapter(-1)">← Chương trước</button><div class="chapter-center-actions"><div id="chapterHeartRow" class="chapter-heart-row"></div><button class="chapter-home-btn" type="button" onclick="backToCurrentStory()" title="Về trang truyện" aria-label="Về trang truyện"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5"/><path d="M9.5 21v-6h5v6"/></svg></button></div><button id="nextChapter" onclick="moveChapter(1)">Chương sau →</button></div>
 <section class="chapter-comments"><div class="chapter-comments-head"><h3>Bình luận</h3><label class="comment-sort-label">Sắp xếp <select id="chapterCommentSort" onchange="setChapterCommentSort(this.value)"><option value="newest">Mới nhất</option><option value="interaction">Tương tác nhiều nhất</option><option value="all">Tất cả bình luận</option></select></label></div><div id="chapterCommentsList"></div><div id="chapterCommentComposer"></div></section>
 </div>
 </main>
@@ -1285,14 +1285,12 @@ function icon(type){
  return `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${p[type]}</svg>`;
 }
 function storyCommentCount(s){
- let n=0;
- s.chapters.forEach((ch,ci)=>ch.paras.forEach((p,pi)=>n+=(comments[`${s.id}_${ci}_${pi}`]||[]).length));
- return n;
+ return storyCommentKeys(s).reduce((n,key)=>n+(comments[key]||[]).length,0);
 }
 function slugify(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/đ/g,'d').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
 function storyPath(story){return '/truyen/'+slugify(story.title)}
 function chapterPath(story,ci){return storyPath(story)+'/chuong-'+(ci+1)}
-function setRoute(path,replace=false,state={}){if(location.pathname===path){history.replaceState(state,'',path);return}history[replace?'replaceState':'pushState'](state,'',path)}
+function setRoute(path,replace=false,state={}){if(location.pathname===path)return;replace?location.replace(path):location.assign(path)}
 function storyBySlug(slug){return stories.find(x=>slugify(x.title)===slug)}
 function profileUsername(){return slugify(userDisplayName(authUser)||String(authUser?.email||'thanh-vien').split('@')[0])||'thanh-vien'}
 function profilePath(){return '/user/'+profileUsername()}
@@ -1533,9 +1531,13 @@ function read(id,chapterOverride=null,updateRoute=true){
  s.views=(s.views||0)+1; save();
  renderChapter(chapterOverride===null ? (pr.scroll||0) : 0);
 }
+function isImportedChapterMetadata(text,index=0){
+ if(index!==0)return false;
+ const t=String(text||'').replace(/\s+/g,' ').trim();
+ // Chỉ ẩn đúng dòng metadata EPUB kiểu: TÊN TRUYỆN - CHƯƠNG ... Tác giả: ... Edit: ...
+ return /Tác giả\s*:/i.test(t) && /Edit\s*:/i.test(t);
+}
 function formatImportedOpeningParagraph(text,index=0){
- // V21.7: tuyệt đối không cắt/xóa nội dung chương ở bước hiển thị.
- // Việc dọn metadata EPUB sẽ xử lý riêng khi import để tránh mất nội dung trên mobile.
  const clean=String(text||'').replace(/\r\n?/g,'\n').trim();
  return renderInlineChapterFormatting(clean).replace(/\n+/g,'<br>');
 }
@@ -1552,6 +1554,7 @@ function renderChapter(restoreScroll=0){
  document.getElementById('chapterTitle').textContent=ch.title;
  document.getElementById('chapter').innerHTML=ch.paras.map((p,i)=>{
   let key=`${s.id}_${currentChapter}_${i}`,c=comments[key]||[];
+  if(isImportedChapterMetadata(p,i))return '';
   return `<div class="para-wrap" id="para_${key}" data-comment-key="${key}"><p class="para" ondblclick="openParagraphComposer('${key}')" onpointerdown="startLongPress(event,'${key}')" onpointerup="cancelLongPress()" onpointercancel="cancelLongPress()" onpointermove="cancelLongPress()">${formatImportedOpeningParagraph(p,i)}</p>${c.length?`<button class="comment-btn" onclick="event.stopPropagation();toggleComments('${key}',true)" aria-label="Xem ${c.length} bình luận">${icon('comment')}<span>${c.length}</span></button>`:''}</div>`;
  }).join('');
  renderChapterComments();
@@ -1969,7 +1972,10 @@ function updateAuthUI(){
  if(activeCommentKey&&document.getElementById('paragraphCommentPanel')?.classList.contains('open'))toggleComments(activeCommentKey,true);
 }
 async function fetchAllRows(table,orderCol){const out=[];for(let from=0;;from+=1000){let q=sb.from(table).select('*').range(from,from+999);if(orderCol)q=q.order(orderCol,{ascending:true});const {data,error}=await q;if(error)throw error;out.push(...(data||[]));if(!data||data.length<1000)break;}return out}
-async function loadCloudStories(){try{const results=await Promise.allSettled([fetchAllRows('stories','id'),fetchAllRows('chapters','id'),fetchAllRows('paragraphs','id')]);const storyRows=results[0].status==='fulfilled'?results[0].value:[];const chapterRows=results[1].status==='fulfilled'?results[1].value:[];const paragraphRows=results[2].status==='fulfilled'?results[2].value:[];if(results[1].status==='rejected')console.warn('chapter cloud read',results[1].reason);if(results[2].status==='rejected')console.warn('paragraph cloud read',results[2].reason);if(!storyRows.length){console.warn('Không đọc được truyện công khai từ Supabase hoặc bảng stories đang trống.');return false;}const parasByChapter={};for(const p of paragraphRows){(parasByChapter[p.chapter_id]||(parasByChapter[p.chapter_id]=[])).push(p)}Object.values(parasByChapter).forEach(a=>a.sort((x,y)=>(Number(x.paragraph_number)||0)-(Number(y.paragraph_number)||0)));const chaptersByStory={};for(const c of chapterRows){if(c.published===false)continue;(chaptersByStory[c.story_id]||(chaptersByStory[c.story_id]=[])).push(c)}Object.values(chaptersByStory).forEach(a=>a.sort((x,y)=>(Number(x.chapter_number)||0)-(Number(y.chapter_number)||0)));const mapped=storyRows.filter(r=>r.published!==false).map(r=>({id:Number(r.id),title:r.title||r.name||`Truyện ${r.id}`,author:r.author||'Alex',mainGenre:r.main_genre||r.genre||'Hiện đại',genre:r.genre||r.main_genre||'Hiện đại',subtags:Array.isArray(r.subtags)?r.subtags:[],status:['completed','complete','done','Đã hoàn thành'].includes(r.status)?'completed':'ongoing',summary:r.summary||r.description||r.introduction||'',cover:r.cover_url||r.cover||'',views:Number(r.views)||0,likes:Number(r.likes)||0,updatedAt:r.updated_at||r.created_at||'',chapters:(chaptersByStory[r.id]||[]).map(c=>({id:Number(c.id),title:c.title||`Chương ${c.chapter_number||''}`,publishState:'published',paras:(parasByChapter[c.id]||[]).flatMap(p=>String(p.content||'').replace(/\r\n?/g,'\n').split(/\n+/).map(x=>x.trim()).filter(Boolean))}))}));if(mapped.length){stories=mapped.sort((a,b)=>(Date.parse(b.updatedAt)||0)-(Date.parse(a.updatedAt)||0));localStorage.setItem('nha_co_alex_stories',JSON.stringify(stories));render();if(introStory){const fresh=stories.find(x=>Number(x.id)===Number(introStory.id));if(fresh)introStory=fresh}return true;}return false;}catch(e){console.warn('story cloud sync',e);return false;}}
+async function loadCloudStories(){try{const results=await Promise.allSettled([fetchAllRows('stories','id'),fetchAllRows('chapters','id'),fetchAllRows('paragraphs','id')]);const storyRows=results[0].status==='fulfilled'?results[0].value:[];const chapterRows=results[1].status==='fulfilled'?results[1].value:[];const paragraphRows=results[2].status==='fulfilled'?results[2].value:[];if(results[1].status==='rejected')console.warn('chapter cloud read',results[1].reason);if(results[2].status==='rejected')console.warn('paragraph cloud read',results[2].reason);if(!storyRows.length){console.warn('Không đọc được truyện công khai từ Supabase hoặc bảng stories đang trống.');return false;}const parasByChapter={};for(const p of paragraphRows){(parasByChapter[p.chapter_id]||(parasByChapter[p.chapter_id]=[])).push(p)}Object.values(parasByChapter).forEach(a=>a.sort((x,y)=>(Number(x.paragraph_number)||0)-(Number(y.paragraph_number)||0)));const chaptersByStory={};for(const c of chapterRows){if(c.published===false)continue;(chaptersByStory[c.story_id]||(chaptersByStory[c.story_id]=[])).push(c)}Object.values(chaptersByStory).forEach(a=>a.sort((x,y)=>(Number(x.chapter_number)||0)-(Number(y.chapter_number)||0)));const mapped=storyRows.filter(r=>r.published!==false).map(r=>({id:Number(r.id),title:r.title||r.name||`Truyện ${r.id}`,author:r.author||'Alex',mainGenre:['Hiện đại','Cổ đại','Tương lai','Huyền ảo'].includes(r.main_genre||r.genre)?(r.main_genre||r.genre):'Hiện đại',genre:r.genre||r.main_genre||'Hiện đại',subtags:Array.isArray(r.subtags)?r.subtags:[],status:['completed','complete','done','Đã hoàn thành'].includes(r.status)?'completed':'ongoing',summary:r.summary||r.description||r.introduction||'',cover:r.cover_url||r.cover||'',views:Number(r.views)||0,likes:Number(r.likes)||0,updatedAt:r.updated_at||r.created_at||'',chapters:(chaptersByStory[r.id]||[]).map(c=>({id:Number(c.id),title:c.title||`Chương ${c.chapter_number||''}`,publishState:'published',paras:(parasByChapter[c.id]||[]).flatMap(p=>String(p.content||'').replace(/\r\n?/g,'\n').split(/\n+/).map(x=>x.trim()).filter(Boolean))}))}));if(mapped.length){stories=mapped.sort((a,b)=>(Date.parse(b.updatedAt)||0)-(Date.parse(a.updatedAt)||0));
+ const realStory=stories.find(x=>Number(x.id)===2&&String(x.title).toLowerCase().includes('làm xác sống'));
+ if(realStory && Number(chapterLikes['2_0'])===17){chapterLikes['2_0']=0;likedChapters=likedChapters.filter(x=>x!=='2_0');localStorage.setItem('nha_co_alex_chapter_likes',JSON.stringify(chapterLikes));localStorage.setItem('nha_co_alex_liked_chapters',JSON.stringify(likedChapters));}
+ localStorage.setItem('nha_co_alex_stories',JSON.stringify(stories));render();if(introStory){const fresh=stories.find(x=>Number(x.id)===Number(introStory.id));if(fresh)introStory=fresh}return true;}return false;}catch(e){console.warn('story cloud sync',e);return false;}}
 async function initAuth(){
  const {data}=await sb.auth.getSession();
  authUser=data.session?.user||null;

@@ -154,12 +154,16 @@ body.gate-locked #secretGate{display:grid;visibility:visible}
 .notif-empty{padding:20px 5px;text-align:center;color:var(--muted)}
 .profile-shell{max-width:760px;margin:auto}
 .profile-card{display:flex;gap:16px;align-items:center;padding:18px;border:1px solid var(--line);border-radius:16px;background:var(--card)}
-.profile-card-main{display:flex;align-items:center;gap:16px;min-width:0;flex:1}.profile-edit-top{margin-left:auto;white-space:nowrap;border:1px solid var(--line);background:var(--soft);color:var(--fg);border-radius:11px;padding:8px 12px;font:inherit;font-size:13px;cursor:pointer}
+.profile-card-main{display:flex;align-items:center;gap:16px;min-width:0;flex:1}.profile-name-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.profile-meta-row{display:flex;gap:8px 14px;align-items:center;flex-wrap:wrap;margin-top:14px;color:var(--muted);font-size:13px}.profile-meta-link{border:0;background:transparent;color:inherit;padding:0;font:inherit;cursor:pointer}.profile-meta-link:hover{color:var(--fg);text-decoration:underline}.profile-edit-top{margin-left:auto;white-space:nowrap;border:1px solid var(--line);background:var(--soft);color:var(--fg);border-radius:11px;padding:8px 12px;font:inherit;font-size:13px;cursor:pointer}
 .profile-avatar{width:76px;height:76px;border-radius:50%;object-fit:cover;background:var(--soft);border:1px solid var(--line)}
 .profile-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}
 .profile-tabs button{appearance:none;border:1px solid var(--line);background:var(--soft);color:var(--text);border-radius:12px;padding:8px 12px;font:inherit;font-size:13px;cursor:pointer;transition:transform .15s ease,filter .15s ease,border-color .15s ease}
 .profile-tabs button:hover{transform:translateY(-1px);filter:brightness(.98)}
-.profile-tabs button.active{border-color:var(--accent);box-shadow:inset 0 -2px 0 var(--accent);font-weight:650}
+.profile-tabs button.active{font-weight:650}
+.profile-tabs button:nth-child(1).active{border-color:#df91ad;box-shadow:inset 0 -2px 0 #df91ad}
+.profile-tabs button:nth-child(2).active{border-color:#aa91d9;box-shadow:inset 0 -2px 0 #aa91d9}
+.profile-tabs button:nth-child(3).active{border-color:#73bdae;box-shadow:inset 0 -2px 0 #73bdae}
+.profile-tabs button:nth-child(4).active{border-color:#d8b85f;box-shadow:inset 0 -2px 0 #d8b85f}
 [data-theme="pastel"] .profile-tabs button:nth-child(1),body.pastel .profile-tabs button:nth-child(1){background:#f8e3ed;border-color:#efc4d2}
 [data-theme="pastel"] .profile-tabs button:nth-child(2),body.pastel .profile-tabs button:nth-child(2){background:#eee5fa;border-color:#d8caef}
 [data-theme="pastel"] .profile-tabs button:nth-child(3),body.pastel .profile-tabs button:nth-child(3){background:#dff3ee;border-color:#c4e5dc}
@@ -998,7 +1002,7 @@ document.body.classList.add('gate-locked');
 <main id="storyIntro" class="container hidden"><div class="story-intro">
   <div class="story-intro-top"><div class="intro-cover" id="introCover"></div><div><h1 class="intro-title" id="introTitle"></h1><div class="muted" id="introAuthor"></div><div class="intro-tags"><span class="intro-tag" id="introGenre"></span><span class="intro-tag" id="introStatus"></span></div><div id="introSubtags" class="intro-subtags"></div><p id="introSummary" class="muted"></p><div class="stats" id="introStats"></div><div class="intro-actions"><button class="btn" id="introReadBtn" onclick="startFromIntro()">Bắt đầu đọc</button><button class="btn" id="introSaveBtn" onclick="toggleIntroSave()">☆ Lưu truyện</button></div></div></div>
   <div class="intro-tabs"><button class="active" onclick="showIntroTab('chapters',this)">Danh sách chương</button><button onclick="showIntroTab('reviews',this)">Review</button><button onclick="showIntroTab('comments',this)">Bình luận</button></div>
-  <div id="introChapters" class="intro-pane active chapter-list"></div><div id="introReviews" class="intro-pane"><div class="intro-community-toolbar"><strong>Review</strong><button class="btn" type="button" onclick="toggleReviewComposer()">✎ <span id="reviewComposerLabel">Viết review</span></button></div><div id="reviewComposer"></div><div id="introReviewList" class="review-list"></div></div><div id="introComments" class="intro-pane all-comments"><div class="intro-community-toolbar"><strong>Bình luận về truyện</strong></div><div id="storyCommentComposer"></div><div id="storyCommentList" class="story-comment-page"></div><div id="storyCommentPagination" class="story-comment-pagination"></div></div>
+  <div id="introChapters" class="intro-pane active chapter-list"></div><div id="introReviews" class="intro-pane"><div class="intro-community-toolbar"><strong>Review</strong><button class="btn" type="button" onclick="toggleReviewComposer()">✎ <span id="reviewComposerLabel">Viết review</span></button></div><div id="reviewComposer"></div><div id="introReviewList" class="review-list"></div></div><div id="introComments" class="intro-pane all-comments"><div class="intro-community-toolbar"><strong>Bình luận</strong></div><div id="storyCommentComposer"></div><div id="storyCommentList" class="story-comment-page"></div><div id="storyCommentPagination" class="story-comment-pagination"></div></div>
 </div></main>
 
 <main id="reader" class="container hidden">
@@ -1020,7 +1024,7 @@ document.body.classList.add('gate-locked');
   <div class="profile-shell">
     <div class="profile-card">
       <div class="profile-card-main"><img id="profileAvatar" class="profile-avatar" alt="">
-      <div><h2 id="profileName" style="margin:0 0 5px">Thành viên</h2><div id="profileEmail" class="muted"></div></div></div>
+      <div><div class="profile-name-line"><h2 id="profileName" style="margin:0 0 5px">Thành viên</h2><span id="profileAdminBadge" class="admin-badge hidden">ADMIN</span></div><div id="profileEmail" class="muted"></div><div id="profileMeta" class="profile-meta-row"></div></div></div>
       <button class="profile-edit-top" onclick="openProfile('edit')">Chỉnh sửa hồ sơ</button>
     </div>
     <div class="profile-tabs">
@@ -1301,8 +1305,8 @@ function commentLocationHTMLForStory(key){
 }
 function renderStoryCommentComposer(){
  const box=document.getElementById('storyCommentComposer');if(!box||!introStory)return;
- if(!authUser){box.innerHTML=`<button class="btn" type="button" onclick="requestCommentLogin('bình luận về truyện')">Viết bình luận về truyện…</button>`;return}
- box.innerHTML=`<form class="intro-compose" onsubmit="submitStoryComment(event)"><textarea id="storyCommentInput" maxlength="5000" placeholder="Viết bình luận về truyện…" aria-label="Bình luận về truyện"></textarea><div class="intro-compose-actions">${emojiPickerHTML('storyCommentInput')}<button type="submit">Gửi</button></div></form>`;
+ if(!authUser){box.innerHTML=`<button class="btn" type="button" onclick="requestCommentLogin('bình luận')">Viết bình luận…</button>`;return}
+ box.innerHTML=`<form class="intro-compose" onsubmit="submitStoryComment(event)"><textarea id="storyCommentInput" maxlength="5000" placeholder="Viết bình luận…" aria-label="Bình luận"></textarea><div class="intro-compose-actions">${emojiPickerHTML('storyCommentInput')}<button type="submit">Gửi</button></div></form>`;
 }
 function submitStoryComment(event){
  event.preventDefault();if(!introStory)return;if(!authUser){requestCommentLogin('bình luận về truyện');return}
@@ -1774,7 +1778,7 @@ async function initAuth(){
    if(location.pathname.startsWith('/user/'))routeFromLocation();
  });
 }
-function isSiteAdmin(){return !!authUser && profileUsername()==='thao-tran'}
+function isSiteAdmin(){return !!authUser && (profileUsername()==='thao-tran'||slugify(authUser?.user_metadata?.full_name||authUser?.user_metadata?.name||'')==='thao-tran')}
 let adminLibraryTab='published',managedDrafts=JSON.parse(localStorage.getItem('nha_managed_drafts')||'[]'),editingManagedStoryId=null,activeManagedStory=null,activeManagedSource='published',activeManagedChapter=-1,chapterAutosaveTimer=null;
 function persistManaged(){localStorage.setItem('nha_managed_drafts',JSON.stringify(managedDrafts));save()}
 function ensureChapterStates(st){(st.chapters||[]).forEach(ch=>{if(!ch.publishState)ch.publishState='published'});return st}
@@ -1920,11 +1924,48 @@ async function saveProfileChanges(){
  setTimeout(()=>openProfile('profile'),350);
 }
 let profileRequestId=0;
+function profileLocalCounts(userId){
+ let commentCount=0,reviewCount=0;
+ for(const list of Object.values(comments||{}))for(const row of (list||[]))if(row?.userId===userId)commentCount++;
+ for(const list of Object.values(reviews||{}))for(const row of (list||[]))if(row?.userId===userId)reviewCount++;
+ const readingCount=ownReadingStoryCount(userId);
+ return {commentCount,reviewCount,readingCount};
+}
+function ownReadingStoryCount(userId){
+ if(!authUser||userId!==authUser.id)return null;
+ return Object.keys(progress||{}).length;
+}
+function profileJoinDate(profile,own){
+ const raw=profile?.created_at||(own?authUser?.created_at:null);if(!raw)return '';
+ const d=new Date(raw);if(Number.isNaN(d.getTime()))return '';
+ return d.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'});
+}
+function renderProfileMeta(profile,own){
+ const el=document.getElementById('profileMeta');if(!el)return;
+ const id=profile?.id||(own?authUser?.id:null),counts=profileLocalCounts(id),joined=profileJoinDate(profile,own),parts=[];
+ if(joined)parts.push(`<span>📅 Tham gia từ ${esc(joined)}</span>`);
+ if(own)parts.push(`<button class="profile-meta-link" type="button" onclick="openProfile('reading')">📚 Đã đọc ${counts.readingCount||0} truyện</button>`);
+ parts.push(`<button class="profile-meta-link" type="button" onclick="openProfileActivity('comments')">💬 ${counts.commentCount} bình luận</button>`);
+ parts.push(`<button class="profile-meta-link" type="button" onclick="openProfileActivity('reviews')">📝 ${counts.reviewCount} review</button>`);
+ el.innerHTML=parts.join('<span>·</span>');
+}
+function openProfileActivity(kind){openProfile('activity');renderProfileActivity(kind)}
+function renderProfileActivity(kind='all'){
+ const c=document.getElementById('profileContent');if(!c||!authUser)return;
+ const rows=[];
+ if(kind!=='reviews')for(const [key,list] of Object.entries(comments||{}))for(const row of (list||[]))if(row?.userId===authUser.id)rows.push({type:'comment',text:row.text||'',createdAt:row.createdAt||'',key});
+ if(kind!=='comments')for(const [storyId,list] of Object.entries(reviews||{}))for(const row of (list||[]))if(row?.userId===authUser.id)rows.push({type:'review',text:row.text||'',createdAt:row.createdAt||'',storyId});
+ rows.sort((a,b)=>(Date.parse(b.createdAt)||0)-(Date.parse(a.createdAt)||0));
+ const label=kind==='comments'?'Bình luận':kind==='reviews'?'Review':'Hoạt động';
+ c.innerHTML=`<h3>${label}</h3>${rows.length?rows.map(r=>`<article class="community-card"><div class="community-body">${esc(r.text)}</div><div class="muted" style="margin-top:8px;font-size:12px">${r.type==='review'?'Review':'Bình luận'} · ${r.createdAt?commentTime(r):''}</div></article>`).join(''):'<p class="muted">Chưa có hoạt động nào.</p>'}`;
+}
 function setProfileHeader(profile,own=false){
  document.getElementById('profileName').textContent=profile.display_name||'Thành viên';
- document.getElementById('profileEmail').textContent=own?(authUser?.email||''):'';
+ const email=document.getElementById('profileEmail');email.textContent=own?(authUser?.email||''):'';email.style.pointerEvents='none';email.style.textDecoration='none';
  const avatar=document.getElementById('profileAvatar');
  avatar.src=profile.avatar_url||'';avatar.style.visibility=profile.avatar_url?'visible':'hidden';
+ const badge=document.getElementById('profileAdminBadge');if(badge)badge.classList.toggle('hidden',!(own&&isSiteAdmin()));
+ renderProfileMeta(profile,own);
  document.querySelector('.profile-edit-top').classList.toggle('hidden',!own);
  document.querySelector('.profile-tabs').classList.toggle('hidden',!own);
 }
@@ -1975,11 +2016,11 @@ function openProfile(section='profile',updateRoute=true){
  ++profileRequestId;
  if(updateRoute)setRoute(profilePath(),false,{profileSection:section});
  displayPage('profilePage');
- setProfileHeader({display_name:userDisplayName(authUser),avatar_url:userAvatar(authUser)},true);
+ setProfileHeader({id:authUser.id,display_name:userDisplayName(authUser),avatar_url:userAvatar(authUser),created_at:authUser.created_at},true);
  document.querySelectorAll('[data-profile-tab]').forEach(b=>b.classList.toggle('active',b.dataset.profileTab===section));
  const c=document.getElementById('profileContent');
  if(section==='profile')c.innerHTML=`<h3>Hồ sơ</h3>${memberProfile?.bio?`<p>${esc(memberProfile.bio)}</p>`:'<p class="muted">Đây là góc riêng của bạn trong Nhà có Alex.</p>'}`;
- if(section==='activity')c.innerHTML='<h3>Hoạt động</h3><p class="muted">Tim và bình luận của bạn sẽ được gom ở đây khi mình nối phần tương tác vào Supabase.</p>';
+ if(section==='activity')renderProfileActivity('all');
  if(section==='saved')c.innerHTML='<h3>Truyện đã lưu</h3><p class="muted">Kệ truyện của bạn sẽ nằm ở đây. Kệ có thể đặt Công khai hoặc Riêng tư ngay tại trang này.</p>';
  if(section==='reading')c.innerHTML='<h3>Đang đọc</h3><p class="muted">Những truyện đang đọc dở sẽ xuất hiện ở đây.</p>';
  if(section==='edit'){pendingAvatarFile=null;c.innerHTML=profileEditMarkup()}

@@ -816,6 +816,33 @@ body.pastel .notif-filters button:nth-child(6){background:#f9e5df;border-color:#
 
 .intro-subtags{display:flex;gap:6px;flex-wrap:wrap;margin:7px 0 2px}.intro-subtag{font-size:11px;padding:3px 8px;border-radius:999px;background:color-mix(in srgb,var(--accent) 10%,var(--card));border:1px solid color-mix(in srgb,var(--accent) 22%,var(--line));color:var(--muted)}
 .admin-library-shell{max-width:900px;margin:30px auto}.admin-library-head{display:flex;justify-content:space-between;align-items:center;gap:16px}.admin-library-head h2{margin-bottom:4px}.admin-library-tabs{display:flex;gap:8px;border-bottom:1px solid var(--line);margin:22px 0 16px}.admin-library-tabs button{border:0;background:transparent;color:var(--muted);padding:10px 14px}.admin-library-tabs button.active{color:var(--fg);border-bottom:2px solid var(--accent)}.admin-library-list{display:grid;gap:12px}.manage-story-row{display:grid;grid-template-columns:64px 1fr auto;gap:14px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}.manage-cover{width:64px;aspect-ratio:3/4;border-radius:8px;background:var(--soft);display:grid;place-items:center;text-align:center;font-size:10px;overflow:hidden}.manage-cover img{width:100%;height:100%;object-fit:cover}.manage-story-row h3{margin:0 0 5px;font-size:15px}.manage-meta{font-size:12px;color:var(--muted)}.manage-actions{display:flex;gap:7px;flex-wrap:wrap}.manage-actions button{border:1px solid var(--line);background:var(--soft);color:var(--fg);border-radius:9px;padding:7px 10px}.story-composer-modal{position:fixed;inset:0;background:rgba(0,0,0,.28);z-index:80;display:grid;place-items:center;padding:20px}.story-composer-modal.hidden{display:none}.story-composer-card{width:min(680px,100%);max-height:88vh;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.18)}.story-composer-head{display:flex;justify-content:space-between;align-items:center}.story-composer-head h2{margin:0}.story-composer-head>button{border:0;background:transparent;color:var(--fg);font-size:24px}.story-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}.story-composer-card label{display:grid;gap:6px;font-size:12px;color:var(--muted);margin:10px 0}.story-composer-card input,.story-composer-card select,.story-composer-card textarea{width:100%;box-sizing:border-box;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:10px;padding:10px;font:inherit}.story-composer-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:16px}.story-composer-actions button{border:1px solid var(--line);background:var(--soft);color:var(--fg);border-radius:10px;padding:9px 13px}@media(max-width:640px){.story-form-grid{grid-template-columns:1fr}.manage-story-row{grid-template-columns:52px 1fr}.manage-cover{width:52px}.manage-actions{grid-column:1/-1}.admin-library-head{align-items:flex-start}}
+
+/* V17.7 polish: admin controls, header alignment, review chevron, theme contrast */
+.nav{align-items:center}
+#memberArea{align-items:center}
+.notif-wrap,.account-wrap{display:flex;align-items:center}
+.bell-btn{width:40px!important;height:40px!important;min-width:40px!important;padding:0!important;align-self:center!important}
+.bell-btn .ico{width:22px!important;height:22px!important;stroke-width:1.9!important}
+.linkish,.story-admin-actions>button,.chapter-admin-actions button{border-radius:10px!important;padding:8px 11px;border:1px solid var(--line);color:var(--fg);background:var(--soft);font:inherit;cursor:pointer}
+body.pastel .story-admin-top .linkish{background:#dff3ee!important;border-color:#c4e5dc!important;color:#496b63!important}
+body.pastel .story-admin-actions .btn{background:#eee5fa!important;border-color:#d8caef!important;color:#655879!important}
+body.pastel #storyVisibilityBtn{background:#fff0c9!important;border-color:#efdca5!important;color:#796636!important}
+body.pastel .danger-btn,body.pastel .chapter-admin-actions button:last-child{background:#f8e3ed!important;border-color:#efc4d2!important;color:#8a5365!important}
+body.pastel .chapter-admin-actions button:first-child{background:#e6eefb!important;border-color:#cad9ef!important;color:#53647e!important}
+body.night .linkish,body.night .story-admin-actions>button,body.night .chapter-admin-actions button{background:#303030!important;border-color:#4b4b4b!important;color:#f1f1f1!important}
+body.night .danger-btn,body.night .chapter-admin-actions button:last-child{background:#3b292d!important;border-color:#70434b!important;color:#ffc7cf!important}
+body.purplenight .linkish,body.purplenight .story-admin-actions>button,body.purplenight .chapter-admin-actions button{background:#342d43!important;border-color:#554865!important;color:#f3edf8!important}
+body.purplenight .danger-btn,body.purplenight .chapter-admin-actions button:last-child{background:#452d3b!important;border-color:#71465e!important;color:#ffd0e0!important}
+.editor-review-toggle{gap:12px;text-align:left}
+.review-chevron{width:17px;height:17px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .2s ease}
+.editor-review-toggle.open .review-chevron{transform:rotate(180deg)}
+.editor-review-content.editor-review-simple{padding:14px 15px 12px;border:0;background:transparent}
+.editor-review-simple .review-body{padding:0;line-height:1.7}
+.editor-review-simple .review-actions{margin-top:10px}
+.intro-subtags{margin-top:8px!important}
+.intro-subtag{background:color-mix(in srgb,#8d7ca8 12%,var(--card))!important;border-color:color-mix(in srgb,#8d7ca8 28%,var(--line))!important;color:color-mix(in srgb,#746486 75%,var(--fg))!important}
+body.night .intro-subtag{background:#2c2931!important;border-color:#4b4454!important;color:#d2c6df!important}
+body.purplenight .intro-subtag{background:#302a3b!important;border-color:#554866!important;color:#d8c8e8!important}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -871,7 +898,7 @@ document.body.classList.add('gate-locked');
     </span>
   <span>Nhà có Alex</span>
 </div>
-<button onclick="goHome()">Trang chủ</button>
+<button id="homeNavBtn" onclick="goHome()">Trang chủ</button>
 <div class="account-area">
   <button id="loginBtn" class="auth-login" onclick="show('login')">Đăng nhập</button>
   <div id="memberArea" class="account-area" style="display:none;margin-left:0">
@@ -1158,6 +1185,8 @@ function displayPage(id){
  closeParagraphComments();closeEmojiPicker();toggleToc(false);toggleFontMenu(false);toggleThemeMenu(false);
  document.getElementById('accountMenu')?.classList.remove('open');
  document.getElementById('notifPanel')?.classList.remove('open');
+ const homeNavBtn=document.getElementById('homeNavBtn');
+ if(homeNavBtn)homeNavBtn.style.display=id==='home'?'none':'';
 }
 
 function requestCommentLogin(kind='bình luận'){localStorage.setItem('nha_return_path',location.pathname);show('login');let m=document.getElementById('authMessage');if(m)m.textContent='Đăng nhập để '+kind+'.'}
@@ -1313,7 +1342,7 @@ function renderStoryReviews(){
  const initial=mine?(mine.html||esc(mine.text||'').replace(/\n/g,'<br>')):'';
  composer.innerHTML=reviewComposerOpen?`<form class="intro-compose" onsubmit="submitStoryReview(event)"><div class="editor-toolbar"><select aria-label="Cỡ chữ" onchange="reviewEditorCommand('fontSize',this.value);this.selectedIndex=0"><option value="">Cỡ chữ</option><option value="2">Nhỏ</option><option value="3">Vừa</option><option value="4">Lớn</option><option value="5">Rất lớn</option></select><button type="button" onclick="reviewEditorCommand('bold')"><b>B</b></button><button type="button" onclick="reviewEditorCommand('italic')"><i>I</i></button><button type="button" onclick="reviewEditorCommand('underline')"><u>U</u></button><button type="button" onclick="markReviewSpoiler()">Spoil</button></div><div id="storyReviewEditor" class="review-editor" contenteditable="true" data-placeholder="Chia sẻ cảm nhận của bạn về truyện này…">${initial}</div><div class="intro-compose-actions">${emojiPickerHTML('storyReviewEditor')}<button type="button" onclick="reviewComposerOpen=false;renderStoryReviews()">Hủy</button><button type="submit">${mine?'Lưu':'Đăng review'}</button></div></form>`:'';
  const rows=[...storyReviews()],admin=rows.find(isAdminReview),others=rows.filter(r=>!isAdminReview(r)).sort((a,b)=>(Date.parse(a.createdAt)||0)-(Date.parse(b.createdAt)||0));
- let html='';if(admin)html+=`<div class="editor-review-block"><button class="editor-review-toggle" type="button" onclick="const x=this.nextElementSibling;x.hidden=!x.hidden;this.querySelector('span').textContent=x.hidden?'⌄':'⌃'">Review không spoil của người edit <span>⌄</span></button><div class="editor-review-content" hidden>${reviewCardHTML(admin,true)}</div></div>`;
+ let html='';if(admin){const adminBody=admin.html?safeReviewHTML(admin.html):esc(admin.text||'').replace(/\n/g,'<br>');html+=`<div class="editor-review-block"><button class="editor-review-toggle" type="button" aria-expanded="false" onclick="const x=this.nextElementSibling,open=x.hidden;x.hidden=!open;this.setAttribute('aria-expanded',String(open));this.classList.toggle('open',open)"><span>Review không spoil của người edit</span><svg class="review-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 9 5 5 5-5"/></svg></button><div class="editor-review-content editor-review-simple" hidden><div class="review-body" onclick="if(event.target.classList.contains('review-spoiler'))toggleReviewSpoiler(event.target)">${adminBody}</div><div class="review-actions"><button type="button">♡ ${Number(admin.likes)||0}</button><span>💬 ${Number(admin.comments)||0} bình luận</span></div></div></div>`;}
  if(others.length)html+=`<div class="review-section-label">Review của mọi người</div>${others.map(r=>reviewCardHTML(r)).join('')}`;else if(!admin)html='<p class="muted">Chưa có review nào cho truyện này.</p>';else html+='<p class="muted">Chưa có review nào khác.</p>';
  listBox.innerHTML=html;
 }

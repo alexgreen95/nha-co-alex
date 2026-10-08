@@ -383,6 +383,7 @@ body.smoky{
 .reading-content p{
   text-align:justify!important;
   text-justify:inter-word;
+  white-space:pre-wrap;
 }
 
 /* Homepage tabs */
@@ -936,6 +937,9 @@ body.pastel .chapter-end-nav #nextChapter{background:#dcebf4;border-color:#c6dfe
 #memberArea{gap:10px!important}
 #memberArea .notif-wrap{margin-left:-2px;margin-right:1px}
 @media(max-width:640px){#memberArea .notif-wrap{margin-left:0;margin-right:0}}
+
+.home-comment-card{cursor:pointer}
+.home-comment-card:active{transform:translateY(1px)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1049,7 +1053,7 @@ document.body.classList.add('gate-locked');
       <button class="sort-main" id="sortMain" onclick="toggleSortMenu(event)"><span id="sortLabel">Sắp xếp theo</span><svg viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></svg></button>
       <div class="sort-menu" id="sortMenu">
         <div class="sort-row"><button onclick="toggleSortSub(event,this)">Thời gian <span>›</span></button><div class="sort-submenu"><button class="sort-choice" data-sort="updated_desc" onclick="chooseSort(event,'time','updated_desc','Mới cập nhật nhất')">Mới cập nhật nhất</button><button class="sort-choice" data-sort="updated_asc" onclick="chooseSort(event,'time','updated_asc','Cũ nhất')">Cũ nhất</button></div></div>
-        <div class="sort-row"><button onclick="toggleSortSub(event,this)">Tình trạng <span>›</span></button><div class="sort-submenu"><button onclick="chooseSort(event,'status','','Tất cả tình trạng')">Tất cả</button><button onclick="chooseSort(event,'status','ongoing','Đang viết')">Đang viết</button><button onclick="chooseSort(event,'status','completed','Đã hoàn thành')">Đã hoàn thành</button></div></div>
+        <div class="sort-row"><button onclick="toggleSortSub(event,this)">Tình trạng <span>›</span></button><div class="sort-submenu"><button onclick="chooseSort(event,'status','','Tất cả tình trạng')">Tất cả</button><button onclick="chooseSort(event,'status','ongoing','Đang làm')">Đang làm</button><button onclick="chooseSort(event,'status','completed','Đã hoàn thành')">Đã hoàn thành</button></div></div>
         <div class="sort-row"><button onclick="toggleSortSub(event,this)">Lượt đọc <span>›</span></button><div class="sort-submenu"><button onclick="chooseSort(event,'views','views_desc','Lượt đọc nhiều nhất')">Nhiều nhất → ít nhất</button><button onclick="chooseSort(event,'views','views_asc','Lượt đọc ít nhất')">Ít nhất → nhiều nhất</button></div></div>
         <div class="sort-row"><button onclick="toggleSortSub(event,this)">Thể loại <span>›</span></button><div class="sort-submenu"><button onclick="chooseSort(event,'genre','','Tất cả thể loại')">Tất cả</button><button onclick="chooseSort(event,'genre','Hiện đại','Hiện đại')">Hiện đại</button><button onclick="chooseSort(event,'genre','Cổ đại','Cổ đại')">Cổ đại</button><button onclick="chooseSort(event,'genre','Tương lai','Tương lai')">Tương lai</button><button onclick="chooseSort(event,'genre','Huyền ảo','Huyền ảo')">Huyền ảo</button></div></div>
       </div>
@@ -1150,7 +1154,7 @@ document.body.classList.add('gate-locked');
 
 <div id="storyComposerModal" class="story-composer-modal hidden" onclick="if(event.target===this)closeStoryComposer()"><div class="story-composer-card">
   <div class="story-composer-head"><h2 id="storyComposerTitle">Truyện mới</h2><button onclick="closeStoryComposer()">×</button></div>
-  <div class="story-form-grid"><label>Tên truyện<input id="manageTitle" placeholder="Tên truyện"></label><label>Thể loại chính<select id="manageGenre"><option>Hiện đại</option><option>Cổ đại</option><option>Tương lai</option><option>Huyền ảo</option></select></label><label>Tình trạng<select id="manageStatus"><option value="ongoing">Đang viết</option><option value="completed">Đã hoàn thành</option></select></label><label>Ảnh bìa<input id="manageCover" type="file" accept="image/*"></label></div>
+  <div class="story-form-grid"><label>Tên truyện<input id="manageTitle" placeholder="Tên truyện"></label><label>Thể loại chính<select id="manageGenre"><option>Hiện đại</option><option>Cổ đại</option><option>Tương lai</option><option>Huyền ảo</option></select></label><label>Tình trạng<select id="manageStatus"><option value="ongoing">Đang làm</option><option value="completed">Đã hoàn thành</option></select></label><label>Ảnh bìa<input id="manageCover" type="file" accept="image/*"></label></div>
   <label>Giới thiệu<textarea id="manageSummary" rows="3" placeholder="Giới thiệu ngắn về truyện..."></textarea></label>
   <label>Tag phụ<input id="manageTags" placeholder="Tận thế, Nữ cường, Ngọt sủng, Sảng văn"></label>
   <div class="story-composer-actions"><button onclick="saveManagedStory('draft')">Lưu bản thảo</button><button class="btn" onclick="saveManagedStory('published')">Đăng truyện</button></div>
@@ -1367,7 +1371,7 @@ function primaryGenreClass(name){
 }
 function card(s){
  const hasProgress=progress[s.id] && (progress[s.id].chapter>0 || progress[s.id].scroll>80);
- return `<div class="card story-card clickable-story" onclick="openStory(${s.id})"><div class="story-cover">${s.cover?`<img src="${esc(s.cover)}" alt="Bìa ${esc(s.title)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`:`Nhà có Alex<br>${esc(s.title)}`}</div><div class="story-info"><h3 class="story-title-link" title="${esc(s.title)}"><span>${esc(s.title)}</span></h3><div class="muted">Tác giả: ${esc(s.author)}</div><div class="genre ${primaryGenreClass(s.mainGenre||s.genre)}">${esc(s.mainGenre||s.genre)}</div><div class="meta-row"><span class="meta-pill ${s.status==='completed'?'status-done':'status-ongoing'}">${s.status==='completed'?'✓ Đã hoàn thành':'◷ Đang viết'}</span></div>
+ return `<div class="card story-card clickable-story" onclick="openStory(${s.id})"><div class="story-cover">${s.cover?`<img src="${esc(s.cover)}" alt="Bìa ${esc(s.title)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`:`Nhà có Alex<br>${esc(s.title)}`}</div><div class="story-info"><h3 class="story-title-link" title="${esc(s.title)}"><span>${esc(s.title)}</span></h3><div class="muted">Tác giả: ${esc(s.author)}</div><div class="genre ${primaryGenreClass(s.mainGenre||s.genre)}">${esc(s.mainGenre||s.genre)}</div><div class="meta-row"><span class="meta-pill ${s.status==='completed'?'status-done':'status-ongoing'}">${s.status==='completed'?'✓ Đã hoàn thành':'◷ Đang làm'}</span></div>
  <div class="stats"><span class="stat">${icon('eye')} ${s.views||0}</span><span class="stat">${icon('heart')} ${storyLikeTotal(s)}</span><span class="stat">${icon('comment')} ${storyCommentCount(s)}</span></div>
  <div class="story-actions"><button class="btn" onclick="event.stopPropagation();${hasProgress?`read(${s.id})`:`openStory(${s.id})`}">${hasProgress?'Đọc tiếp':'Đọc'}</button> <button class="btn" onclick="event.stopPropagation();toggleSave(${s.id})">${saved.includes(s.id)?'★ Đã lưu':'☆ Lưu'}</button></div></div></div>`;
 }
@@ -1390,7 +1394,7 @@ function toggleSortSub(e,btn){e.stopPropagation();let row=btn.closest('.sort-row
 function chooseSort(e,type,value,label){e.stopPropagation();storyFilter[type]=value;document.getElementById('sortLabel').textContent='Sắp xếp theo: '+label;document.getElementById('sortMenu').classList.remove('open');document.querySelectorAll('.sort-row').forEach(x=>x.classList.remove('open'));render()}
 document.addEventListener('click',e=>{if(!e.target.closest('.sort-wrap'))document.getElementById('sortMenu')?.classList.remove('open')});
 let introStory=null;
-function openStory(id,updateRoute=true){let s=stories.find(x=>x.id===id);if(!s)return;if(updateRoute)setRoute(storyPath(s));introStory=s;displayPage('storyIntro');document.getElementById('introTitle').textContent=s.title;document.getElementById('introAuthor').textContent='Tác giả: '+s.author;document.getElementById('introGenre').textContent=s.mainGenre||s.genre;document.getElementById('introStatus').textContent=s.status==='completed'?'Đã hoàn thành':'Đang viết';document.getElementById('introSubtags').innerHTML=(s.subtags||[]).map(t=>`<span class="intro-subtag">${esc(t)}</span>`).join('');document.getElementById('introSummary').textContent=s.summary||'Một góc nhỏ để giới thiệu câu chuyện trước khi bắt đầu đọc.';document.getElementById('introStats').innerHTML=`<span class="stat">${icon('eye')} ${s.views||0}</span><span class="stat">${icon('heart')} ${storyLikeTotal(s)}</span><span class="stat">${icon('comment')} ${storyCommentCount(s)}</span>`;document.getElementById('introCover').innerHTML=s.cover?`<img src="${esc(s.cover)}" alt="Bìa ${esc(s.title)}">`:`Nhà có Alex<br>${esc(s.title)}`;let pr=progress[id];document.getElementById('introReadBtn').textContent=pr?'Đọc tiếp · '+s.chapters[Math.min(pr.chapter||0,s.chapters.length-1)].title.split(':')[0]:'Bắt đầu đọc';document.getElementById('introSaveBtn').textContent=saved.includes(id)?'★ Đã lưu':'☆ Lưu truyện';document.getElementById('introChapters').innerHTML=s.chapters.map((c,i)=>`<button onclick="read(${s.id},${i})">${esc(c.title)}</button>`).join('');renderStoryAbout();storyCommentPage=1;reviewComposerOpen=false;renderStoryReviews();renderAllStoryComments();showIntroTab('about',document.querySelector('.intro-tabs button'));window.scrollTo(0,0)}
+function openStory(id,updateRoute=true){let s=stories.find(x=>x.id===id);if(!s)return;if(updateRoute)setRoute(storyPath(s));introStory=s;displayPage('storyIntro');document.getElementById('introTitle').textContent=s.title;document.getElementById('introAuthor').textContent='Tác giả: '+s.author;document.getElementById('introGenre').textContent=s.mainGenre||s.genre;document.getElementById('introStatus').textContent=s.status==='completed'?'Đã hoàn thành':'Đang làm';document.getElementById('introSubtags').innerHTML=(s.subtags||[]).map(t=>`<span class="intro-subtag">${esc(t)}</span>`).join('');document.getElementById('introSummary').textContent=s.summary||'Một góc nhỏ để giới thiệu câu chuyện trước khi bắt đầu đọc.';document.getElementById('introStats').innerHTML=`<span class="stat">${icon('eye')} ${s.views||0}</span><span class="stat">${icon('heart')} ${storyLikeTotal(s)}</span><span class="stat">${icon('comment')} ${storyCommentCount(s)}</span>`;document.getElementById('introCover').innerHTML=s.cover?`<img src="${esc(s.cover)}" alt="Bìa ${esc(s.title)}">`:`Nhà có Alex<br>${esc(s.title)}`;let pr=progress[id];document.getElementById('introReadBtn').textContent=pr?'Đọc tiếp · '+s.chapters[Math.min(pr.chapter||0,s.chapters.length-1)].title.split(':')[0]:'Bắt đầu đọc';document.getElementById('introSaveBtn').textContent=saved.includes(id)?'★ Đã lưu':'☆ Lưu truyện';document.getElementById('introChapters').innerHTML=s.chapters.map((c,i)=>`<button onclick="read(${s.id},${i})">${esc(c.title)}</button>`).join('');renderStoryAbout();storyCommentPage=1;reviewComposerOpen=false;renderStoryReviews();renderAllStoryComments();showIntroTab('about',document.querySelector('.intro-tabs button'));window.scrollTo(0,0)}
 function renderStoryAbout(){if(!introStory)return;const v=document.getElementById('introAboutView'),b=document.getElementById('introAboutEditBtn'),e=document.getElementById('introAboutEdit');if(v)v.innerHTML=esc(introStory.summary||'Chưa có phần giới thiệu.').replace(/\n/g,'<br>');if(b)b.style.display=isSiteAdmin()?'inline-flex':'none';if(e)e.hidden=true;if(v)v.hidden=false}
 function editStoryAbout(){if(!introStory||!isSiteAdmin())return;document.getElementById('introAboutInput').value=introStory.summary||'';document.getElementById('introAboutView').hidden=true;document.getElementById('introAboutEdit').hidden=false;document.getElementById('introAboutEditBtn').style.display='none'}
 function cancelStoryAboutEdit(){renderStoryAbout()}
@@ -1458,7 +1462,28 @@ function renderStoryReviews(){
 function submitStoryReview(event){event.preventDefault();if(!introStory||!authUser)return;const ed=document.getElementById('storyReviewEditor'),html=safeReviewHTML(ed?.innerHTML||''),text=(ed?.innerText||'').trim();if(!text)return;const rows=reviews[introStory.id]||(reviews[introStory.id]=[]),mine=myStoryReview();if(mine){mine.text=text;mine.html=html;mine.editedAt=new Date().toISOString()}else rows.push({id:crypto.randomUUID(),userId:authUser.id,username:profileUsername(),name:userDisplayName(authUser),avatar:userAvatar(authUser),text,html,createdAt:new Date().toISOString(),likes:0,comments:0});reviewComposerOpen=false;save();renderStoryReviews()}
 function deleteStoryReview(id){if(!introStory||!confirm('Xóa review này nha?'))return;const rows=reviews[introStory.id]||[],row=rows.find(r=>r.id===id);if(!row||!authUser||row.userId!==authUser.id)return;reviews[introStory.id]=rows.filter(r=>r.id!==id);save();renderStoryReviews()}
 
-function openCommentLocation(storyId,chapterIndex,paraIndex){if(chapterIndex==null){openStory(storyId);setTimeout(()=>showIntroTab('comments',document.querySelectorAll('.intro-tabs button')[2]),40);return}read(storyId,chapterIndex);let k=`${storyId}_${chapterIndex}_${paraIndex}`;setTimeout(()=>jumpToParagraph(k),80)}
+function openCommentLocation(storyId,chapterIndex,paraIndex,commentId=null){
+ const story=stories.find(x=>Number(x.id)===Number(storyId));if(!story)return;
+ if(chapterIndex==null){
+  openStory(Number(storyId));
+  setTimeout(()=>{showIntroTab('comments',document.querySelectorAll('.intro-tabs button')[2]);if(commentId)focusExactComment(commentId)},120);
+  return;
+ }
+ read(Number(storyId),Number(chapterIndex));
+ if(paraIndex==null||!Number.isFinite(Number(paraIndex))){
+  setTimeout(()=>{document.getElementById('chapterCommentsList')?.scrollIntoView({behavior:'smooth',block:'start'});if(commentId)focusExactComment(commentId)},140);
+  return;
+ }
+ const k=`${Number(storyId)}_${Number(chapterIndex)}_${Number(paraIndex)}`;
+ setTimeout(()=>{jumpToParagraph(k);if(commentId)setTimeout(()=>focusExactComment(commentId),220)},140);
+}
+function focusExactComment(commentId){
+ const el=document.querySelector(`.comment-item[data-comment-id="${CSS.escape(String(commentId))}"]`);
+ if(!el)return;
+ el.scrollIntoView({behavior:'smooth',block:'center'});
+ el.classList.add('jump-flash');
+ setTimeout(()=>el.classList.remove('jump-flash'),1800);
+}
 
 function read(id,chapterOverride=null,updateRoute=true){
  let s=stories.find(x=>x.id===id); if(!s)return;
@@ -1482,11 +1507,11 @@ function renderChapter(restoreScroll=0){
  displayPage('reader');
  document.getElementById('rtitle').textContent=s.title;
  document.getElementById('rauthor').textContent='Tác giả: '+s.author;
- document.getElementById('rstatus').textContent=s.status==='completed'?'✓ Đã hoàn thành':'◷ Đang viết';
+ document.getElementById('rstatus').textContent=s.status==='completed'?'✓ Đã hoàn thành':'◷ Đang làm';
  document.getElementById('chapterTitle').textContent=ch.title;
  document.getElementById('chapter').innerHTML=ch.paras.map((p,i)=>{
   let key=`${s.id}_${currentChapter}_${i}`,c=comments[key]||[];
-  return `<div class="para-wrap" id="para_${key}" data-comment-key="${key}"><p class="para" ondblclick="openParagraphComposer('${key}')" onpointerdown="startLongPress(event,'${key}')" onpointerup="cancelLongPress()" onpointercancel="cancelLongPress()" onpointermove="cancelLongPress()">${i===0?formatImportedOpeningParagraph(p):esc(p)}</p>${c.length?`<button class="comment-btn" onclick="event.stopPropagation();toggleComments('${key}',true)" aria-label="Xem ${c.length} bình luận">${icon('comment')}<span>${c.length}</span></button>`:''}</div>`;
+  return `<div class="para-wrap" id="para_${key}" data-comment-key="${key}"><p class="para" ondblclick="openParagraphComposer('${key}')" onpointerdown="startLongPress(event,'${key}')" onpointerup="cancelLongPress()" onpointercancel="cancelLongPress()" onpointermove="cancelLongPress()">${formatImportedOpeningParagraph(p)}</p>${c.length?`<button class="comment-btn" onclick="event.stopPropagation();toggleComments('${key}',true)" aria-label="Xem ${c.length} bình luận">${icon('comment')}<span>${c.length}</span></button>`:''}</div>`;
  }).join('');
  renderChapterComments();
  renderChapterHeart();
@@ -1654,7 +1679,8 @@ function renderHomeComments(){
  panel.querySelector('.community-feed').innerHTML=rows.length?rows.slice(0,6).map(({key,comment})=>{
    const username=slugify(comment.username||comment.name)||'thanh-vien';
    const avatar=comment.avatar?`<img class="community-avatar" src="${esc(comment.avatar)}" alt="">`:`<div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">${esc(Array.from(comment.name||'T')[0])}</div>`;
-   return `<article class="community-card">${`<div class="community-head">${avatar}<div class="community-meta"><strong>${esc(comment.name||'Thành viên')}${isAdminComment(comment)?'<span class="admin-badge admin-badge-home">ADMIN</span>':''}</strong><span class="community-sub">${commentTime(comment)} · ${commentLocationHTML(key)}</span></div></div>`}<div class="community-body">${esc(comment.text)}</div></article>`;
+   const location=commentLocationHTML(key).replace('data-comment-location=',`data-comment-id="${esc(comment.id)}" data-comment-location=`);
+   return `<article class="community-card home-comment-card" data-home-comment-key="${esc(key)}" data-home-comment-id="${esc(comment.id)}">${`<div class="community-head">${avatar}<div class="community-meta"><strong>${esc(comment.name||'Thành viên')}${isAdminComment(comment)?'<span class="admin-badge admin-badge-home">ADMIN</span>':''}</strong><span class="community-sub">${commentTime(comment)} · ${location}</span></div></div>`}<div class="community-body">${esc(comment.text)}</div></article>`;
  }).join(''):'<p class="muted panel-empty">Chưa có bình luận nào.</p>';
 }
 function refreshCommentViews(){
@@ -1720,11 +1746,20 @@ document.addEventListener('click',event=>{
  }
  const locationButton=event.target.closest('[data-comment-location]');
  if(locationButton){
-  const key=locationButton.dataset.commentLocation,demo=demoHomeComments.find(row=>row.key===key);
-  if(demo){openCommentLocation(demo.storyId,0,demo.para);return}
+  const key=locationButton.dataset.commentLocation,commentId=locationButton.dataset.commentId||null,demo=demoHomeComments.find(row=>row.key===key);
+  if(demo){openCommentLocation(demo.storyId,0,demo.para,commentId);return}
+  if(key.startsWith('story_')){openCommentLocation(Number(key.split('_')[1]),null,null,commentId);return}
   const [storyId,chapterIndex,paraIndex]=key.replace(/^chapter_/,'').split('_').map(Number);
-  if(key.startsWith('chapter_'))read(storyId,chapterIndex);else openCommentLocation(storyId,chapterIndex,paraIndex);
+  openCommentLocation(storyId,chapterIndex,key.startsWith('chapter_')?null:paraIndex,commentId);
  }
+});
+document.addEventListener('click',event=>{
+ const card=event.target.closest('.home-comment-card');
+ if(!card||event.target.closest('a,button'))return;
+ const key=card.dataset.homeCommentKey,commentId=card.dataset.homeCommentId||null;
+ if(key?.startsWith('story_')){openCommentLocation(Number(key.split('_')[1]),null,null,commentId);return}
+ const parts=String(key||'').replace(/^chapter_/,'').split('_').map(Number);
+ if(parts.length>=2)openCommentLocation(parts[0],parts[1],key.startsWith('chapter_')?null:parts[2],commentId);
 });
 document.addEventListener('submit',event=>{if(event.target.matches('[data-reply-form]')){event.preventDefault();submitCommentReply()}});
 
@@ -1893,7 +1928,7 @@ function updateAuthUI(){
  if(activeCommentKey&&document.getElementById('paragraphCommentPanel')?.classList.contains('open'))toggleComments(activeCommentKey,true);
 }
 async function fetchAllRows(table,orderCol){const out=[];for(let from=0;;from+=1000){let q=sb.from(table).select('*').range(from,from+999);if(orderCol)q=q.order(orderCol,{ascending:true});const {data,error}=await q;if(error)throw error;out.push(...(data||[]));if(!data||data.length<1000)break;}return out}
-async function loadCloudStories(){try{const [storyRows,chapterRows,paragraphRows]=await Promise.all([fetchAllRows('stories','id'),fetchAllRows('chapters','id'),fetchAllRows('paragraphs','id')]);if(!storyRows.length)return;const parasByChapter={};for(const p of paragraphRows){(parasByChapter[p.chapter_id]||(parasByChapter[p.chapter_id]=[])).push(p)}Object.values(parasByChapter).forEach(a=>a.sort((x,y)=>(Number(x.paragraph_number)||0)-(Number(y.paragraph_number)||0)));const chaptersByStory={};for(const c of chapterRows){if(c.published===false)continue;(chaptersByStory[c.story_id]||(chaptersByStory[c.story_id]=[])).push(c)}Object.values(chaptersByStory).forEach(a=>a.sort((x,y)=>(Number(x.chapter_number)||0)-(Number(y.chapter_number)||0)));const mapped=storyRows.filter(r=>r.published!==false).map(r=>({id:Number(r.id),title:r.title||r.name||`Truyện ${r.id}`,author:r.author||'Alex',mainGenre:r.main_genre||r.genre||'Hiện đại',genre:r.genre||r.main_genre||'Hiện đại',subtags:Array.isArray(r.subtags)?r.subtags:[],status:['completed','complete','done','Đã hoàn thành'].includes(r.status)?'completed':'ongoing',summary:r.summary||r.description||r.introduction||'',cover:r.cover_url||r.cover||'',views:Number(r.views)||0,likes:Number(r.likes)||0,updatedAt:r.updated_at||r.created_at||'',chapters:(chaptersByStory[r.id]||[]).map(c=>({id:Number(c.id),title:c.title||`Chương ${c.chapter_number||''}`,publishState:'published',paras:(parasByChapter[c.id]||[]).map(p=>p.content||'')}))}));if(mapped.length){stories=mapped.sort((a,b)=>(Date.parse(b.updatedAt)||0)-(Date.parse(a.updatedAt)||0));localStorage.setItem('nha_co_alex_stories',JSON.stringify(stories));render();if(introStory){const fresh=stories.find(x=>Number(x.id)===Number(introStory.id));if(fresh)introStory=fresh}}}catch(e){console.warn('story cloud sync',e)}}
+async function loadCloudStories(){try{const [storyRows,chapterRows,paragraphRows]=await Promise.all([fetchAllRows('stories','id'),fetchAllRows('chapters','id'),fetchAllRows('paragraphs','id')]);if(!storyRows.length){console.warn('Không đọc được truyện công khai từ Supabase hoặc bảng stories đang trống.');return false;}const parasByChapter={};for(const p of paragraphRows){(parasByChapter[p.chapter_id]||(parasByChapter[p.chapter_id]=[])).push(p)}Object.values(parasByChapter).forEach(a=>a.sort((x,y)=>(Number(x.paragraph_number)||0)-(Number(y.paragraph_number)||0)));const chaptersByStory={};for(const c of chapterRows){if(c.published===false)continue;(chaptersByStory[c.story_id]||(chaptersByStory[c.story_id]=[])).push(c)}Object.values(chaptersByStory).forEach(a=>a.sort((x,y)=>(Number(x.chapter_number)||0)-(Number(y.chapter_number)||0)));const mapped=storyRows.filter(r=>r.published!==false).map(r=>({id:Number(r.id),title:r.title||r.name||`Truyện ${r.id}`,author:r.author||'Alex',mainGenre:r.main_genre||r.genre||'Hiện đại',genre:r.genre||r.main_genre||'Hiện đại',subtags:Array.isArray(r.subtags)?r.subtags:[],status:['completed','complete','done','Đã hoàn thành'].includes(r.status)?'completed':'ongoing',summary:r.summary||r.description||r.introduction||'',cover:r.cover_url||r.cover||'',views:Number(r.views)||0,likes:Number(r.likes)||0,updatedAt:r.updated_at||r.created_at||'',chapters:(chaptersByStory[r.id]||[]).map(c=>({id:Number(c.id),title:c.title||`Chương ${c.chapter_number||''}`,publishState:'published',paras:(parasByChapter[c.id]||[]).map(p=>p.content||'')}))}));if(mapped.length){stories=mapped.sort((a,b)=>(Date.parse(b.updatedAt)||0)-(Date.parse(a.updatedAt)||0));localStorage.setItem('nha_co_alex_stories',JSON.stringify(stories));render();if(introStory){const fresh=stories.find(x=>Number(x.id)===Number(introStory.id));if(fresh)introStory=fresh}return true;}return false;}catch(e){console.warn('story cloud sync',e);return false;}}
 async function initAuth(){
  const {data}=await sb.auth.getSession();
  authUser=data.session?.user||null;
@@ -1901,8 +1936,9 @@ async function initAuth(){
  updateAuthUI();
  // Community feeds are public: always hydrate comments/reviews from Supabase,
  // including visitors who are not signed in and devices with empty localStorage.
- await loadCloudStories();
+ const cloudStoriesReady=await loadCloudStories();
   await Promise.allSettled([loadCloudComments(),loadCloudReviews()]);
+  if(cloudStoriesReady && location.pathname.startsWith('/truyen/')) routeFromLocation();
  const returnPath=localStorage.getItem('nha_return_path');
  if(authUser&&returnPath){localStorage.removeItem('nha_return_path');if(/^\/(truyen|user)\//.test(returnPath)){setRoute(returnPath,true);routeFromLocation()}}
  else if(location.pathname.startsWith('/user/'))routeFromLocation();
@@ -1922,10 +1958,10 @@ function ensureChapterStates(st){(st.chapters||[]).forEach(ch=>{if(!ch.publishSt
 function chapterCounts(st){ensureChapterStates(st);let pub=0,draft=0;(st.chapters||[]).forEach(ch=>ch.publishState==='draft'?draft++:pub++);return {pub,draft}}
 function openAdminLibrary(updateRoute=true){if(!isSiteAdmin()){goHome();return}if(updateRoute)setRoute('/quan-ly-thu-vien');displayPage('adminLibrary');adminLibraryTab='published';document.querySelectorAll('.admin-library-tabs button').forEach((b,i)=>b.classList.toggle('active',i===0));renderAdminLibrary();window.scrollTo(0,0)}
 function setAdminLibraryTab(tab,btn){adminLibraryTab=tab;document.querySelectorAll('.admin-library-tabs button').forEach(b=>b.classList.remove('active'));btn?.classList.add('active');renderAdminLibrary()}
-function renderAdminLibrary(){const el=document.getElementById('adminLibraryList');if(!el)return;const rows=adminLibraryTab==='published'?stories:managedDrafts;if(!rows.length){el.innerHTML=`<div class="profile-section"><p class="muted">${adminLibraryTab==='draft'?'Chưa có bản thảo nào.':'Chưa có truyện đã đăng.'}</p></div>`;return}el.innerHTML=rows.map(s=>{const c=chapterCounts(s);return `<div class="manage-story-row"><div class="manage-cover">${s.cover?`<img src="${esc(s.cover)}" alt="">`:`Nhà có Alex`}</div><div><h3>${esc(s.title)}</h3><div class="manage-meta">${esc(s.mainGenre||s.genre||'Hiện đại')} · ${s.status==='completed'?'Đã hoàn thành':'Đang viết'} · ${c.pub} chương đã đăng · ${c.draft} chương bản thảo</div><div class="manage-meta">${adminLibraryTab==='draft'?'Bản thảo / Ẩn':'Công khai'}</div></div><div class="manage-actions"><button onclick="openStoryAdmin('${encodeURIComponent(String(s.id))}','${adminLibraryTab}')">Sửa</button>${adminLibraryTab==='published'?`<button onclick="openStory(${Number(s.id)})">Xem truyện</button>`:`<button onclick="publishDraft('${esc(String(s.id))}')">Đăng</button>`}</div></div>`}).join('')}
+function renderAdminLibrary(){const el=document.getElementById('adminLibraryList');if(!el)return;const rows=adminLibraryTab==='published'?stories:managedDrafts;if(!rows.length){el.innerHTML=`<div class="profile-section"><p class="muted">${adminLibraryTab==='draft'?'Chưa có bản thảo nào.':'Chưa có truyện đã đăng.'}</p></div>`;return}el.innerHTML=rows.map(s=>{const c=chapterCounts(s);return `<div class="manage-story-row"><div class="manage-cover">${s.cover?`<img src="${esc(s.cover)}" alt="">`:`Nhà có Alex`}</div><div><h3>${esc(s.title)}</h3><div class="manage-meta">${esc(s.mainGenre||s.genre||'Hiện đại')} · ${s.status==='completed'?'Đã hoàn thành':'Đang làm'} · ${c.pub} chương đã đăng · ${c.draft} chương bản thảo</div><div class="manage-meta">${adminLibraryTab==='draft'?'Bản thảo / Ẩn':'Công khai'}</div></div><div class="manage-actions"><button onclick="openStoryAdmin('${encodeURIComponent(String(s.id))}','${adminLibraryTab}')">Sửa</button>${adminLibraryTab==='published'?`<button onclick="openStory(${Number(s.id)})">Xem truyện</button>`:`<button onclick="publishDraft('${esc(String(s.id))}')">Đăng</button>`}</div></div>`}).join('')}
 function getManagedStory(id,source='published'){return source==='draft'?managedDrafts.find(x=>String(x.id)===String(id)):stories.find(x=>String(x.id)===String(id))}
 function openStoryAdmin(id,source='published',updateRoute=true){if(!isSiteAdmin())return;id=decodeURIComponent(String(id));let st=getManagedStory(id,source);if(!st){st=getManagedStory(id,'draft');source='draft'}if(!st){openAdminLibrary();return}activeManagedStory=ensureChapterStates(st);activeManagedSource=source;if(updateRoute)setRoute(`/quan-ly-thu-vien/truyen/${encodeURIComponent(id)}`);displayPage('storyAdmin');renderStoryAdmin();window.scrollTo(0,0)}
-function renderStoryAdmin(){const st=activeManagedStory;if(!st)return;const c=chapterCounts(st);document.getElementById('storyAdminTitle').textContent=st.title;document.getElementById('storyAdminMeta').textContent=`${st.mainGenre||st.genre||'Hiện đại'} · ${st.status==='completed'?'Đã hoàn thành':'Đang viết'}`;document.getElementById('storyAdminSummary').innerHTML=`<span>${c.pub} chương đã đăng</span><span>${c.draft} chương bản thảo</span><span>${activeManagedSource==='draft'?'Truyện đang ẩn / bản thảo':'Truyện công khai'}</span>`;document.getElementById('storyVisibilityBtn').textContent=activeManagedSource==='draft'?'Công khai truyện':'Ẩn truyện';const el=document.getElementById('chapterAdminList');el.innerHTML=(st.chapters||[]).length?st.chapters.map((ch,i)=>`<div class="chapter-admin-row" draggable="true" data-index="${i}" ondragstart="chapterDragStart(event)" ondragover="event.preventDefault()" ondrop="chapterDrop(event)"><button class="chapter-drag" title="Kéo để sắp xếp">☰</button><div><h4>${esc(ch.title||`Chương ${i+1}`)}</h4><span class="chapter-state">${ch.publishState==='draft'?'Bản thảo':'Đã đăng'}</span></div><div class="chapter-admin-actions"><button onclick="openChapterAdmin('${encodeURIComponent(String(st.id))}',${i})">Sửa</button><button onclick="deleteManagedChapter(${i})">Xóa</button></div></div>`).join(''):`<div class="profile-section"><p class="muted">Chưa có chương nào. Bấm “＋ Chương mới” để bắt đầu.</p></div>`}
+function renderStoryAdmin(){const st=activeManagedStory;if(!st)return;const c=chapterCounts(st);document.getElementById('storyAdminTitle').textContent=st.title;document.getElementById('storyAdminMeta').textContent=`${st.mainGenre||st.genre||'Hiện đại'} · ${st.status==='completed'?'Đã hoàn thành':'Đang làm'}`;document.getElementById('storyAdminSummary').innerHTML=`<span>${c.pub} chương đã đăng</span><span>${c.draft} chương bản thảo</span><span>${activeManagedSource==='draft'?'Truyện đang ẩn / bản thảo':'Truyện công khai'}</span>`;document.getElementById('storyVisibilityBtn').textContent=activeManagedSource==='draft'?'Công khai truyện':'Ẩn truyện';const el=document.getElementById('chapterAdminList');el.innerHTML=(st.chapters||[]).length?st.chapters.map((ch,i)=>`<div class="chapter-admin-row" draggable="true" data-index="${i}" ondragstart="chapterDragStart(event)" ondragover="event.preventDefault()" ondrop="chapterDrop(event)"><button class="chapter-drag" title="Kéo để sắp xếp">☰</button><div><h4>${esc(ch.title||`Chương ${i+1}`)}</h4><span class="chapter-state">${ch.publishState==='draft'?'Bản thảo':'Đã đăng'}</span></div><div class="chapter-admin-actions"><button onclick="openChapterAdmin('${encodeURIComponent(String(st.id))}',${i})">Sửa</button><button onclick="deleteManagedChapter(${i})">Xóa</button></div></div>`).join(''):`<div class="profile-section"><p class="muted">Chưa có chương nào. Bấm “＋ Chương mới” để bắt đầu.</p></div>`}
 function openStoryComposerFromAdmin(){if(!activeManagedStory)return;openStoryComposer(String(activeManagedStory.id),activeManagedSource)}
 function toggleStoryVisibility(){if(!activeManagedStory)return;if(activeManagedSource==='published'){if(!confirm('Ẩn truyện này? Độc giả sẽ không còn thấy truyện trong chế độ công khai.'))return;const idx=stories.findIndex(x=>String(x.id)===String(activeManagedStory.id));if(idx>=0)stories.splice(idx,1);managedDrafts.unshift(activeManagedStory);activeManagedSource='draft'}else{const idx=managedDrafts.findIndex(x=>String(x.id)===String(activeManagedStory.id));if(idx>=0)managedDrafts.splice(idx,1);stories.unshift(activeManagedStory);activeManagedSource='published'}persistManaged();renderStoryAdmin()}
 function deleteManagedStory(){if(!activeManagedStory||!confirm(`Xóa truyện “${activeManagedStory.title}” và toàn bộ chương? Thao tác này không thể hoàn tác.`))return;if(activeManagedSource==='published')stories=stories.filter(x=>String(x.id)!==String(activeManagedStory.id));else managedDrafts=managedDrafts.filter(x=>String(x.id)!==String(activeManagedStory.id));persistManaged();openAdminLibrary()}
@@ -2368,7 +2404,7 @@ deleteStoryReview=async function(id){if(!introStory||!authUser||!confirm('Xóa r
 const toggleSaveV179=toggleSave;
 toggleSave=function(id){toggleSaveV179(id);queueCloudMemberState()};
 
-console.info('Nhà có Alex V20.4 · Supabase comments + reviews sync');
+console.info('Nhà có Alex V20.9 · Preserve chapter line breaks + Đang làm');
 render();
 routeFromLocation();
 initAuth().catch(()=>updateAuthUI());

@@ -155,7 +155,18 @@ body.gate-locked #secretGate{display:grid;visibility:visible}
 .profile-shell{max-width:760px;margin:auto}
 .profile-card{display:flex;gap:16px;align-items:center;padding:18px;border:1px solid var(--line);border-radius:16px;background:var(--card)}
 .profile-avatar{width:76px;height:76px;border-radius:50%;object-fit:cover;background:var(--soft);border:1px solid var(--line)}
-.profile-tabs{display:flex;gap:7px;flex-wrap:wrap;margin:18px 0}
+.profile-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}
+.profile-tabs button{appearance:none;border:1px solid var(--line);background:var(--soft);color:var(--text);border-radius:12px;padding:8px 12px;font:inherit;font-size:13px;cursor:pointer;transition:transform .15s ease,filter .15s ease,border-color .15s ease}
+.profile-tabs button:hover{transform:translateY(-1px);filter:brightness(.98)}
+.profile-tabs button.active{border-color:var(--accent);box-shadow:inset 0 -2px 0 var(--accent);font-weight:650}
+[data-theme="pastel"] .profile-tabs button:nth-child(1){background:#f8e3ed}
+[data-theme="pastel"] .profile-tabs button:nth-child(2){background:#eee5fa}
+[data-theme="pastel"] .profile-tabs button:nth-child(3){background:#dff3ee}
+[data-theme="pastel"] .profile-tabs button:nth-child(4){background:#fff0c9}
+[data-theme="pastel"] .profile-tabs button:nth-child(5){background:#e3edf9}
+.profile-edit-grid{display:grid;grid-template-columns:120px 1fr;gap:20px;align-items:start}
+.avatar-editor{text-align:center}.avatar-preview{width:96px;height:96px;border-radius:50%;object-fit:cover;background:var(--soft);border:1px solid var(--line);display:block;margin:0 auto 10px}.avatar-file{display:none}.avatar-pick{display:inline-block;border:1px solid var(--line);background:var(--soft);border-radius:10px;padding:7px 10px;font-size:12px;cursor:pointer}.profile-fields{display:grid;gap:12px}.profile-fields label{display:grid;gap:6px;font-size:13px;font-weight:600}.profile-fields input,.profile-fields textarea{width:100%;box-sizing:border-box;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:10px;padding:10px 11px;font:inherit}.profile-fields textarea{min-height:92px;resize:vertical}.profile-edit-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.profile-edit-note{font-size:12px;color:var(--muted)}
+@media(max-width:560px){.profile-edit-grid{grid-template-columns:1fr}.profile-tabs{gap:6px}.profile-tabs button{padding:7px 9px}}
 .profile-section{border:1px solid var(--line);border-radius:16px;padding:18px;background:var(--card)}
 @media(max-width:720px){
  .nav>button:not(.auth-login){display:none}
@@ -625,6 +636,51 @@ body.purplenight .hero-fade-top{height:54px!important;background:linear-gradient
 body.purplenight .hero-fade{height:118px!important;background:linear-gradient(to bottom,rgba(29,25,40,0) 0%,rgba(29,25,40,.10) 20%,rgba(29,25,40,.30) 44%,rgba(29,25,40,.58) 66%,rgba(29,25,40,.82) 84%,#1d1928 100%)!important}
 @media(max-width:700px){.chapter-comments .comment-compose{width:100%!important}.emoji-trigger,.emoji-picker{display:none!important}body.night .hero-fade,body.purplenight .hero-fade{height:96px!important}}
 
+
+
+/* ===== V16.3: aligned story cards + intro underline + tab-aware search ===== */
+#stories .story-card{
+  height:194px!important;
+  min-height:194px!important;
+  box-sizing:border-box!important;
+  align-items:center!important;
+}
+#stories .story-cover{
+  aspect-ratio:3/4!important;
+  height:auto!important;
+  align-self:center!important;
+  flex:none!important;
+}
+#stories .story-info{
+  align-self:stretch!important;
+  min-width:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+}
+#stories .story-info .story-title-link{
+  display:-webkit-box!important;
+  -webkit-box-orient:vertical!important;
+  -webkit-line-clamp:3!important;
+  overflow:hidden!important;
+}
+#stories .story-actions{margin-top:auto!important;padding-top:6px!important}
+
+/* Selected intro tab: simple text with a clearly visible dark underline. */
+.intro-tabs button{border-bottom-width:3px!important}
+.intro-tabs button.active{
+  background:transparent!important;
+  border-bottom-color:var(--fg)!important;
+  color:var(--fg)!important;
+}
+
+/* Search belongs to the Stories tab only. */
+.art-hero.hide-story-search .hero-panel .search{display:none!important}
+
+@media(max-width:640px){
+  #stories .story-card{height:auto!important;min-height:170px!important;align-items:center!important}
+  #stories .story-cover{align-self:center!important}
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
 window.addEventListener('popstate',()=>routeFromLocation());
@@ -819,11 +875,11 @@ document.addEventListener('click',e=>{if(!e.target.closest('.emoji-trigger')&&!e
       <div><h2 id="profileName" style="margin:0 0 5px">Thành viên</h2><div id="profileEmail" class="muted"></div></div>
     </div>
     <div class="profile-tabs">
-      <button onclick="openProfile('profile')">Hồ sơ</button>
-      <button onclick="openProfile('activity')">Hoạt động</button>
-      <button onclick="openProfile('saved')">Truyện đã lưu</button>
-      <button onclick="openProfile('reading')">Đang đọc</button>
-      <button onclick="openProfile('edit')">Chỉnh sửa hồ sơ</button>
+      <button data-profile-tab="profile" onclick="openProfile('profile')">Hồ sơ</button>
+      <button data-profile-tab="activity" onclick="openProfile('activity')">Hoạt động</button>
+      <button data-profile-tab="saved" onclick="openProfile('saved')">Truyện đã lưu</button>
+      <button data-profile-tab="reading" onclick="openProfile('reading')">Đang đọc</button>
+      <button data-profile-tab="edit" onclick="openProfile('edit')">Chỉnh sửa hồ sơ</button>
     </div>
     <div id="profileContent" class="profile-section"></div>
   </div>
@@ -1127,17 +1183,18 @@ async function signOut(){
  updateAuthUI();
  show('home');
 }
-function userDisplayName(u){
- return u?.user_metadata?.full_name || u?.user_metadata?.name || u?.email?.split('@')[0] || 'Thành viên';
-}
-function userAvatar(u){
- return u?.user_metadata?.avatar_url || u?.user_metadata?.picture || '';
-}
+let memberProfile=null;
+function googleDisplayName(u){ return u?.user_metadata?.full_name || u?.user_metadata?.name || u?.email?.split('@')[0] || 'Thành viên'; }
+function googleAvatar(u){ return u?.user_metadata?.avatar_url || u?.user_metadata?.picture || ''; }
+function userDisplayName(u){ return memberProfile?.display_name || googleDisplayName(u); }
+function userAvatar(u){ return memberProfile?.avatar_url || googleAvatar(u); }
 async function syncProfile(u){
  if(!u)return;
- const row={id:u.id,display_name:userDisplayName(u),avatar_url:userAvatar(u)};
- // Nếu schema hồ sơ cũ có thêm cột bắt buộc, đăng nhập vẫn hoạt động dù đồng bộ hồ sơ chưa thành công.
- await sb.from('profiles').upsert(row,{onConflict:'id'}).select().maybeSingle();
+ const {data:existing}=await sb.from('profiles').select('id,display_name,avatar_url,bio,saved_stories_public').eq('id',u.id).maybeSingle();
+ if(existing){ memberProfile=existing; return existing; }
+ const row={id:u.id,display_name:googleDisplayName(u),avatar_url:googleAvatar(u),bio:''};
+ const {data}=await sb.from('profiles').upsert(row,{onConflict:'id'}).select().maybeSingle();
+ memberProfile=data||row; return memberProfile;
 }
 function updateAuthUI(){
  const logged=!!authUser;
@@ -1216,18 +1273,64 @@ async function markNotificationsRead(){
  if(currentStory)renderChapterComments();
  if(activeCommentKey&&document.getElementById('paragraphCommentPanel')?.classList.contains('open'))toggleComments(activeCommentKey,true);
 }
+let pendingAvatarFile=null;
+function profileEditMarkup(){
+ const name=esc(userDisplayName(authUser));
+ const avatar=esc(userAvatar(authUser));
+ const bio=esc(memberProfile?.bio||'');
+ return `<h3>Chỉnh sửa hồ sơ</h3><div class="profile-edit-grid">
+   <div class="avatar-editor">
+    <img id="editAvatarPreview" class="avatar-preview" src="${avatar}" alt="Ảnh đại diện">
+    <label class="avatar-pick" for="editAvatarFile">Đổi ảnh đại diện</label>
+    <input id="editAvatarFile" class="avatar-file" type="file" accept="image/png,image/jpeg,image/webp" onchange="previewProfileAvatar(this)">
+    <div class="profile-edit-note" style="margin-top:7px">JPG, PNG hoặc WebP</div>
+   </div>
+   <div class="profile-fields">
+    <label>Tên hiển thị<input id="editDisplayName" maxlength="50" value="${name}"></label>
+    <label>Giới thiệu<textarea id="editBio" maxlength="240" placeholder="Viết vài dòng về bạn…">${bio}</textarea></label>
+    <label>Email<input value="${esc(authUser?.email||'')}" disabled></label>
+    <div class="profile-edit-actions"><button class="btn" onclick="saveProfileChanges()">Lưu thay đổi</button><button class="btn" onclick="openProfile('profile')">Hủy</button><span id="profileEditMessage" class="profile-edit-note"></span></div>
+   </div>
+ </div>`;
+}
+function previewProfileAvatar(input){
+ pendingAvatarFile=input.files?.[0]||null;
+ if(!pendingAvatarFile)return;
+ if(pendingAvatarFile.size>5*1024*1024){document.getElementById('profileEditMessage').textContent='Ảnh tối đa 5 MB nha.';pendingAvatarFile=null;input.value='';return}
+ const r=new FileReader();r.onload=()=>document.getElementById('editAvatarPreview').src=r.result;r.readAsDataURL(pendingAvatarFile);
+}
+async function saveProfileChanges(){
+ if(!authUser)return;
+ const msg=document.getElementById('profileEditMessage');
+ const display_name=document.getElementById('editDisplayName').value.trim();
+ const bio=document.getElementById('editBio').value.trim();
+ if(!display_name){msg.textContent='Tên hiển thị không được để trống.';return}
+ msg.textContent='Đang lưu…';
+ let avatar_url=memberProfile?.avatar_url||googleAvatar(authUser);
+ if(pendingAvatarFile){
+   const ext=(pendingAvatarFile.name.split('.').pop()||'jpg').toLowerCase();
+   const path=`${authUser.id}/avatar-${Date.now()}.${ext}`;
+   const {error:upErr}=await sb.storage.from('avatars').upload(path,pendingAvatarFile,{upsert:true,contentType:pendingAvatarFile.type});
+   if(upErr){msg.textContent='Chưa tải được avatar. Cần bật bucket avatars trong Supabase trước.';return}
+   const {data:pub}=sb.storage.from('avatars').getPublicUrl(path); avatar_url=pub.publicUrl;
+ }
+ const {data,error}=await sb.from('profiles').upsert({id:authUser.id,display_name,bio,avatar_url},{onConflict:'id'}).select().maybeSingle();
+ if(error){msg.textContent='Chưa lưu được hồ sơ, thử lại nha.';return}
+ memberProfile=data||{...(memberProfile||{}),display_name,bio,avatar_url};pendingAvatarFile=null;updateAuthUI();openProfile('profile');
+}
 function openProfile(section='profile'){
  if(!authUser){show('login');return}
- ['home','reader','library','login'].forEach(x=>document.getElementById(x).classList.add('hidden'));
+ ['home','reader','library','login','storyIntro'].forEach(x=>document.getElementById(x)?.classList.add('hidden'));
  document.getElementById('profilePage').classList.remove('hidden');
  document.body.classList.remove('reading');
  document.getElementById('accountMenu').classList.remove('open');
+ document.querySelectorAll('[data-profile-tab]').forEach(b=>b.classList.toggle('active',b.dataset.profileTab===section));
  const c=document.getElementById('profileContent');
- if(section==='profile')c.innerHTML='<h3>Hồ sơ</h3><p class="muted">Đây là góc riêng của bạn trong Nhà có Alex.</p>';
+ if(section==='profile')c.innerHTML=`<h3>Hồ sơ</h3>${memberProfile?.bio?`<p>${esc(memberProfile.bio)}</p>`:'<p class="muted">Đây là góc riêng của bạn trong Nhà có Alex.</p>'}`;
  if(section==='activity')c.innerHTML='<h3>Hoạt động</h3><p class="muted">Tim và bình luận của bạn sẽ được gom ở đây khi mình nối phần tương tác vào Supabase.</p>';
  if(section==='saved')c.innerHTML='<h3>Truyện đã lưu</h3><p class="muted">Kệ truyện của bạn sẽ nằm ở đây. Kệ có thể đặt Công khai hoặc Riêng tư ngay tại trang này.</p>';
  if(section==='reading')c.innerHTML='<h3>Đang đọc</h3><p class="muted">Những truyện đang đọc dở sẽ xuất hiện ở đây.</p>';
- if(section==='edit')c.innerHTML='<h3>Chỉnh sửa hồ sơ</h3><p class="muted">Phần đổi avatar, tên hiển thị và giới thiệu sẽ được nối ở bước hồ sơ tiếp theo.</p>';
+ if(section==='edit'){pendingAvatarFile=null;c.innerHTML=profileEditMarkup()}
  window.scrollTo(0,0);
 }
 document.addEventListener('click',e=>{
@@ -1268,6 +1371,8 @@ function switchHomeTab(panelId,btn){
   document.querySelectorAll('.home-tab').forEach(x=>x.classList.remove('active'));
   const p=document.getElementById(panelId); if(p)p.classList.add('active');
   if(btn)btn.classList.add('active');
+  const hero=document.querySelector('.art-hero');
+  if(hero)hero.classList.toggle('hide-story-search',panelId!=='storiesPanel');
 }
 function applyStoryLimit(){
   const grid=document.getElementById('stories'); if(!grid)return;

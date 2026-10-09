@@ -48,6 +48,7 @@ header{border-bottom:1px solid var(--line);position:sticky;top:0;background:colo
 .reader-head{text-align:center;margin-bottom:28px}
 .reader-head h1{font-size:34px;margin-bottom:8px}
 .chapter-title{text-align:center;margin:18px 0 30px;font-family:var(--reading-font,Arial,sans-serif)}
+.chapter-image{display:flex;justify-content:center;margin:24px 0;max-width:100%}.chapter-image img{display:block;max-width:100%;height:auto;object-fit:contain}
 .chapter{font-family:var(--reading-font,Arial,sans-serif);font-size:var(--reader);line-height:1.9}
 .para-wrap{position:relative;margin:0 0 1.25em;padding-right:58px}
 .para{margin:0}
@@ -2078,6 +2079,17 @@ function backToCurrentStory(){
 }
 function renderChapter(restoreScroll=0){
  let s=currentStory,ch=s.chapters[currentChapter];
+ const imagesByParagraph=new Map();
+ for(const image of (ch.images||[])){
+  const number=String(image.after_paragraph_number);
+  if(!imagesByParagraph.has(number))imagesByParagraph.set(number,[]);
+  imagesByParagraph.get(number).push(image);
+ }
+ const imagesAfter=index=>(imagesByParagraph.get(String(ch._paragraphNumbers?.[index]))||[]).map(image=>{
+  if(!image.image_path)return '';
+  const {data}=sb.storage.from('story-images').getPublicUrl(image.image_path);
+  return `<div class="chapter-image"><img src="${esc(data.publicUrl)}" alt="${esc(image.alt_text||'')}" decoding="async"></div>`;
+ }).join('');
  displayPage('reader');
  document.getElementById('rtitle').textContent=s.title;
  document.getElementById('rauthor').textContent='Tác giả: '+s.author;
@@ -2085,8 +2097,8 @@ function renderChapter(restoreScroll=0){
  document.getElementById('chapterTitle').textContent=ch.title;
  document.getElementById('chapter').innerHTML=ch.paras.map((p,i)=>{
   let key=`${s.id}_${currentChapter}_${i}`,c=comments[key]||[];
-  if(isImportedChapterMetadata(p,i) && !cleanImportedOpeningParagraph(p,i))return '';
-  return `<div class="para-wrap" id="para_${key}" data-comment-key="${key}"><p class="para" ondblclick="openParagraphComposer('${key}')" onpointerdown="startLongPress(event,'${key}')" onpointerup="cancelLongPress()" onpointercancel="cancelLongPress()" onpointermove="cancelLongPress()">${formatImportedOpeningParagraph(p,i)}</p>${c.length?`<button class="comment-btn" onclick="event.stopPropagation();toggleComments('${key}',true)" aria-label="Xem ${c.length} bình luận">${icon('comment')}<span>${c.length}</span></button>`:''}</div>`;
+  if(isImportedChapterMetadata(p,i) && !cleanImportedOpeningParagraph(p,i))return imagesAfter(i);
+  return `<div class="para-wrap" id="para_${key}" data-comment-key="${key}"><p class="para" ondblclick="openParagraphComposer('${key}')" onpointerdown="startLongPress(event,'${key}')" onpointerup="cancelLongPress()" onpointercancel="cancelLongPress()" onpointermove="cancelLongPress()">${formatImportedOpeningParagraph(p,i)}</p>${c.length?`<button class="comment-btn" onclick="event.stopPropagation();toggleComments('${key}',true)" aria-label="Xem ${c.length} bình luận">${icon('comment')}<span>${c.length}</span></button>`:''}</div>`+imagesAfter(i);
  }).join('');
  renderChapterComments();
  renderChapterHeart();
@@ -2625,9 +2637,19 @@ async function ensureChapterContent(story,chapterIndex){
   try{
    // Giữ nguyên ID Supabase (kể cả UUID/string). Ép Number() có thể làm ID thành NaN,
    // khiến các chương tạo sau không tìm thấy paragraph trên một số thiết bị.
-   let {data,error}=await sb.from('paragraphs').select('*').eq('chapter_id',ch.id).order('paragraph_number',{ascending:true});
+   const [{data,error},imageResult]=await Promise.all([
+    sb.from('paragraphs').select('*').eq('chapter_id',ch.id).order('paragraph_number',{ascending:true}),
+    sb.from('chapter_images').select('id,after_paragraph_number,image_path,sort_order,alt_text').eq('chapter_id',ch.id).order('sort_order',{ascending:true})
+      .then(result=>result).catch(error=>({data:[],error}))
+   ]);
    if(error)throw error;
-   let paras=(data||[]).flatMap(p=>String(p.content||'').replace(/\r\n?/g,'\n').split(/\n+/).map(x=>x.trim()).filter(Boolean));
+   const paragraphNumbers=[];
+   let paras=(data||[]).flatMap(p=>{
+    const parts=String(p.content||'').replace(/\r\n?/g,'\n').split(/\n+/).map(x=>x.trim()).filter(Boolean);
+    // Preserve existing text indices; place images after the final part of the real row.
+    parts.forEach((_,i)=>paragraphNumbers.push(i===parts.length-1?p.paragraph_number:null));
+    return parts;
+   });
    // Một số chương cũ có thể lưu nội dung trực tiếp ở row chapters thay vì paragraphs.
    // Chỉ dùng cloud chapter content làm fallback; tuyệt đối không lấy local/demo.
    if(!paras.length){
@@ -2642,6 +2664,9 @@ async function ensureChapterContent(story,chapterIndex){
      paras=String(raw).replace(/\r\n?/g,'\n').split(/\n+/).map(x=>x.trim()).filter(Boolean);
    }
    ch.paras=paras;
+   ch._paragraphNumbers=paragraphNumbers;
+   ch.images=(imageResult.data||[]).slice().sort((a,b)=>(Number(a.sort_order)||0)-(Number(b.sort_order)||0));
+   if(imageResult.error)console.warn('chapter images cloud read',imageResult.error);
    ch._parasLoaded=true;
    return true;
   }catch(e){console.warn('paragraph cloud read',e);return false}

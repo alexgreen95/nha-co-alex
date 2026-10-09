@@ -34,10 +34,12 @@ async function feedPage(readerReviewCount, options = {}) {
       ...Array.from({ length: readerReviewCount }, (_, i) => ({ id: 'reader-review-' + i, user_id: 'reader-user', story_id: 1, content: 'Review người đọc ' + (i + 1), created_at: timestamp(i + 2) })),
     ],
   };
+  Object.assign(fixtures,options.fixtures||{});
   await page.route('https://cdn.jsdelivr.net/**', route => route.fulfill({ status: 200, contentType: 'application/javascript', body: sdk }));
   await page.route('https://fonts.googleapis.com/**', route => route.fulfill({ status: 200, contentType: 'text/css', body: '' }));
   await page.route(/^https:\/\/[^/]+\.supabase\.co\//, route => {
     const url = new URL(route.request().url());
+    options.onRequest?.(url);
     const table = url.pathname.split('/').pop();
     return route.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' }, body: JSON.stringify(fixtures[table] || []) });
   });

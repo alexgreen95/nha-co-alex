@@ -1096,6 +1096,28 @@ body.purplenight .account-menu,body.purplenight .notif-panel{
   content:"";
 }
 
+
+/* V21.20 — actual editor-review DOM: full row width + justified text */
+.editor-review-block .editor-review-content.editor-review-simple{
+  display:block !important;
+  width:100% !important;
+  max-width:100% !important;
+  box-sizing:border-box !important;
+}
+.editor-review-block .review-body.editor-review-body{
+  display:block !important;
+  width:100% !important;
+  max-width:100% !important;
+  box-sizing:border-box !important;
+  margin:0 !important;
+  padding:0 !important;
+  text-align:justify !important;
+  text-align-last:left !important;
+  text-justify:inter-word !important;
+  white-space:pre-line !important;
+  line-height:1.85 !important;
+}
+
 </style>
 </head>
 <body class="gate-locked gate-checking">
@@ -2166,7 +2188,7 @@ async function loadCloudStories(){
    mainGenre:['Hiện đại','Cổ đại','Tương lai','Huyền ảo'].includes(r.main_genre||r.genre)?(r.main_genre||r.genre):'',
    genre:r.genre||r.main_genre||'',subtags:Array.isArray(r.subtags)?r.subtags:(Array.isArray(r.tags)?r.tags:[]),
    status:['completed','complete','done','Đã hoàn thành'].includes(r.status)?'completed':'ongoing',
-   summary:r.summary||r.description||'',longIntro:r.introduction||r.long_intro||'',cover:r.cover_url||r.cover||'',views:Number(r.views)||0,likes:Number(r.likes)||0,
+   summary:r.summary||r.description||'',longIntro:r.introduction||r.long_intro||r.long_description||r.detailed_description||r.full_description||'',cover:r.cover_url||r.cover||'',views:Number(r.views)||0,likes:Number(r.likes)||0,
    updatedAt:r.updated_at||r.created_at||'',
    chapters:(chaptersByStory[r.id]||[]).map(c=>({id:c.id,chapterNumber:Number(c.chapter_number)||null,title:c.title||`Chương ${c.chapter_number||''}`,publishState:'published',paras:[],_parasLoaded:false,_chapterContent:c.content||c.body||c.text||''}))
   }));
@@ -2347,7 +2369,7 @@ async function saveManagedStory(mode){
      row.mainGenre=(cv.main_genre||cv.genre||row.mainGenre);
      row.genre=cv.genre||cv.main_genre||row.mainGenre;
      row.status=['completed','complete','done','Đã hoàn thành'].includes(cv.status)?'completed':'ongoing';
-     row.summary=cv.summary??cv.description??row.summary??'';row.longIntro=cv.introduction??cv.long_intro??row.longIntro??'';
+     row.summary=cv.summary??cv.description??row.summary??'';row.longIntro=cv.introduction??cv.long_intro??cv.long_description??cv.detailed_description??cv.full_description??row.longIntro??'';
      row.subtags=Array.isArray(cv.subtags)?cv.subtags:(Array.isArray(cv.tags)?cv.tags:row.subtags||[]);
      row.cover=cv.cover_url||cv.cover||'';
      target[idx]=row;

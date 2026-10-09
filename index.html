@@ -2647,15 +2647,20 @@ async function initAuth(){
  authUser=data.session?.user||null;
  if(authUser)await syncProfile(authUser);
  updateAuthUI();
- // Community feeds are public: always hydrate comments/reviews from Supabase,
- // including visitors who are not signed in and devices with empty localStorage.
- const cloudStoriesReady=await loadCloudStories();
-  // Route ngay sau khi metadata truyện về; stats/bình luận/review tải nền, không chặn Trang chủ.
-  if(location.pathname!=='/') routeFromLocation();
-  Promise.allSettled([refreshPublicStoryCloudFields(),loadCloudComments(),loadCloudReviews()]).then(()=>{
-    render();
-    if(introStory) openStory(introStory.id,false);
-  });
+ // Trang chủ ưu tiên metadata truyện trước. Community chỉ tải khi mở đúng tab,
+ // tránh tranh băng thông với card truyện trên mobile.
+ await loadCloudStories();
+ render();
+ if(location.pathname!=='/') routeFromLocation();
+ // Stats cập nhật nền sau khi card đã hiện; không giữ màn hình chờ.
+ refreshPublicStoryCloudFields().then(()=>render()).catch(()=>{});
+ // Các trang con cần community thì hydrate ngay; riêng Home dùng lazy loading theo tab.
+ if(location.pathname!=='/'){
+   Promise.allSettled([loadCloudComments(),loadCloudReviews()]).then(()=>{
+     homeCommentsCloudLoaded=true;homeReviewsCloudLoaded=true;
+     if(introStory) openStory(introStory.id,false);
+   });
+ }
  const returnPath=sessionStorage.getItem('nha_return_path');
  if(authUser&&returnPath){sessionStorage.removeItem('nha_return_path');if(/^\/(truyen|user)\//.test(returnPath)){setRoute(returnPath,true);routeFromLocation()}}
  else if(location.pathname.startsWith('/user/'))routeFromLocation();
@@ -3072,6 +3077,16 @@ theme(localStorage.getItem('reader_theme')||'pastel');
 
 <script>
 let homeShowAllStories=false;
+let homeCommentsCloudLoaded=false,homeReviewsCloudLoaded=false,homeCommentsCloudLoading=null,homeReviewsCloudLoading=null;
+async function ensureHomeCommunity(panelId){
+  if(panelId==='commentsPanel'&&!homeCommentsCloudLoaded){
+    if(!homeCommentsCloudLoading)homeCommentsCloudLoading=loadCloudComments().then(()=>{homeCommentsCloudLoaded=true;renderHomeComments();}).finally(()=>homeCommentsCloudLoading=null);
+    await homeCommentsCloudLoading;
+  }else if(panelId==='reviewsPanel'&&!homeReviewsCloudLoaded){
+    if(!homeReviewsCloudLoading)homeReviewsCloudLoading=loadCloudReviews().then(()=>{homeReviewsCloudLoaded=true;renderHomeReviews();}).finally(()=>homeReviewsCloudLoading=null);
+    await homeReviewsCloudLoading;
+  }
+}
 function switchHomeTab(panelId,btn){
   document.querySelectorAll('.home-panel').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.home-tab').forEach(x=>x.classList.remove('active'));
@@ -3079,6 +3094,7 @@ function switchHomeTab(panelId,btn){
   if(btn)btn.classList.add('active');
   const hero=document.querySelector('.art-hero');
   if(hero)hero.classList.toggle('hide-story-search',panelId!=='storiesPanel');
+  if(panelId!=='storiesPanel')ensureHomeCommunity(panelId);
 }
 function applyStoryLimit(){
   const grid=document.getElementById('stories'); if(!grid)return;
@@ -3235,7 +3251,7 @@ function queueCloudMemberState(){if(!authUser||!cloudSyncReady)return;clearTimeo
 const localSaveV179=save;
 save=function(){localSaveV179();queueCloudMemberState()};
 const syncProfileV179=syncProfile;
-syncProfile=async function(u){await syncProfileV179(u);await loadCloudMemberState();await refreshPublicStoryCloudFields();cloudSyncReady=true;Promise.allSettled([loadCloudComments(),loadCloudReviews()]);};
+syncProfile=async function(u){await syncProfileV179(u);await loadCloudMemberState();cloudSyncReady=true;};
 
 submitStoryComment=async function(event){event.preventDefault();if(!introStory||!authUser)return;const input=document.getElementById('storyCommentInput'),text=input?.value.trim();if(!text)return;input.disabled=true;const ok=await insertCloudComment(storyCommentKey(introStory.id),text);input.disabled=false;if(ok){input.value='';storyCommentPage=1;renderAllStoryComments();renderHomeComments();}};
 addParaComment=async function(key){if(!authUser){requestCommentLogin('bình luận');return}const input=document.getElementById('panelCommentInput'),text=input?.value.trim();if(!text)return;input.disabled=true;const ok=await insertCloudComment(key,text);const live=document.getElementById('panelCommentInput');if(live){live.disabled=false;if(ok)live.value='';}};

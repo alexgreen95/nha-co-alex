@@ -3327,6 +3327,92 @@ initAuth().catch(()=>{updateAuthUI(); if(!location.pathname.startsWith('/quan-ly
  });
 })();
 </script>
+
+<style id="alex-activity-address-story-clamp-20261009">
+/* Activity: metadata at top-left, clickable location at top-right. */
+.profile-activity-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:8px;min-width:0}
+.profile-activity-kindtime{font-size:12px;color:var(--muted);white-space:nowrap;flex:0 0 auto}
+.profile-activity-address{margin-left:auto;min-width:0;max-width:68%;text-align:right;overflow:hidden}
+.profile-activity-address .comment-location{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:top;font-size:12px}
+.activity-card .activity-more{margin-top:8px}
+/* Long comments inside story/chapter comment threads. */
+.comment-bubble{min-width:0;max-width:100%;overflow:hidden}
+.comment-text.story-comment-clamp{min-width:0;max-width:100%;overflow-wrap:anywhere;word-break:break-word}
+.comment-text.story-comment-clamp:not(.expanded){display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+.story-comment-more{display:inline-block;margin:6px 0 0;padding:0;border:0;background:transparent;color:var(--accent);font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.comment-bubble.story-comment-expanded{cursor:pointer}
+@media(max-width:700px){
+ .profile-activity-top{gap:8px}
+ .profile-activity-address{max-width:62%}
+}
+</style>
+<script id="alex-activity-address-story-clamp-20261009-js">
+(function(){
+ function activityClampHTML(bodyHTML){
+   return '<div class="community-body activity-clamp">'+bodyHTML+'</div><button class="activity-more" type="button">Xem thêm</button>';
+ }
+ function setupActivity(root){
+   root=root||document;
+   requestAnimationFrame(function(){
+     root.querySelectorAll('.activity-card').forEach(function(card){
+       var body=card.querySelector('.activity-clamp'),btn=card.querySelector('.activity-more');
+       if(!body||!btn)return;
+       body.classList.remove('expanded');card.classList.remove('expanded');
+       btn.hidden=body.scrollHeight<=body.clientHeight+2;
+     });
+   });
+ }
+ window.renderProfileActivity=function(kind='all'){
+   const c=document.getElementById('profileContent');if(!c||!authUser)return;
+   const rows=[];
+   if(kind!=='reviews')for(const [key,list] of Object.entries(comments||{}))for(const row of (list||[]))if(row?.userId===authUser.id)rows.push({type:'comment',text:row.text||'',createdAt:row.createdAt||'',key,id:row.id});
+   if(kind!=='comments')for(const [storyId,list] of Object.entries(reviews||{}))for(const row of (list||[]))if(row?.userId===authUser.id)rows.push({type:'review',text:row.text||'',html:row.html||'',createdAt:row.createdAt||'',storyId:Number(storyId)});
+   rows.sort((a,b)=>(Date.parse(b.createdAt)||0)-(Date.parse(a.createdAt)||0));
+   const label=kind==='comments'?'Bình luận':kind==='reviews'?'Review':'Hoạt động';
+   c.innerHTML='<h3>'+label+'</h3>'+(rows.length?rows.map(function(r){
+     let location='';
+     if(r.type==='comment') location=commentLocationHTML(r.key).replace('data-comment-location=', 'data-comment-id="'+esc(r.id)+'" data-comment-location=');
+     else {const st=stories.find(x=>Number(x.id)===Number(r.storyId));if(st)location='<button type="button" class="comment-location" onclick="event.stopPropagation();openStory('+Number(st.id)+')">'+esc(st.title)+'</button>'}
+     const body=r.type==='review'?(r.html?safeReviewHTML(r.html):esc(r.text).replace(/\n/g,'<br>')):commentTextHTML(r.text);
+     const when=r.createdAt?commentTime(r):'';
+     return '<article class="community-card activity-card"><div class="profile-activity-top"><div class="profile-activity-kindtime">'+(r.type==='review'?'Review':'Bình luận')+(when?' · '+when:'')+'</div>'+(location?'<div class="profile-activity-address">'+location+'</div>':'')+'</div>'+activityClampHTML(body)+'</article>';
+   }).join(''):'<p class="muted">Chưa có hoạt động nào.</p>');
+   setupActivity(c);
+ };
+
+ /* Add the same 3-line Xem thêm behavior to comments on story/chapter pages. */
+ const originalCommentMarkup=window.commentMarkup;
+ if(typeof originalCommentMarkup==='function'){
+   window.commentMarkup=function(){
+     let html=originalCommentMarkup.apply(this,arguments);
+     html=html.replace('<p class="comment-text">','<p class="comment-text story-comment-clamp">');
+     html=html.replace('</p></div>','</p><button class="story-comment-more" type="button">Xem thêm</button></div>');
+     return html;
+   };
+ }
+ function setupStoryCommentClamps(root){
+   root=root||document;
+   requestAnimationFrame(function(){
+     root.querySelectorAll('.comment-bubble').forEach(function(bubble){
+       const body=bubble.querySelector('.story-comment-clamp'),btn=bubble.querySelector('.story-comment-more');
+       if(!body||!btn)return;
+       if(!body.classList.contains('expanded')) btn.hidden=body.scrollHeight<=body.clientHeight+2;
+     });
+   });
+ }
+ const mo=new MutationObserver(function(muts){
+   for(const m of muts){if(m.addedNodes&&m.addedNodes.length){setupStoryCommentClamps(document);break;}}
+ });
+ mo.observe(document.body,{childList:true,subtree:true});
+ setupStoryCommentClamps(document);
+ document.addEventListener('click',function(e){
+   const more=e.target.closest('.story-comment-more');
+   if(more){e.preventDefault();e.stopPropagation();const bubble=more.closest('.comment-bubble'),body=bubble?.querySelector('.story-comment-clamp');if(!bubble||!body)return;body.classList.add('expanded');bubble.classList.add('story-comment-expanded');more.hidden=true;return;}
+   const bubble=e.target.closest('.comment-bubble.story-comment-expanded');
+   if(bubble&&!e.target.closest('a,button,input,textarea,select')){const body=bubble.querySelector('.story-comment-clamp'),more=bubble.querySelector('.story-comment-more');body?.classList.remove('expanded');bubble.classList.remove('story-comment-expanded');if(more)more.hidden=false;}
+ },true);
+})();
+</script>
 </body></html>
 <style id="alex-cover-comment-position-20261009">
 /* Requested polish: slightly taller home covers without widening the cards. */

@@ -1000,13 +1000,14 @@ body.purplenight .account-menu,body.purplenight .notif-panel{
 
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<!-- Nhà có Alex V21.9 -->
+<!-- Nhà có Alex V21.21 -->
 
 <style id="v2120-fixes">
 /* V21.20 — account menu is one flat panel, not a stack of buttons */
 .account-menu{padding:6px 0!important;overflow:hidden!important}
 .account-menu button{display:block!important;width:100%!important;margin:0!important;padding:10px 14px!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;outline:0!important;transform:none!important;text-align:left!important}
-.account-menu button:hover,.account-menu button:focus,.account-menu button:active{background:transparent!important;box-shadow:none!important;transform:none!important}
+.account-menu button:hover,.account-menu button:focus-visible{background:var(--soft)!important;box-shadow:inset 3px 0 0 var(--accent)!important;transform:none!important}
+.account-menu button:active{background:var(--soft)!important;box-shadow:inset 3px 0 0 var(--accent)!important;transform:none!important}
 .account-menu .logout{margin-top:4px!important;padding-top:12px!important;border-top:1px solid var(--line)!important}
 </style>
 </head>
@@ -1391,7 +1392,21 @@ function goHome(){
 function chapterLikeKey(storyId,chapterIndex){return `${storyId}_${chapterIndex}`}
 function storyLikeTotal(story){return (story.chapters||[]).reduce((sum,_,i)=>sum+(Number(chapterLikes[chapterLikeKey(story.id,i)])||0),0)}
 function renderChapterHeart(){const box=document.getElementById('chapterHeartRow');if(!box||!currentStory)return;const key=chapterLikeKey(currentStory.id,currentChapter),count=Number(chapterLikes[key])||0,on=likedChapters.includes(key);box.innerHTML=`<button class="chapter-heart-btn ${on?'liked':''}" type="button" onclick="toggleChapterLike()" aria-label="${on?'Bỏ tim':'Thả tim'} chương này">${on?'♥':'♡'} <span>${count}</span></button>`}
-function toggleChapterLike(){if(!currentStory)return;if(!authUser){requestCommentLogin('thả tim chương');return}const key=chapterLikeKey(currentStory.id,currentChapter);if(likedChapters.includes(key)){likedChapters=likedChapters.filter(x=>x!==key);chapterLikes[key]=Math.max(0,(Number(chapterLikes[key])||0)-1)}else{likedChapters.push(key);chapterLikes[key]=(Number(chapterLikes[key])||0)+1}save();renderChapterHeart();render()}
+async function toggleChapterLike(){
+ if(!currentStory)return;
+ if(!authUser){requestCommentLogin('thả tim chương');return}
+ const ch=currentStory.chapters?.[currentChapter],chapterId=Number(ch?.id),key=chapterLikeKey(currentStory.id,currentChapter);
+ if(!Number.isFinite(chapterId)){console.warn('chapter like: missing cloud chapter id');return}
+ const on=likedChapters.includes(key);
+ let result;
+ if(on) result=await sb.from('chapter_likes').delete().eq('chapter_id',chapterId).eq('user_id',authUser.id);
+ else result=await sb.from('chapter_likes').insert({chapter_id:chapterId,user_id:authUser.id});
+ if(result.error){console.warn('chapter like cloud',result.error);return}
+ if(on){likedChapters=likedChapters.filter(x=>x!==key);chapterLikes[key]=Math.max(0,(Number(chapterLikes[key])||0)-1)}
+ else{likedChapters.push(key);chapterLikes[key]=(Number(chapterLikes[key])||0)+1}
+ renderChapterHeart();render();
+ if(introStory&&String(introStory.id)===String(currentStory.id))openStory(currentStory.id,false);
+}
 function primaryGenreClass(name){
  const g=String(name||'').trim().toLowerCase();
  if(g==='hiện đại')return 'genre-hien-dai';
@@ -1599,6 +1614,7 @@ async function moveChapter(n){
  progress[currentStory.id]={chapter:currentChapter,scroll:0};save();
  // V21.17: chương được tải lazy từ Supabase, nên phải đợi nội dung cloud trước khi render.
  await ensureChapterContent(currentStory,currentChapter);
+ if(await recordStoryView(currentStory.id))currentStory.views=(currentStory.views||0)+1;
  renderChapter(0);
 }
 function renderToc(){
@@ -1613,6 +1629,7 @@ async function goChapter(i){
  toggleToc(false);
  // V21.17: chọn chương từ mục lục cũng phải tải paragraph từ Supabase trước.
  await ensureChapterContent(currentStory,i);
+ if(await recordStoryView(currentStory.id))currentStory.views=(currentStory.views||0)+1;
  renderChapter(0);
 }
 function toggleToc(force){toggleFontMenu(false);
@@ -2003,10 +2020,14 @@ async function refreshPublicStoryCloudFields(){
    const [storyRows,viewRows,likeRows]=await Promise.all([
      fetchAllRows('stories','id'),
      fetchAllRows('story_views','id').catch(()=>[]),
-     fetchAllRows('story_likes','id').catch(()=>[])
+     fetchAllRows('chapter_likes','chapter_id').catch(()=>[])
    ]);
    const views={}; for(const r of viewRows||[]) views[r.story_id]=(views[r.story_id]||0)+1;
-   const likes={}; for(const r of likeRows||[]) likes[r.story_id]=(likes[r.story_id]||0)+1;
+   const chapterIdToKey={};
+   for(const st of stories){(st.chapters||[]).forEach((ch,i)=>{if(ch?.id!=null)chapterIdToKey[String(ch.id)]=chapterLikeKey(st.id,i)})}
+   chapterLikes={};
+   for(const r of likeRows||[]){const key=chapterIdToKey[String(r.chapter_id)];if(key)chapterLikes[key]=(chapterLikes[key]||0)+1}
+   likedChapters=authUser?(likeRows||[]).filter(r=>String(r.user_id)===String(authUser.id)).map(r=>chapterIdToKey[String(r.chapter_id)]).filter(Boolean):[];
    for(const st of stories){
      const r=(storyRows||[]).find(x=>String(x.id)===String(st.id));
      if(r){
@@ -2022,15 +2043,12 @@ async function refreshPublicStoryCloudFields(){
        if(r.status) st.status=['completed','complete','done','Đã hoàn thành'].includes(r.status)?'completed':'ongoing';
      }
      st.views=Number(views[st.id]||0);
-     st.cloudLikes=Number(likes[st.id]||0);
+     st.cloudLikes=0;
    }
  }catch(e){console.warn('public story cloud fields',e)}
 }
 const _storyLikeTotalV219=storyLikeTotal;
-storyLikeTotal=function(story){
- const chapterTotal=_storyLikeTotalV219(story);
- return Math.max(Number(story.cloudLikes)||0, chapterTotal);
-};
+storyLikeTotal=function(story){ return _storyLikeTotalV219(story); };
 async function loadCloudStories(){
  try{
   // V21.15: tải metadata + danh sách chương trước để Trang chủ hiện nhanh.
@@ -2044,7 +2062,7 @@ async function loadCloudStories(){
   for(const c of chapterRows){if(c.published===false)continue;(chaptersByStory[c.story_id]||(chaptersByStory[c.story_id]=[])).push(c)}
   Object.values(chaptersByStory).forEach(a=>a.sort((x,y)=>(Number(x.chapter_number)||0)-(Number(y.chapter_number)||0)));
   const mapped=storyRows.filter(r=>r.published!==false).map(r=>({
-   id:Number(r.id),title:r.title||r.name||`Truyện ${r.id}`,author:r.author||'Alex',
+   id:Number(r.id),title:r.title||r.name||`Truyện ${r.id}`,author:r.author||'',
    mainGenre:['Hiện đại','Cổ đại','Tương lai','Huyền ảo'].includes(r.main_genre||r.genre)?(r.main_genre||r.genre):'',
    genre:r.genre||r.main_genre||'',subtags:Array.isArray(r.subtags)?r.subtags:(Array.isArray(r.tags)?r.tags:[]),
    status:['completed','complete','done','Đã hoàn thành'].includes(r.status)?'completed':'ongoing',
@@ -2171,7 +2189,7 @@ function deleteManagedChapter(i){if(!activeManagedStory?.chapters?.[i]||!confirm
 let draggedChapterIndex=null;function chapterDragStart(e){draggedChapterIndex=Number(e.currentTarget.dataset.index);e.currentTarget.classList.add('dragging')}function chapterDrop(e){e.preventDefault();const to=Number(e.currentTarget.dataset.index);if(draggedChapterIndex===null||draggedChapterIndex===to)return;const [m]=activeManagedStory.chapters.splice(draggedChapterIndex,1);activeManagedStory.chapters.splice(to,0,m);draggedChapterIndex=null;persistManaged();renderStoryAdmin()}
 function openStoryComposer(id=null,source='draft'){if(!isSiteAdmin())return;editingManagedStoryId=id?{id:String(id),source}:null;let s=null;if(id){s=source==='published'?stories.find(x=>String(x.id)===String(id)):managedDrafts.find(x=>String(x.id)===String(id));}document.getElementById('storyComposerTitle').textContent=s?'Sửa thông tin truyện':'Truyện mới';document.getElementById('manageTitle').value=s?.title||'';document.getElementById('manageGenre').value=s?.mainGenre||'Hiện đại';document.getElementById('manageStatus').value=s?.status||'ongoing';document.getElementById('manageSummary').value=s?.summary||'';document.getElementById('manageTags').value=(s?.subtags||[]).join(', ');const cp=document.getElementById('manageCoverPreview');if(cp)cp.innerHTML=s?.cover?`<img src="${esc(s.cover)}" alt="Ảnh bìa hiện tại">`:'Chưa có bìa';const ci=document.getElementById('manageCover');if(ci)ci.value='';document.getElementById('storyComposerModal').classList.remove('hidden')}
 function closeStoryComposer(){document.getElementById('storyComposerModal').classList.add('hidden');editingManagedStoryId=null}
-function managedStoryFromForm(base={}){return {...base,title:document.getElementById('manageTitle').value.trim(),author:'Alex',mainGenre:document.getElementById('manageGenre').value,genre:document.getElementById('manageGenre').value,status:document.getElementById('manageStatus').value,summary:document.getElementById('manageSummary').value.trim(),subtags:document.getElementById('manageTags').value.split(',').map(x=>x.trim()).filter(Boolean),chapters:base.chapters||[],views:base.views||0,likes:base.likes||0}}
+function managedStoryFromForm(base={}){return {...base,title:document.getElementById('manageTitle').value.trim(),author:base.author||'',mainGenre:document.getElementById('manageGenre').value,genre:document.getElementById('manageGenre').value,status:document.getElementById('manageStatus').value,summary:document.getElementById('manageSummary').value.trim(),subtags:document.getElementById('manageTags').value.split(',').map(x=>x.trim()).filter(Boolean),chapters:base.chapters||[],views:base.views||0,likes:base.likes||0}}
 async function saveManagedStory(mode){
  if(!isSiteAdmin())return;const title=document.getElementById('manageTitle').value.trim();if(!title){alert('Nhập tên truyện trước nha bà.');return}
  let base={id:'draft-'+Date.now(),chapters:[]};if(editingManagedStoryId)base=getManagedStory(editingManagedStoryId.id,editingManagedStoryId.source)||base;
@@ -2187,7 +2205,7 @@ async function saveManagedStory(mode){
    if(sourceBefore==='published' && /^\d+$/.test(String(row.id))){
      // Cập nhật các cột nền trước; ảnh bìa thử cover_url rồi fallback sang cover
      // để tương thích schema hiện tại của dự án.
-     const basePatch={title:row.title,author:row.author||'Alex',genre:row.mainGenre,status:(row.status==='completed'?'completed':'writing')};
+     const basePatch={title:row.title,genre:row.mainGenre,status:(row.status==='completed'?'completed':'writing')};
      let baseResult=await sb.from('stories').update(basePatch).eq('id',Number(row.id));
      if(baseResult.error){console.warn('story base update cloud',baseResult.error);alert('Chưa áp dụng được thông tin truyện: '+(baseResult.error.message||'Supabase từ chối cập nhật.'));return}
      const metadataWrites=[
@@ -2644,7 +2662,7 @@ function queueCloudMemberState(){if(!authUser||!cloudSyncReady)return;clearTimeo
 const localSaveV179=save;
 save=function(){localSaveV179();queueCloudMemberState()};
 const syncProfileV179=syncProfile;
-syncProfile=async function(u){await syncProfileV179(u);await loadCloudMemberState();cloudSyncReady=true;Promise.allSettled([loadCloudComments(),loadCloudReviews()]);};
+syncProfile=async function(u){await syncProfileV179(u);await loadCloudMemberState();await refreshPublicStoryCloudFields();cloudSyncReady=true;Promise.allSettled([loadCloudComments(),loadCloudReviews()]);};
 
 submitStoryComment=async function(event){event.preventDefault();if(!introStory||!authUser)return;const input=document.getElementById('storyCommentInput'),text=input?.value.trim();if(!text)return;input.disabled=true;const ok=await insertCloudComment(storyCommentKey(introStory.id),text);input.disabled=false;if(ok){input.value='';storyCommentPage=1;renderAllStoryComments();renderHomeComments();}};
 addParaComment=async function(key){if(!authUser){requestCommentLogin('bình luận');return}const input=document.getElementById('panelCommentInput'),text=input?.value.trim();if(!text)return;input.disabled=true;const ok=await insertCloudComment(key,text);input.disabled=false;if(ok)input.value='';};

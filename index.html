@@ -1312,6 +1312,10 @@ body.purplenight .account-menu,body.purplenight .notif-panel{
 #paragraphCommentPanel .reply-compose{display:block!important;}
 
 .comment-mention{color:var(--accent);font-weight:700;text-decoration:none}.comment-mention:hover{text-decoration:underline}
+.mention-popup{position:fixed;z-index:120;width:320px;max-width:calc(100vw - 16px);padding:5px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--fg);box-shadow:0 8px 24px rgba(73,50,50,.14);overflow:auto;overscroll-behavior:contain}
+.mention-popup[hidden]{display:none}.mention-option{display:flex;align-items:center;gap:10px;width:100%;border:0;border-radius:8px;background:transparent;text-align:left;padding:8px;color:var(--fg)}
+.mention-option:hover,.mention-option[aria-selected="true"]{background:var(--soft)}.mention-option-avatar{width:34px;height:34px;flex:0 0 34px;border-radius:50%;object-fit:cover;background:var(--soft);display:grid;place-items:center;color:var(--accent);font-weight:700}
+.mention-option-label{min-width:0;display:grid;gap:1px}.mention-option-label strong,.mention-option-label small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mention-option-label strong{font-size:13px}.mention-option-label small,.mention-status{font-size:12px;color:var(--muted)}.mention-status{padding:10px}
 
 /* Profile story shelves — compact cover-first layout inspired by reading libraries. */
 .profile-shelf-head{margin-bottom:18px}.profile-shelf-head h3{margin:0 0 5px}.profile-shelf-head p{margin:0;font-size:13px}
@@ -2202,11 +2206,160 @@ function commentOwnerMenu(comment){
  if(!isOwnComment(comment)&&!canDeleteComment(comment))return '';
  return `<span class="comment-owner-menu"><button type="button" class="comment-more" data-comment-action="menu" aria-label="Tùy chọn bình luận">⋯</button><span class="comment-menu-pop">${isOwnComment(comment)?`<button type="button" data-comment-action="edit" data-comment-id="${esc(comment.id)}">Sửa</button>`:''}${canDeleteComment(comment)?`<button type="button" class="danger" data-comment-action="delete" data-comment-id="${esc(comment.id)}">Xóa</button>`:''}</span></span>`;
 }
-let mentionProfilesBySlug={};
-async function loadMentionProfiles(){try{const {data,error}=await sb.from('profiles').select('id,display_name,avatar_url');if(error)return;mentionProfilesBySlug={};for(const p of(data||[])){const u=slugify(p.display_name||'');if(u)mentionProfilesBySlug[u]=p}}catch(e){console.warn('mention profiles',e)}}
-function commentTextHTML(text){const raw=String(text||'');let out='',last=0,re=/@([A-Za-z0-9_-]+)/g,m;while((m=re.exec(raw))){out+=esc(raw.slice(last,m.index));const u=slugify(m[1]),p=mentionProfilesBySlug[u];if(p)out+=`<a class="comment-mention" href="/user/${u}" data-user-profile="${u}">${esc(p.display_name||m[1])}</a>`;else out+=esc(m[0]);last=m.index+m[0].length}return out+esc(raw.slice(last))}
+// Mention identity belongs to a selected profile and a surviving token range,
+// never to a username parsed at submit time. Drafts stay local to their input.
+const mentionDrafts=new WeakMap(),mentionProfilesById=new Map();
+const mentionInputSelector='#storyCommentInput,#chapterCommentInput,#panelCommentInput,#replyCommentInput';
+let mentionPopup=null,mentionActive=null,mentionSearchTimer=null,mentionSearchVersion=0,mentionDismissed=null;
+function rememberMentionProfiles(rows){for(const p of rows||[])if(p?.id)mentionProfilesById.set(String(p.id),p)}
+function mentionUsername(p){return slugify(p?.display_name||'')||'thanh-vien'}
+function mentionBoundary(text,start,end){return (start===0||/[\s([{]/.test(text[start-1]))&&(end===text.length||!/[\p{L}\p{M}0-9_-]/u.test(text[end]))}
+function reconcileMentionDraft(input){
+ let state=mentionDrafts.get(input);if(!state){state={value:input.value,tokens:[]};mentionDrafts.set(input,state)}
+ const old=state.value,next=input.value;
+ if(old!==next){
+  let left=0,right=0;while(left<old.length&&left<next.length&&old[left]===next[left])left++;
+  while(right<old.length-left&&right<next.length-left&&old[old.length-1-right]===next[next.length-1-right])right++;
+  const oldEnd=old.length-right,delta=next.length-old.length;
+  state.tokens=state.tokens.flatMap(t=>{
+   if(t.end<=left)return [{...t}];
+   if(t.start>=oldEnd)return [{...t,start:t.start+delta,end:t.end+delta}];
+   return [];
+  });state.value=next;
+ }
+ state.tokens=state.tokens.filter(t=>next.slice(t.start,t.end)===t.token&&mentionBoundary(next,t.start,t.end));
+ return state;
+}
+function selectedCommentMentions(input){
+ if(!input)return [];const state=reconcileMentionDraft(input),leading=input.value.length-input.value.trimStart().length,text=input.value.trim();
+ return state.tokens.map(t=>({...t,start:t.start-leading,end:t.end-leading})).filter(t=>t.start>=0&&t.end<=text.length);
+}
+function finishCommentMentionDraft(input,ok){
+ const live=input?.id?document.getElementById(input.id):input;
+ if(input)input.disabled=false;if(live)live.disabled=false;
+ if(ok){for(const el of new Set([input,live]))if(el){el.value='';mentionDrafts.delete(el)}if(mentionActive?.input===input||mentionActive?.input===live)closeMentionPopup()}
+}
+function mentionQuery(input){
+ if(!input?.matches(mentionInputSelector)||input.disabled||input.selectionStart!==input.selectionEnd)return null;
+ const pos=input.selectionStart??input.value.length,state=reconcileMentionDraft(input);
+ if(state.tokens.some(t=>pos>t.start&&pos<=t.end))return null;
+ const m=input.value.slice(0,pos).match(/(?:^|[\s([{])@([\p{L}\p{M}0-9_-]*)$/u);if(!m||m[1].length>48)return null;
+ const start=pos-m[1].length-1;let end=pos;while(end<input.value.length&&/[\p{L}\p{M}0-9_-]/u.test(input.value[end]))end++;
+ return {start,end,query:slugify(m[1])};
+}
+// The existing username is a slug of display_name, not a database column.
+// A bounded case-insensitive PostgreSQL regex searches its accented spelling.
+const mentionSearchLetters={};
+for(let cp=0;cp<=0x1eff;cp++){
+ if(cp>0x024f&&cp<0x1e00)continue;
+ const c=String.fromCodePoint(cp),s=slugify(c);
+ if(s.length===1&&/^[a-z]$/.test(s))mentionSearchLetters[s]=(mentionSearchLetters[s]||'')+c;
+}
+function mentionSearchPattern(query){return '^[^[:alnum:]]*'+Array.from(query).map(c=>c==='-'?'[^[:alnum:]]+':mentionSearchLetters[c]?'['+mentionSearchLetters[c]+'][\\u0300-\\u036f]*':c).join('')}
+async function searchMentionProfiles(query){
+ let request=sb.from('profiles').select('id,display_name,avatar_url');
+ if(query)request=request.filter('display_name','imatch',mentionSearchPattern(query));
+ const {data,error}=await request.order('display_name',{ascending:true}).order('id',{ascending:true}).limit(8);
+ if(error)throw error;rememberMentionProfiles(data);
+ return (data||[]).filter(p=>mentionUsername(p).startsWith(query));
+}
+function ensureMentionPopup(){
+ if(mentionPopup)return mentionPopup;
+ mentionPopup=document.createElement('div');mentionPopup.id='commentMentionSuggestions';mentionPopup.className='mention-popup';mentionPopup.hidden=true;mentionPopup.setAttribute('role','listbox');mentionPopup.setAttribute('aria-label','Tài khoản để nhắc tên');document.body.appendChild(mentionPopup);
+ mentionPopup.addEventListener('pointerdown',e=>{if(e.target.closest('[data-mention-index]'))e.preventDefault()});
+ mentionPopup.addEventListener('click',e=>{const button=e.target.closest('[data-mention-index]');if(button)chooseMentionProfile(Number(button.dataset.mentionIndex))});
+ return mentionPopup;
+}
+function closeMentionPopup(){
+ clearTimeout(mentionSearchTimer);mentionSearchVersion++;
+ if(mentionActive){mentionActive.input.setAttribute('aria-expanded','false');mentionActive.input.removeAttribute('aria-activedescendant')}
+ mentionActive=null;if(mentionPopup)mentionPopup.hidden=true;
+}
+function positionMentionPopup(){
+ if(!mentionActive||!mentionPopup||mentionPopup.hidden)return;
+ const input=mentionActive.input;if(!input.isConnected){closeMentionPopup();return}
+ const rect=input.getBoundingClientRect(),viewport=window.visualViewport,topEdge=viewport?.offsetTop||0,bottomEdge=topEdge+(viewport?.height||innerHeight),leftEdge=viewport?.offsetLeft||0,width=viewport?.width||innerWidth;
+ if(rect.bottom<topEdge||rect.top>bottomEdge){closeMentionPopup();return}
+ mentionPopup.style.width=Math.min(320,width-16)+'px';
+ const above=rect.top-topEdge-14,below=bottomEdge-rect.bottom-14,useAbove=above>=150||above>below;
+ mentionPopup.style.maxHeight=Math.max(40,Math.min(240,useAbove?above:below))+'px';
+ mentionPopup.style.left=Math.max(leftEdge+8,Math.min(rect.left,leftEdge+width-mentionPopup.offsetWidth-8))+'px';
+ mentionPopup.style.top=(useAbove?Math.max(topEdge+8,rect.top-mentionPopup.offsetHeight-6):rect.bottom+6)+'px';
+}
+function renderMentionPopup(status=''){
+ const active=mentionActive;if(!active)return;const popup=ensureMentionPopup();
+ const duplicateNames=new Map();for(const p of active.rows)duplicateNames.set(mentionUsername(p),(duplicateNames.get(mentionUsername(p))||0)+1);
+ popup.innerHTML=active.rows.length?active.rows.map((p,i)=>{
+  const username=mentionUsername(p),avatar=p.avatar_url?`<img class="mention-option-avatar" src="${esc(p.avatar_url)}" alt="" referrerpolicy="no-referrer">`:`<span class="mention-option-avatar" aria-hidden="true">${esc(Array.from(p.display_name||'T')[0])}</span>`;
+  const detail=(p.display_name||'Thành viên')+(duplicateNames.get(username)>1?' · '+String(p.id).slice(-6):'');
+  return `<button type="button" role="option" tabindex="-1" id="mentionOption${i}" data-mention-index="${i}" data-mention-user-id="${esc(p.id)}" class="mention-option" aria-selected="${i===active.index}">${avatar}<span class="mention-option-label"><strong>@${esc(username)}</strong><small>${esc(detail)}</small></span></button>`;
+ }).join(''):`<div class="mention-status" role="status">${esc(status||'Không tìm thấy tài khoản phù hợp.')}</div>`;
+ popup.hidden=false;active.input.setAttribute('aria-expanded','true');
+ if(active.rows.length)active.input.setAttribute('aria-activedescendant','mentionOption'+active.index);else active.input.removeAttribute('aria-activedescendant');
+ positionMentionPopup();
+}
+function updateMentionPopup(input){
+ const query=mentionQuery(input);if(!query){if(mentionActive?.input===input)closeMentionPopup();return}
+ if(mentionDismissed?.input===input&&mentionDismissed.value===input.value&&mentionDismissed.caret===input.selectionStart)return;
+ mentionDismissed=null;
+ if(mentionActive?.input===input&&mentionActive.start===query.start&&mentionActive.end===query.end&&mentionActive.query===query.query)return;
+ closeMentionPopup();const version=mentionSearchVersion;
+ mentionActive={input,...query,rows:[],index:0,pending:true};
+ input.setAttribute('aria-autocomplete','list');input.setAttribute('aria-controls','commentMentionSuggestions');renderMentionPopup('Đang tìm tài khoản…');
+ mentionSearchTimer=setTimeout(async()=>{
+  try{const rows=await searchMentionProfiles(query.query);if(version!==mentionSearchVersion||document.activeElement!==input)return;mentionActive.rows=rows;mentionActive.pending=false;renderMentionPopup();}
+  catch(e){if(version===mentionSearchVersion){mentionActive.pending=false;renderMentionPopup('Chưa tải được tài khoản. Bà thử lại nhé.')}console.warn('mention search',e.message||e)}
+ },query.query?120:0);
+}
+function chooseMentionProfile(index){
+ const active=mentionActive,p=active?.rows[index];if(!p)return;
+ const {input}=active,current=mentionQuery(input);if(!current||current.start!==active.start||current.query!==active.query){closeMentionPopup();return}
+ const token='@'+mentionUsername(p),after=input.value.slice(current.end),space=/^\s/.test(after)?'':' ';
+ input.value=input.value.slice(0,current.start)+token+space+after;
+ const state=reconcileMentionDraft(input);state.tokens.push({id:String(p.id),start:current.start,end:current.start+token.length,token});
+ const caret=current.start+token.length+space.length;closeMentionPopup();input.focus({preventScroll:true});input.setSelectionRange(caret,caret);input.dispatchEvent(new Event('input',{bubbles:true}));
+}
+// Capture keyboard selection before existing Enter-to-submit handlers run.
+document.addEventListener('keydown',e=>{
+ if(!e.target.matches?.(mentionInputSelector)||!mentionActive||mentionActive.input!==e.target||e.isComposing)return;
+ if(!mentionQuery(e.target)){closeMentionPopup();return}
+ if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();mentionDismissed={input:e.target,value:e.target.value,caret:e.target.selectionStart};closeMentionPopup();return}
+ if(['ArrowDown','ArrowUp','Enter','Tab'].includes(e.key)&&mentionActive.rows.length){
+  e.preventDefault();e.stopImmediatePropagation();
+  if(e.key==='Enter'||e.key==='Tab')chooseMentionProfile(mentionActive.index);
+  else{mentionActive.index=(mentionActive.index+(e.key==='ArrowDown'?1:-1)+mentionActive.rows.length)%mentionActive.rows.length;renderMentionPopup();mentionPopup.querySelector('[aria-selected="true"]')?.scrollIntoView({block:'nearest'})}
+ }else if(e.key==='Enter'&&mentionActive.pending){e.preventDefault();e.stopImmediatePropagation()}
+},true);
+document.addEventListener('beforeinput',e=>{
+ const input=e.target;if(!input.matches?.(mentionInputSelector))return;const state=reconcileMentionDraft(input);
+ if(/^history/.test(e.inputType||'')){state.tokens=[];return}
+ const start=input.selectionStart,end=input.selectionEnd;
+ if(start!==end)state.tokens=state.tokens.filter(t=>end<=t.start||start>=t.end);
+},true);
+document.addEventListener('input',e=>{if(e.target.matches?.(mentionInputSelector)){reconcileMentionDraft(e.target);if(!e.isComposing)updateMentionPopup(e.target)}});
+document.addEventListener('compositionend',e=>{if(e.target.matches?.(mentionInputSelector))updateMentionPopup(e.target)});
+document.addEventListener('selectionchange',()=>{const input=document.activeElement;if(input?.matches(mentionInputSelector))updateMentionPopup(input);else if(mentionActive)closeMentionPopup()});
+document.addEventListener('focusout',e=>{if(e.target===mentionActive?.input)closeMentionPopup()});
+document.addEventListener('pointerdown',e=>{if(mentionActive&&e.target!==mentionActive.input&&!mentionPopup?.contains(e.target))closeMentionPopup()},true);
+window.addEventListener('scroll',positionMentionPopup,true);window.addEventListener('resize',positionMentionPopup);window.visualViewport?.addEventListener('resize',positionMentionPopup);window.visualViewport?.addEventListener('scroll',positionMentionPopup);
+function commentTextHTML(text,mentionIds=[]){
+ const raw=String(text||''),known=(mentionIds||[]).map(id=>mentionProfilesById.get(String(id))).filter(Boolean);let out='',last=0,re=/@([A-Za-z0-9_-]+)/g,m;
+ while((m=re.exec(raw))){out+=esc(raw.slice(last,m.index));const username=slugify(m[1]),matches=known.filter(p=>mentionUsername(p)===username),p=matches.length===1?matches[0]:null;
+  if(p)out+=`<a class="comment-mention" href="/user/${username}" data-user-profile="${username}">${esc(p.display_name||m[1])}</a>`;else out+=esc(m[0]);last=m.index+m[0].length;
+ }return out+esc(raw.slice(last));
+}
 async function commentNotificationTriggersEnabled(){const {data,error}=await sb.rpc('nca_comment_notifications_enabled');return !error&&data===true;}
-async function saveCommentMentions(commentId,text,ctx){if(!authUser||!commentId)return;const slugs=[...new Set([...String(text||'').matchAll(/@([A-Za-z0-9_-]+)/g)].map(m=>slugify(m[1])).filter(Boolean))];if(!slugs.length)return;if(!Object.keys(mentionProfilesBySlug).length)await loadMentionProfiles();const people=slugs.map(u=>mentionProfilesBySlug[u]).filter(Boolean).filter(p=>String(p.id)!==String(authUser.id));for(const p of people){const mr=await sb.from('comment_mentions').insert({comment_id:commentId,mentioned_user_id:p.id});if(mr.error)console.warn('comment mention',mr.error);if(!mr.error && !(await commentNotificationTriggersEnabled())){const nr=await sb.from('notifications').insert({user_id:p.id,actor_id:authUser.id,type:'mention',story_id:ctx.story_id,comment_id:commentId});if(nr.error)console.warn('mention notification',nr.error)}}}
+async function saveCommentMentions(commentId,text,ctx,selected=[]){
+ if(!authUser||!commentId)return;
+ const valid=selected.filter(t=>t.id&&String(text).slice(t.start,t.end)===t.token&&mentionBoundary(String(text),t.start,t.end));
+ const ids=[...new Set(valid.map(t=>String(t.id)))];if(!ids.length)return;
+ const triggersEnabled=await commentNotificationTriggersEnabled();
+ for(const id of ids){
+  const mr=await sb.from('comment_mentions').insert({comment_id:commentId,mentioned_user_id:id});
+  if(mr.error){console.warn('comment mention',mr.error);continue}
+  if(id!==String(authUser.id)&&!triggersEnabled){const nr=await sb.from('notifications').insert({user_id:id,actor_id:authUser.id,type:'mention',story_id:ctx.story_id,comment_id:commentId});if(nr.error)console.warn('mention notification',nr.error)}
+ }
+}
 function commentMarkup(comment,key,list,headerExtra=''){
  const username=slugify(comment.username||comment.name)||'thanh-vien';
  const profileLink='/user/'+username, liked=!!authUser&&(comment.likedBy||[]).includes(authUser.id);
@@ -2215,7 +2368,7 @@ function commentMarkup(comment,key,list,headerExtra=''){
  return `<article class="comment-item" data-comment-id="${esc(comment.id)}">
   <a class="comment-avatar" href="${profileLink}" data-user-profile="${username}" aria-label="Hồ sơ ${esc(comment.name||'Thành viên')}">${avatar}</a>
   <div class="comment-main"><div class="comment-author-line"><a class="comment-author" href="${profileLink}" data-user-profile="${username}">${esc(comment.name||'Thành viên')}</a>${isAdminComment(comment)?'<span class="admin-badge">ADMIN</span>':''}${headerExtra}${commentOwnerMenu(comment)}</div>
-   <div class="comment-bubble">${target?`<span class="comment-reply-to">Trả lời ${esc(target.name)}</span>`:''}<p class="comment-text">${commentTextHTML(comment.text)}</p></div>
+   <div class="comment-bubble">${target?`<span class="comment-reply-to">Trả lời ${esc(target.name)}</span>`:''}<p class="comment-text">${commentTextHTML(comment.text,comment.mentions)}</p></div>
    <div class="comment-meta"><button type="button" data-comment-action="like" data-comment-id="${esc(comment.id)}" aria-pressed="${liked}" aria-label="Thả tim bình luận của ${esc(comment.name)}">${liked?'♥':'♡'} <span>${Math.max(0,Number(comment.likes)||0)}</span></button><button type="button" data-comment-action="reply" data-comment-id="${esc(comment.id)}">Trả lời</button>${commentTime(comment)}${comment.editedAt?'<span class="comment-edited">· Đã chỉnh sửa</span>':''}</div>
   </div></article>`;
 }
@@ -2287,11 +2440,12 @@ function renderHomeComments(){
    const username=slugify(comment.username||comment.name)||'thanh-vien';
    const avatar=comment.avatar?`<img class="community-avatar" src="${esc(comment.avatar)}" alt="">`:`<div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">${esc(Array.from(comment.name||'T')[0])}</div>`;
    const location=commentLocationHTML(key).replace('data-comment-location=',`data-comment-id="${esc(comment.id)}" data-comment-location=`);
-   return `<article class="community-card home-comment-card" data-home-comment-key="${esc(key)}" data-home-comment-id="${esc(comment.id)}">${`<div class="community-head">${avatar}<div class="community-meta"><strong>${esc(comment.name||'Thành viên')}${isAdminComment(comment)?'<span class="admin-badge admin-badge-home">ADMIN</span>':''}</strong><span class="community-sub">${commentTime(comment)} · ${location}</span></div></div>`}<div class="community-body">${commentTextHTML(comment.text)}</div></article>`;
+   return `<article class="community-card home-comment-card" data-home-comment-key="${esc(key)}" data-home-comment-id="${esc(comment.id)}">${`<div class="community-head">${avatar}<div class="community-meta"><strong>${esc(comment.name||'Thành viên')}${isAdminComment(comment)?'<span class="admin-badge admin-badge-home">ADMIN</span>':''}</strong><span class="community-sub">${commentTime(comment)} · ${location}</span></div></div>`}<div class="community-body">${commentTextHTML(comment.text,comment.mentions)}</div></article>`;
  }).join(''):'<p class="muted panel-empty">Chưa có bình luận nào.</p>';
 }
 function refreshCommentViews(){
- const drafts=[...document.querySelectorAll('.comment-compose input')].map(input=>({id:input.id,value:input.value,start:input.selectionStart,end:input.selectionEnd,focused:document.activeElement===input}));
+ const drafts=[...document.querySelectorAll(mentionInputSelector)].map(input=>({id:input.id,value:input.value,start:input.selectionStart,end:input.selectionEnd,focused:document.activeElement===input,mentions:reconcileMentionDraft(input).tokens.map(t=>({...t}))}));
+ closeMentionPopup();
  closeEmojiPicker();
  renderHomeComments();renderHomeReviews();renderAllStoryComments();if(introStory)renderStoryReviews();
  if(currentStory){
@@ -2308,7 +2462,7 @@ function refreshCommentViews(){
  if(activeCommentKey&&document.getElementById('paragraphCommentPanel')?.classList.contains('open')){
   document.getElementById('paragraphCommentPanelBody').innerHTML=renderParaComments(activeCommentKey,commentList(activeCommentKey));
  }
- for(const draft of drafts){const input=document.getElementById(draft.id);if(!input)continue;input.value=draft.value;input.setSelectionRange(draft.start,draft.end);if(draft.focused)input.focus({preventScroll:true})}
+ for(const draft of drafts){const input=document.getElementById(draft.id);if(!input)continue;input.value=draft.value;mentionDrafts.set(input,{value:draft.value,tokens:draft.mentions});input.setSelectionRange(draft.start,draft.end);if(draft.focused)input.focus({preventScroll:true})}
 }
 function toggleCommentLike(key,id){
  if(!authUser){requestCommentLogin('thả tim bình luận');return}
@@ -3083,7 +3237,7 @@ function openProfileActivity(kind){openProfile('activity');renderProfileActivity
 function renderProfileActivity(kind='all'){
  const c=document.getElementById('profileContent');if(!c||!authUser)return;
  const rows=[];
- if(kind!=='reviews')for(const [key,list] of Object.entries(comments||{}))for(const row of (list||[]))if(row?.userId===authUser.id)rows.push({type:'comment',text:row.text||'',createdAt:row.createdAt||'',key});
+ if(kind!=='reviews')for(const [key,list] of Object.entries(comments||{}))for(const row of (list||[]))if(row?.userId===authUser.id)rows.push({type:'comment',text:row.text||'',mentions:row.mentions||[],createdAt:row.createdAt||'',key});
  if(kind!=='comments')for(const [storyId,list] of Object.entries(reviews||{}))for(const row of (list||[]))if(row?.userId===authUser.id)rows.push({type:'review',text:row.text||'',createdAt:row.createdAt||'',storyId});
  rows.sort((a,b)=>(Date.parse(b.createdAt)||0)-(Date.parse(a.createdAt)||0));
  const label=kind==='comments'?'Bình luận':kind==='reviews'?'Review':'Hoạt động';
@@ -3294,21 +3448,26 @@ async function cloudProfiles(ids){
   return Object.fromEntries((data||[]).map(p=>[p.id,p]));
 }
 async function loadCloudComments(){
-   await loadMentionProfiles();
   const {data,error}=await sb.from('comments').select('*').order('created_at',{ascending:true});
   if(error){console.warn('comments sync',error.message||error,error);return}
-  const rows=data||[], prof=await cloudProfiles(rows.map(r=>r.user_id));
+  const rows=data||[], mentionMap={};
+  // Read only mentions for the loaded comments; fetch only their public profiles.
+  for(let offset=0;offset<rows.length;offset+=100){
+   const result=await sb.from('comment_mentions').select('comment_id,mentioned_user_id').in('comment_id',rows.slice(offset,offset+100).map(r=>r.id));
+   for(const m of result.data||[])(mentionMap[m.comment_id]||(mentionMap[m.comment_id]=[])).push(m.mentioned_user_id);
+  }
+  const prof=await cloudProfiles([...rows.map(r=>r.user_id),...Object.values(mentionMap).flat()]);rememberMentionProfiles(Object.values(prof));
   let likes=[]; const lr=await sb.from('comment_likes').select('comment_id,user_id'); if(!lr.error)likes=lr.data||[];
   const likeMap={}; for(const x of likes)(likeMap[x.comment_id]||(likeMap[x.comment_id]=[])).push(x.user_id);
   const next={};
-  for(const r of rows){const p=prof[r.user_id]||{},key=cloudCommentKey(r);(next[key]||(next[key]=[])).push({id:r.id,userId:r.user_id,username:slugify(p.display_name||'thanh-vien'),name:p.display_name||'Thành viên',avatar:p.avatar_url||'',text:r.content||'',createdAt:r.created_at,editedAt:r.edited_at,parentId:r.parent_id,replyTo:r.reply_to_user_id,likes:(likeMap[r.id]||[]).length,likedBy:likeMap[r.id]||[]});}
+  for(const r of rows){const p=prof[r.user_id]||{},key=cloudCommentKey(r);(next[key]||(next[key]=[])).push({id:r.id,userId:r.user_id,username:slugify(p.display_name||'thanh-vien'),name:p.display_name||'Thành viên',avatar:p.avatar_url||'',text:r.content||'',mentions:mentionMap[r.id]||[],createdAt:r.created_at,editedAt:r.edited_at,parentId:r.parent_id,replyTo:r.reply_to_user_id,likes:(likeMap[r.id]||[]).length,likedBy:likeMap[r.id]||[]});}
   comments=next;  refreshCommentViews();
 }
 async function insertCloudComment(key,text,extra={}){
   const c=cloudCommentContext(key), payload={user_id:authUser.id,content:text,scope:c.scope,story_id:c.story_id,chapter_index:c.chapter_index,paragraph_index:c.paragraph_index,parent_id:extra.parentId||null,reply_to_user_id:extra.replyToUserId||null};
   const {data,error}=await sb.from('comments').insert(payload).select('*').single();
   if(error){console.error(error);alert('Chưa lưu được bình luận lên tài khoản. Thử lại nha.');return null}
-  await saveCommentMentions(data?.id,text,c);
+  await saveCommentMentions(data?.id,text,c,extra.mentions||[]);
    await loadCloudComments(); return data;
 }
 async function loadCloudReviews(){
@@ -3393,10 +3552,10 @@ syncProfile=async function(u){
  return memberProfile;
 };
 
-submitStoryComment=async function(event){event.preventDefault();if(!introStory||!authUser)return;const input=document.getElementById('storyCommentInput'),text=input?.value.trim();if(!text)return;input.disabled=true;const ok=await insertCloudComment(storyCommentKey(introStory.id),text);input.disabled=false;if(ok){input.value='';storyCommentPage=1;renderAllStoryComments();renderHomeComments();}};
-addParaComment=async function(key){if(!authUser){requestCommentLogin('bình luận');return}const input=document.getElementById('panelCommentInput'),text=input?.value.trim();if(!text)return;input.disabled=true;const ok=await insertCloudComment(key,text);const live=document.getElementById('panelCommentInput');if(live){live.disabled=false;if(ok)live.value='';}};
-addChapterComment=async function(){if(!authUser){requestCommentLogin('bình luận');return}const input=document.getElementById('chapterCommentInput'),text=input?.value.trim();if(!text)return;input.disabled=true;const ok=await insertCloudComment(chapterGeneralKey(),text);input.disabled=false;if(ok)input.value='';};
-submitCommentReply=async function(){if(!authUser||!activeReply)return;const input=document.getElementById('replyCommentInput'),text=input?.value.trim();if(!text)return;const {key,targetId,rootId}=activeReply,list=normalizedComments(key),target=list.find(r=>String(r.id)===String(targetId));if(!target)return;input.disabled=true;const ok=await insertCloudComment(key,text,{parentId:rootId,replyToUserId:target.userId});if(ok){activeReply=null;refreshCommentViews();}else{const live=document.getElementById('replyCommentInput');if(live)live.disabled=false;}};
+submitStoryComment=async function(event){event.preventDefault();if(!introStory||!authUser)return;const input=document.getElementById('storyCommentInput'),text=input?.value.trim();if(!text)return;input.disabled=true;const ok=await insertCloudComment(storyCommentKey(introStory.id),text,{mentions:selectedCommentMentions(input)});finishCommentMentionDraft(input,ok);if(ok){storyCommentPage=1;renderAllStoryComments();renderHomeComments();}};
+addParaComment=async function(key){if(!authUser){requestCommentLogin('bình luận');return}const input=document.getElementById('panelCommentInput'),text=input?.value.trim();if(!text)return;input.disabled=true;const ok=await insertCloudComment(key,text,{mentions:selectedCommentMentions(input)});finishCommentMentionDraft(input,ok);};
+addChapterComment=async function(){if(!authUser){requestCommentLogin('bình luận');return}const input=document.getElementById('chapterCommentInput'),text=input?.value.trim();if(!text)return;input.disabled=true;const ok=await insertCloudComment(chapterGeneralKey(),text,{mentions:selectedCommentMentions(input)});finishCommentMentionDraft(input,ok);};
+submitCommentReply=async function(){if(!authUser||!activeReply)return;const input=document.getElementById('replyCommentInput'),text=input?.value.trim();if(!text)return;const {key,targetId,rootId}=activeReply,list=normalizedComments(key),target=list.find(r=>String(r.id)===String(targetId));if(!target)return;input.disabled=true;const ok=await insertCloudComment(key,text,{parentId:rootId,replyToUserId:target.userId,mentions:selectedCommentMentions(input)});finishCommentMentionDraft(input,ok);if(ok){activeReply=null;refreshCommentViews();}};
 saveEditComment=async function(key,id,item){const list=comments[key]||[],comment=list.find(r=>String(r.id)===String(id));if(!comment||!isOwnComment(comment))return;const text=item?.querySelector('.comment-edit-box textarea')?.value.trim();if(!text)return;const {error}=await sb.from('comments').update({content:text,edited_at:new Date().toISOString()}).eq('id',id).eq('user_id',authUser.id);if(error){alert('Chưa sửa được bình luận.');return}await loadCloudComments();};
 deleteCommentById=async function(key,id){const list=comments[key]||[],comment=list.find(r=>String(r.id)===String(id));if(!comment||!canDeleteComment(comment)||!confirm('Xóa bình luận này nha?'))return;const {data,error}=await sb.from('comments').delete().eq('id',id).select('id');if(error||!data?.length){alert('Chưa xóa được bình luận.');return}const removed=new Set([String(id)]);let changed=true;while(changed){changed=false;for(const row of list){if(row.parentId&&removed.has(String(row.parentId))&&!removed.has(String(row.id))){removed.add(String(row.id));changed=true}}}if(activeReply?.key===key&&(removed.has(String(activeReply.targetId))||removed.has(String(activeReply.rootId))))activeReply=null;comments[key]=list.filter(row=>!removed.has(String(row.id)));refreshCommentViews();await loadCloudComments();await loadNotifications();};
 toggleCommentLike=async function(key,id){if(!authUser){requestCommentLogin('thả tim bình luận');return}const comment=(comments[key]||[]).find(r=>String(r.id)===String(id));if(!comment)return;const liked=(comment.likedBy||[]).includes(authUser.id);let res;if(liked)res=await sb.from('comment_likes').delete().eq('comment_id',id).eq('user_id',authUser.id);else res=await sb.from('comment_likes').insert({comment_id:id,user_id:authUser.id});if(res.error){console.warn(res.error);return}await loadCloudComments();};
@@ -3445,7 +3604,7 @@ initAuth().catch(()=>{updateAuthUI(); if(!location.pathname.startsWith('/quan-ly
  window.renderProfileActivity=function(kind='all'){
    const c=document.getElementById('profileContent');if(!c||!authUser)return;
    const rows=[];
-   if(kind!=='reviews')for(const [key,list] of Object.entries(comments||{}))for(const row of (list||[]))if(row?.userId===authUser.id)rows.push({type:'comment',text:row.text||'',createdAt:row.createdAt||'',key,id:row.id});
+   if(kind!=='reviews')for(const [key,list] of Object.entries(comments||{}))for(const row of (list||[]))if(row?.userId===authUser.id)rows.push({type:'comment',text:row.text||'',mentions:row.mentions||[],createdAt:row.createdAt||'',key,id:row.id});
    if(kind!=='comments')for(const [storyId,list] of Object.entries(reviews||{}))for(const row of (list||[]))if(row?.userId===authUser.id)rows.push({type:'review',text:row.text||'',html:row.html||'',createdAt:row.createdAt||'',storyId:Number(storyId)});
    rows.sort((a,b)=>(Date.parse(b.createdAt)||0)-(Date.parse(a.createdAt)||0));
    const label=kind==='comments'?'Bình luận':kind==='reviews'?'Review':'Hoạt động';
@@ -3453,7 +3612,7 @@ initAuth().catch(()=>{updateAuthUI(); if(!location.pathname.startsWith('/quan-ly
      let location='';
      if(r.type==='comment') location=commentLocationHTML(r.key).replace('data-comment-location=', 'data-comment-id="'+esc(r.id)+'" data-comment-location=');
      else {const st=stories.find(x=>Number(x.id)===Number(r.storyId));if(st)location='<button type="button" class="comment-location" onclick="event.stopPropagation();openStory('+Number(st.id)+')">'+esc(st.title)+'</button>'}
-     const body=r.type==='review'?(r.html?safeReviewHTML(r.html):esc(r.text).replace(/\n/g,'<br>')):commentTextHTML(r.text);
+     const body=r.type==='review'?(r.html?safeReviewHTML(r.html):esc(r.text).replace(/\n/g,'<br>')):commentTextHTML(r.text,r.mentions);
      return '<article class="community-card activity-card">'+clampCardHTML(body,'')+(location?'<div class="profile-activity-location">'+(r.type==='review'?'Review · ':'Bình luận · ')+location+'</div>':'')+'<div class="muted" style="margin-top:6px;font-size:12px">'+(r.type==='review'?'Review':'Bình luận')+' · '+(r.createdAt?commentTime(r):'')+'</div></article>';
    }).join(''):'<p class="muted">Chưa có hoạt động nào.</p>');
    setupActivityClamps(c);
@@ -3469,7 +3628,7 @@ initAuth().catch(()=>{updateAuthUI(); if(!location.pathname.startsWith('/quan-ly
    feed.innerHTML=rows.length?rows.slice(0,6).map(({key,comment})=>{
      const avatar=comment.avatar?'<img class="community-avatar" src="'+esc(comment.avatar)+'" alt="">':'<div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">'+esc(Array.from(comment.name||'T')[0])+'</div>';
      const location=commentLocationHTML(key).replace('data-comment-location=', 'data-comment-id="'+esc(comment.id)+'" data-comment-location=');
-     return '<article class="community-card home-comment-card activity-card" data-home-comment-key="'+esc(key)+'" data-home-comment-id="'+esc(comment.id)+'"><div class="community-head">'+avatar+'<div class="community-meta"><strong>'+esc(comment.name||'Thành viên')+(isAdminComment(comment)?'<span class="admin-badge admin-badge-home">ADMIN</span>':'')+'</strong><span class="community-sub">'+commentTime(comment)+' · '+location+'</span></div></div>'+clampCardHTML(commentTextHTML(comment.text),'')+'</article>';
+     return '<article class="community-card home-comment-card activity-card" data-home-comment-key="'+esc(key)+'" data-home-comment-id="'+esc(comment.id)+'"><div class="community-head">'+avatar+'<div class="community-meta"><strong>'+esc(comment.name||'Thành viên')+(isAdminComment(comment)?'<span class="admin-badge admin-badge-home">ADMIN</span>':'')+'</strong><span class="community-sub">'+commentTime(comment)+' · '+location+'</span></div></div>'+clampCardHTML(commentTextHTML(comment.text,comment.mentions),'')+'</article>';
    }).join(''):'<p class="muted panel-empty">Chưa có bình luận nào.</p>';
    setupActivityClamps(feed);
  };
@@ -3531,7 +3690,7 @@ initAuth().catch(()=>{updateAuthUI(); if(!location.pathname.startsWith('/quan-ly
  window.renderProfileActivity=function(kind='all'){
    const c=document.getElementById('profileContent');if(!c||!authUser)return;
    const rows=[];
-   if(kind!=='reviews')for(const [key,list] of Object.entries(comments||{}))for(const row of (list||[]))if(row?.userId===authUser.id)rows.push({type:'comment',text:row.text||'',createdAt:row.createdAt||'',key,id:row.id});
+   if(kind!=='reviews')for(const [key,list] of Object.entries(comments||{}))for(const row of (list||[]))if(row?.userId===authUser.id)rows.push({type:'comment',text:row.text||'',mentions:row.mentions||[],createdAt:row.createdAt||'',key,id:row.id});
    if(kind!=='comments')for(const [storyId,list] of Object.entries(reviews||{}))for(const row of (list||[]))if(row?.userId===authUser.id)rows.push({type:'review',text:row.text||'',html:row.html||'',createdAt:row.createdAt||'',storyId:Number(storyId)});
    rows.sort((a,b)=>(Date.parse(b.createdAt)||0)-(Date.parse(a.createdAt)||0));
    const label=kind==='comments'?'Bình luận':kind==='reviews'?'Review':'Hoạt động';
@@ -3539,7 +3698,7 @@ initAuth().catch(()=>{updateAuthUI(); if(!location.pathname.startsWith('/quan-ly
      let location='';
      if(r.type==='comment') location=commentLocationHTML(r.key).replace('data-comment-location=', 'data-comment-id="'+esc(r.id)+'" data-comment-location=');
      else {const st=stories.find(x=>Number(x.id)===Number(r.storyId));if(st)location='<button type="button" class="comment-location" onclick="event.stopPropagation();openStory('+Number(st.id)+')">'+esc(st.title)+'</button>'}
-     const body=r.type==='review'?(r.html?safeReviewHTML(r.html):esc(r.text).replace(/\n/g,'<br>')):commentTextHTML(r.text);
+     const body=r.type==='review'?(r.html?safeReviewHTML(r.html):esc(r.text).replace(/\n/g,'<br>')):commentTextHTML(r.text,r.mentions);
      const when=r.createdAt?commentTime(r):'';
      return '<article class="community-card activity-card"><div class="profile-activity-top"><div class="profile-activity-kindtime">'+(r.type==='review'?'Review':'Bình luận')+(when?' · '+when:'')+'</div>'+(location?'<div class="profile-activity-address">'+location+'</div>':'')+'</div>'+activityClampHTML(body)+'</article>';
    }).join(''):'<p class="muted">Chưa có hoạt động nào.</p>');
@@ -3605,7 +3764,7 @@ initAuth().catch(()=>{updateAuthUI(); if(!location.pathname.startsWith('/quan-ly
  window.renderProfileActivity=function(kind='all'){
    const c=document.getElementById('profileContent');if(!c||!authUser)return;
    const rows=[];
-   if(kind!=='reviews')for(const [key,list] of Object.entries(comments||{}))for(const row of (list||[]))if(row?.userId===authUser.id)rows.push({type:'comment',text:row.text||'',createdAt:row.createdAt||'',key,id:row.id});
+   if(kind!=='reviews')for(const [key,list] of Object.entries(comments||{}))for(const row of (list||[]))if(row?.userId===authUser.id)rows.push({type:'comment',text:row.text||'',mentions:row.mentions||[],createdAt:row.createdAt||'',key,id:row.id});
    if(kind!=='comments')for(const [storyId,list] of Object.entries(reviews||{}))for(const row of (list||[]))if(row?.userId===authUser.id)rows.push({type:'review',text:row.text||'',html:row.html||'',createdAt:row.createdAt||'',storyId:Number(storyId)});
    rows.sort((a,b)=>(Date.parse(b.createdAt)||0)-(Date.parse(a.createdAt)||0));
    const label=kind==='comments'?'Bình luận':kind==='reviews'?'Review':'Hoạt động';
@@ -3613,7 +3772,7 @@ initAuth().catch(()=>{updateAuthUI(); if(!location.pathname.startsWith('/quan-ly
      let location='';
      if(r.type==='comment') location=commentLocationHTML(r.key).replace('data-comment-location=', 'data-comment-id="'+esc(r.id)+'" data-comment-location=');
      else {const st=stories.find(x=>Number(x.id)===Number(r.storyId));if(st)location='<button type="button" class="comment-location" onclick="event.stopPropagation();openStory('+Number(st.id)+')">'+esc(st.title)+'</button>';}
-     const body=r.type==='review'?(r.html?safeReviewHTML(r.html):esc(r.text).replace(/\n/g,'<br>')):commentTextHTML(r.text);
+     const body=r.type==='review'?(r.html?safeReviewHTML(r.html):esc(r.text).replace(/\n/g,'<br>')):commentTextHTML(r.text,r.mentions);
      const when=r.createdAt?commentTime(r):'';
      return '<article class="community-card activity-card"><div class="profile-activity-top"><div class="profile-activity-kindtime">'+(r.type==='review'?'Review':'Bình luận')+(when?' · '+when:'')+'</div>'+(location?'<div class="profile-activity-address">'+location+'</div>':'')+'</div>'+clampHTML(body)+'</article>';
    };
@@ -3824,7 +3983,7 @@ initAuth().catch(()=>{updateAuthUI(); if(!location.pathname.startsWith('/quan-ly
    feed.innerHTML=shown.length?shown.map(({key,comment})=>{
      const avatar=comment.avatar?'<img class="community-avatar" src="'+esc(comment.avatar)+'" alt="">':'<div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">'+esc(Array.from(comment.name||'T')[0])+'</div>';
      const location=commentLocationHTML(key).replace('data-comment-location=', 'data-comment-id="'+esc(comment.id)+'" data-comment-location=');
-     return '<article class="community-card home-comment-card activity-card" data-home-comment-key="'+esc(key)+'" data-home-comment-id="'+esc(comment.id)+'"><div class="community-head">'+avatar+'<div class="community-meta"><strong>'+esc(comment.name||'Thành viên')+(isAdminComment(comment)?'<span class="admin-badge admin-badge-home">ADMIN</span>':'')+'</strong><span class="community-sub">'+commentTime(comment)+' · '+location+'</span></div></div>'+clampCardHTML(commentTextHTML(comment.text),'')+'</article>';
+     return '<article class="community-card home-comment-card activity-card" data-home-comment-key="'+esc(key)+'" data-home-comment-id="'+esc(comment.id)+'"><div class="community-head">'+avatar+'<div class="community-meta"><strong>'+esc(comment.name||'Thành viên')+(isAdminComment(comment)?'<span class="admin-badge admin-badge-home">ADMIN</span>':'')+'</strong><span class="community-sub">'+commentTime(comment)+' · '+location+'</span></div></div>'+clampCardHTML(commentTextHTML(comment.text,comment.mentions),'')+'</article>';
    }).join(''):'<p class="muted panel-empty">Chưa có bình luận nào.</p>';
    if(typeof setupActivityClamps==='function')setupActivityClamps(feed);
    addMoreButton(feed,'comments',rows.length,shown.length,window.renderHomeComments);

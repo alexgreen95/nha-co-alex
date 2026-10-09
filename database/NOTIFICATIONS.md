@@ -35,3 +35,13 @@ Profile role changes are blocked for browser clients, and new client-created pro
 First-login profile creation omits role and receives the existing reader default. Profile editing updates only display name, avatar and bio, and now returns role as well so the frontend retains admin permissions. Local RLS tests cover default-role creation, reader upsert, reader/admin profile updates, nonowner update rejection, and a broad legacy DELETE grant that must remain bounded. Trusted database-owner signup triggers bypass RLS; no auth/signup trigger is modified by this migration.
 
 Additional tests: `tests/admin-comments-db.test.cjs` and `tests/admin-comments.test.cjs`.
+
+## Mention autocomplete
+
+No new SQL is required. The supplied schema has no username column; existing profile URLs use `slugify(display_name)`. Autocomplete retains that convention and shows both the slug and display name (plus an ID suffix when suggestions share a slug). Notification recipients always come from the selected `profiles.id`, not a parsed name. The inspected live public profiles had no derived-name collision; collisions are still covered by tests without adding a unique-name constraint.
+
+Story, chapter, paragraph and reply composers share a bounded public-profile search (only `id,display_name,avatar_url`, at most eight rows). Empty `@` queries run immediately; other queries debounce for 120 ms. Case-insensitive PostgreSQL regex matching supports the existing slug's accented spellings. No unrestricted profile-directory query is used for autocomplete. Existing public SELECT policies on profiles and mentions remain unchanged; no private profile field or service-role key is used.
+
+Each composer keeps selected IDs and token ranges in local draft state, including across comment rerenders. Removing or editing a token invalidates its selection; manually typed or pasted usernames remain text and do not produce mention rows. Submission deduplicates surviving IDs and uses the installed mention trigger. Self mentions may be stored but create no notification. Replies continue to use the explicit target user ID; reply/mention dedupe stays in the existing trigger. Existing saved mentions are read from `comment_mentions` for rendering. This change concerns new comment/reply drafts; it does not introduce mention-recipient editing for already-posted comments (the existing schema has no client DELETE policy for mention rows).
+
+Tests: `tests/mention-autocomplete.test.cjs`, `tests/mention-identities-db.test.cjs`, and the notification regression tests. Browser submissions use mocked API writes; recipient isolation, self suppression, accent matching and reply/mention dedupe run against the PostgreSQL fixture. Real production checks are read-only profile searches.

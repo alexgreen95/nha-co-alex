@@ -52,14 +52,14 @@ test('mention helper keeps legacy notifications until migration and delegates af
   await page.route('**/rest/v1/rpc/nca_comment_notifications_enabled',route=>route.fulfill({status:enabled?200:404,headers,contentType:'application/json',body:enabled?'true':'{"code":"PGRST202","message":"Function not installed"}'}));
   await page.route('**/rest/v1/comment_mentions',route=>{writes.push('mention');return route.fulfill({status:duplicate?409:201,headers,contentType:'application/json',body:duplicate?'{"code":"23505","message":"Duplicate mention"}':'[]'});});
   await page.route('**/rest/v1/notifications',route=>{writes.push('notification');return route.fulfill({status:201,headers,contentType:'application/json',body:'[]'});});
-  await page.evaluate(()=>{authUser={id:'reader-user'};mentionProfilesBySlug={alex:{id:'admin-user',display_name:'Alex'}};});
-  await page.evaluate(async()=>{await saveCommentMentions(123,'@alex @alex',{story_id:1});});
+  await page.evaluate(()=>{authUser={id:'reader-user'};});
+  await page.evaluate(async()=>{await saveCommentMentions(123,'@alex @alex',{story_id:1},[{id:'admin-user',start:0,end:5,token:'@alex'},{id:'admin-user',start:6,end:11,token:'@alex'}]);});
   assert.deepEqual(writes,['mention','notification']);
   enabled=true;writes.length=0;
-  await page.evaluate(async()=>{await saveCommentMentions(124,'@alex',{story_id:1});});
+  await page.evaluate(async()=>{await saveCommentMentions(124,'@alex',{story_id:1},[{id:'admin-user',start:0,end:5,token:'@alex'}]);});
   assert.deepEqual(writes,['mention']);
   enabled=false;duplicate=true;writes.length=0;
-  await page.evaluate(async()=>{await saveCommentMentions(123,'@alex',{story_id:1});});
+  await page.evaluate(async()=>{await saveCommentMentions(123,'@alex',{story_id:1},[{id:'admin-user',start:0,end:5,token:'@alex'}]);});
   assert.deepEqual(writes,['mention']);
   assert.deepEqual(page.errors,[]);
  }finally{await page.close();}

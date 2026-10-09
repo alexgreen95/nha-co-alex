@@ -65,3 +65,34 @@ test('homepage comment opens its source only through its location link and colla
     assert.deepEqual(page.errors,[]);
   } finally {await page.close();}
 });
+
+test('replies run oldest to newest with pagination while roots remain newest first',async()=>{
+ const page=await feedPage(0);
+ try{
+  await page.evaluate(()=>{
+   const base={name:'Bạn đọc',userId:'reader-user',likes:0};
+   const root={...base,id:'root-old',text:'Bình luận gốc cũ',createdAt:'2026-10-09T08:00:00Z'};
+   const newer={...base,id:'root-new',text:'Bình luận gốc mới',createdAt:'2026-10-09T09:00:00Z'};
+   const replies=Array.from({length:8},(_,i)=>({...base,id:'reply-'+i,parentId:i===7?'reply-0':root.id,text:'Phản hồi '+i,createdAt:new Date(Date.UTC(2026,9,9,10,i)).toISOString()})).reverse();
+   comments.story_1=[newer,...replies,root];
+  });
+  for(const surface of ['story','chapter','paragraph']){
+   await page.evaluate(async surface=>{
+    if(surface==='story'){openStory(1);showIntroTab('comments',document.querySelectorAll('.intro-tabs button')[3]);}
+    else if(surface==='chapter'){comments.chapter_1_0=comments.story_1;await read(1,0);}
+    else{comments['1_0_0']=comments.story_1;ensureCommentPanel();document.getElementById('paragraphCommentPanelBody').innerHTML=commentThreadsHTML('1_0_0','paragraph');document.getElementById('paragraphCommentPanel').classList.add('open');}
+   },surface);
+   const container=page.locator(surface==='story'?'#storyCommentList':surface==='chapter'?'#chapterCommentsList':'#paragraphCommentPanelBody');
+   const thread=container.locator('.comment-thread').filter({has:page.locator(':scope > .comment-item[data-comment-id="root-old"]')}).first();
+   const ids=await container.locator('.comment-thread > .comment-item').evaluateAll(els=>els.map(el=>el.dataset.commentId));
+   assert.equal(ids[0],'root-new',surface);
+   await thread.locator('.comment-reply-toggle').click();
+   assert.deepEqual(await thread.locator('.comment-replies .comment-item').evaluateAll(els=>els.map(el=>el.dataset.commentId)),Array.from({length:6},(_,i)=>'reply-'+i));
+   await thread.locator('.comment-reply-more').click();
+   assert.deepEqual(await thread.locator('.comment-replies .comment-item').evaluateAll(els=>els.map(el=>el.dataset.commentId)),Array.from({length:8},(_,i)=>'reply-'+i));
+   await thread.locator('.comment-reply-toggle').click();
+   assert.equal(await thread.locator('.comment-replies .comment-item').count(),0);
+  }
+  assert.deepEqual(page.errors,[]);
+ }finally{await page.close();}
+});

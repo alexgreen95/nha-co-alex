@@ -2235,7 +2235,7 @@ function commentThreadsHTML(key,surface){
   .sort((a,b)=>(Date.parse(b.createdAt)||0)-(Date.parse(a.createdAt)||0));
  return roots.map(root=>{
   const replies=list.filter(comment=>String(comment.id)!==String(root.id)&&String(rootComment(list,comment).id)===String(root.id))
-   .sort((a,b)=>(Date.parse(b.createdAt)||0)-(Date.parse(a.createdAt)||0));
+   .sort((a,b)=>(Date.parse(a.createdAt)||0)-(Date.parse(b.createdAt)||0));
   return `<div class="comment-thread" data-comment-key="${esc(key)}" data-comment-surface="${surface}">${commentMarkup(root,key,list)}${replies.length?`<div class="comment-replies">${replies.map(reply=>commentMarkup(reply,key,list)).join('')}</div>`:''}${replyComposerHTML(key,root,surface)}</div>`;
  }).join('');
 }
@@ -3607,7 +3607,7 @@ initAuth().catch(()=>{updateAuthUI(); if(!location.pathname.startsWith('/quan-ly
     return '<button type="button" class="comment-reply-toggle" data-reply-state="'+esc(sk)+'">Ẩn phản hồi</button><div class="comment-replies" data-reply-list="'+esc(sk)+'">'+replies.slice(0,n).map(r=>commentMarkup(r,key,normalizedComments(key))).join('')+(n<replies.length?'<button type="button" class="comment-reply-more" data-reply-state="'+esc(sk)+'">Xem thêm phản hồi</button>':'')+'</div>';
   }
   function threadHTML(key,root,list,surface,location){
-    const replies=list.filter(c=>String(c.id)!==String(root.id)&&String(rootComment(list,c).id)===String(root.id)).sort((a,b)=>(Date.parse(b.createdAt)||0)-(Date.parse(a.createdAt)||0));
+    const replies=list.filter(c=>String(c.id)!==String(root.id)&&String(rootComment(list,c).id)===String(root.id)).sort((a,b)=>(Date.parse(a.createdAt)||0)-(Date.parse(b.createdAt)||0));
     return '<div class="comment-thread" data-comment-key="'+esc(key)+'" data-comment-surface="'+surface+'">'+commentMarkup(root,key,list,location||'')+replyBlock(key,root,replies)+replyComposerHTML(key,root,surface)+'</div>';
   }
   window.commentThreadsHTML=function(key,surface){

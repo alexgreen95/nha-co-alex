@@ -3514,3 +3514,80 @@ initAuth().catch(()=>{updateAuthUI(); if(!location.pathname.startsWith('/quan-ly
   #reader .para-wrap .comment-btn{right:-8px!important;}
 }
 </style>
+
+<style id="alex-comment-replies-pagination-20261009">
+/* Short comments never show Xem thêm unless they truly overflow three lines. */
+.comment-bubble .story-comment-more{display:none!important}
+.comment-bubble.story-comment-overflow .story-comment-more:not([hidden]){display:block!important}
+/* Replies are collapsed by default and revealed in batches of six. */
+.comment-replies.reply-collapsed{display:none!important}
+.comment-reply-toggle,.comment-reply-more{border:0;background:transparent;color:var(--accent);padding:4px 0;margin:3px 0 2px 46px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.comment-reply-more{display:block;margin-top:5px}
+@media(max-width:700px){.comment-reply-toggle,.comment-reply-more{margin-left:24px}}
+</style>
+<script id="alex-comment-replies-pagination-20261009-js">
+(function(){
+  const PAGE=6;
+  window.__alexReplyState=window.__alexReplyState||new Map();
+  function stateKey(key,root){return String(key)+'::'+String(root.id)}
+  function replyBlock(key,root,replies){
+    if(!replies.length)return '';
+    const sk=stateKey(key,root),shown=Number(window.__alexReplyState.get(sk)||0);
+    if(shown<=0)return '<button type="button" class="comment-reply-toggle" data-reply-state="'+esc(sk)+'">Xem '+replies.length+' phản hồi</button><div class="comment-replies reply-collapsed" data-reply-list="'+esc(sk)+'"></div>';
+    const n=Math.min(shown,replies.length);
+    return '<button type="button" class="comment-reply-toggle" data-reply-state="'+esc(sk)+'">Ẩn phản hồi</button><div class="comment-replies" data-reply-list="'+esc(sk)+'">'+replies.slice(0,n).map(r=>commentMarkup(r,key,normalizedComments(key))).join('')+(n<replies.length?'<button type="button" class="comment-reply-more" data-reply-state="'+esc(sk)+'">Xem thêm phản hồi</button>':'')+'</div>';
+  }
+  function threadHTML(key,root,list,surface,location){
+    const replies=list.filter(c=>String(c.id)!==String(root.id)&&String(rootComment(list,c).id)===String(root.id)).sort((a,b)=>(Date.parse(b.createdAt)||0)-(Date.parse(a.createdAt)||0));
+    return '<div class="comment-thread" data-comment-key="'+esc(key)+'" data-comment-surface="'+surface+'">'+commentMarkup(root,key,list,location||'')+replyBlock(key,root,replies)+replyComposerHTML(key,root,surface)+'</div>';
+  }
+  window.commentThreadsHTML=function(key,surface){
+    const list=normalizedComments(key),roots=list.filter(c=>String(rootComment(list,c).id)===String(c.id)).sort((a,b)=>(Date.parse(b.createdAt)||0)-(Date.parse(a.createdAt)||0));
+    return roots.map(root=>threadHTML(key,root,list,surface)).join('');
+  };
+  window.renderAllStoryComments=function(){
+    const box=document.getElementById('storyCommentList'),pager=document.getElementById('storyCommentPagination');if(!box||!introStory)return;
+    renderStoryCommentComposer(); const entries=[];
+    for(const key of storyCommentKeys(introStory)){const list=normalizedComments(key);for(const root of list.filter(c=>rootComment(list,c).id===c.id))entries.push({key,root,list,time:Date.parse(root.createdAt)||0});}
+    entries.sort((a,b)=>b.time-a.time); const pageSize=20,totalPages=Math.max(1,Math.ceil(entries.length/pageSize));storyCommentPage=Math.min(Math.max(1,storyCommentPage),totalPages);
+    const page=entries.slice((storyCommentPage-1)*pageSize,storyCommentPage*pageSize);
+    box.innerHTML=page.map(({key,root,list})=>'<div class="comment-group">'+threadHTML(key,root,list,'story',commentLocationHTMLForStory(key))+'</div>').join('')||'<p class="muted">Chưa có bình luận nào cho truyện này.</p>';
+    pager.innerHTML=entries.length>pageSize?Array.from({length:totalPages},(_,i)=>i+1).map(n=>'<button type="button" class="'+(n===storyCommentPage?'active':'')+'" onclick="setStoryCommentPage('+n+')">'+n+'</button>').join(''):'';
+  };
+  window.renderChapterComments=function(){
+    const composer=document.getElementById('chapterCommentComposer');if(composer)composer.innerHTML=commentComposerHTML('bình luận');
+    const select=document.getElementById('chapterCommentSort');if(select)select.value=chapterCommentSort;
+    const box=document.getElementById('chapterCommentsList');if(!box||!currentStory)return;
+    const entries=chapterCommentEntries();
+    box.innerHTML=entries.map(({key,list,root})=>'<div class="comment-group unified-comment-group"'+(key===chapterGeneralKey()?'':' data-chapter-comment-jump="'+esc(key)+'"')+'>'+threadHTML(key,root,list,'chapter')+'</div>').join('')||'<p class="muted">Chưa có bình luận nào trong chương này.</p>';
+  };
+  function rerenderThread(btn){
+    const thread=btn.closest('.comment-thread'); if(!thread)return;
+    const key=thread.dataset.commentKey,surface=thread.dataset.commentSurface,list=normalizedComments(key),rootEl=thread.querySelector('.comment-item[data-comment-id]');
+    const root=list.find(c=>String(c.id)===String(rootEl?.dataset.commentId)); if(!root)return;
+    const location=surface==='story'?commentLocationHTMLForStory(key):'';
+    thread.outerHTML=threadHTML(key,root,list,surface,location);
+  }
+  document.addEventListener('click',function(e){
+    const t=e.target.closest('.comment-reply-toggle,.comment-reply-more');if(!t)return;
+    e.preventDefault();e.stopPropagation();const sk=t.dataset.replyState;
+    if(t.classList.contains('comment-reply-toggle')){const cur=Number(window.__alexReplyState.get(sk)||0);window.__alexReplyState.set(sk,cur>0?0:PAGE)}
+    else window.__alexReplyState.set(sk,Number(window.__alexReplyState.get(sk)||0)+PAGE);
+    rerenderThread(t); requestAnimationFrame(()=>syncStoryCommentMore(document));
+  },true);
+
+  function naturalHeight(el){
+    const c=el.cloneNode(true);c.classList.add('expanded');Object.assign(c.style,{position:'absolute',visibility:'hidden',pointerEvents:'none',left:'-99999px',top:'0',width:el.getBoundingClientRect().width+'px',height:'auto',maxHeight:'none',overflow:'visible',display:'block',webkitLineClamp:'unset',webkitBoxOrient:'initial'});document.body.appendChild(c);const h=c.scrollHeight;c.remove();return h;
+  }
+  window.syncStoryCommentMore=function(root){
+    (root||document).querySelectorAll('.comment-bubble').forEach(function(bubble){
+      const body=bubble.querySelector('.story-comment-clamp'),btn=bubble.querySelector('.story-comment-more');if(!body||!btn)return;
+      const lh=parseFloat(getComputedStyle(body).lineHeight)||20,h=naturalHeight(body),overflow=h>lh*3+3;
+      bubble.classList.toggle('story-comment-overflow',overflow);
+      if(!overflow){body.classList.remove('expanded');bubble.classList.remove('story-comment-expanded');btn.hidden=true}else if(!body.classList.contains('expanded'))btn.hidden=false;
+    });
+  };
+  const obs=new MutationObserver(()=>requestAnimationFrame(()=>syncStoryCommentMore(document)));obs.observe(document.body,{childList:true,subtree:true});
+  window.addEventListener('resize',()=>syncStoryCommentMore(document));requestAnimationFrame(()=>syncStoryCommentMore(document));
+})();
+</script>

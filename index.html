@@ -2133,14 +2133,16 @@ function deleteCommentById(key,id){
  comments[key]=list.filter(row=>!remove.has(String(row.id)));save();refreshCommentViews();
 }
 function replyComposerHTML(key,root,surface){
- if(!activeReply||activeReply.key!==key||activeReply.rootId!==root.id||activeReply.surface!==surface)return '';
- const target=normalizedComments(key).find(row=>row.id===activeReply.targetId);
+ if(!activeReply||activeReply.key!==key||String(activeReply.rootId)!==String(root.id)||activeReply.surface!==surface)return '';
+ const target=normalizedComments(key).find(row=>String(row.id)===String(activeReply.targetId));
  return `<form class="comment-compose reply-compose" data-reply-form="true"><div class="reply-label">Trả lời ${esc(target?.name||'Thành viên')} <button type="button" data-comment-action="cancel-reply" aria-label="Hủy trả lời">×</button></div><div class="comment-compose-row"><input id="replyCommentInput" aria-label="Nội dung trả lời" placeholder="Viết trả lời…" maxlength="5000">${emojiPickerHTML('replyCommentInput')}<button type="submit">Gửi</button></div></form>`;
 }
 function commentThreadsHTML(key,surface){
- const list=normalizedComments(key), roots=list.filter(comment=>rootComment(list,comment).id===comment.id);
+ const list=normalizedComments(key), roots=list.filter(comment=>String(rootComment(list,comment).id)===String(comment.id))
+  .sort((a,b)=>(Date.parse(b.createdAt)||0)-(Date.parse(a.createdAt)||0));
  return roots.map(root=>{
-  const replies=list.filter(comment=>comment.id!==root.id&&rootComment(list,comment).id===root.id);
+  const replies=list.filter(comment=>String(comment.id)!==String(root.id)&&String(rootComment(list,comment).id)===String(root.id))
+   .sort((a,b)=>(Date.parse(b.createdAt)||0)-(Date.parse(a.createdAt)||0));
   return `<div class="comment-thread" data-comment-key="${esc(key)}" data-comment-surface="${surface}">${commentMarkup(root,key,list)}${replies.length?`<div class="comment-replies">${replies.map(reply=>commentMarkup(reply,key,list)).join('')}</div>`:''}${replyComposerHTML(key,root,surface)}</div>`;
  }).join('');
 }
@@ -2214,7 +2216,7 @@ function toggleCommentLike(key,id){
 }
 function beginCommentReply(key,id,surface){
  if(!authUser){requestCommentLogin('trả lời bình luận');return}
- const list=normalizedComments(key),target=list.find(row=>row.id===id);if(!target)return;
+ const list=normalizedComments(key),target=list.find(row=>String(row.id)===String(id));if(!target)return;
  const oldInput=document.getElementById('replyCommentInput');if(oldInput)oldInput.value='';
  activeReply={key,targetId:id,rootId:rootComment(list,target).id,surface};
  refreshCommentViews();document.getElementById('replyCommentInput')?.focus({preventScroll:true});
@@ -3095,9 +3097,9 @@ const syncProfileV179=syncProfile;
 syncProfile=async function(u){await syncProfileV179(u);await loadCloudMemberState();await refreshPublicStoryCloudFields();cloudSyncReady=true;Promise.allSettled([loadCloudComments(),loadCloudReviews()]);};
 
 submitStoryComment=async function(event){event.preventDefault();if(!introStory||!authUser)return;const input=document.getElementById('storyCommentInput'),text=input?.value.trim();if(!text)return;input.disabled=true;const ok=await insertCloudComment(storyCommentKey(introStory.id),text);input.disabled=false;if(ok){input.value='';storyCommentPage=1;renderAllStoryComments();renderHomeComments();}};
-addParaComment=async function(key){if(!authUser){requestCommentLogin('bình luận');return}const input=document.getElementById('panelCommentInput'),text=input?.value.trim();if(!text)return;input.disabled=true;const ok=await insertCloudComment(key,text);input.disabled=false;if(ok)input.value='';};
+addParaComment=async function(key){if(!authUser){requestCommentLogin('bình luận');return}const input=document.getElementById('panelCommentInput'),text=input?.value.trim();if(!text)return;input.disabled=true;const ok=await insertCloudComment(key,text);const live=document.getElementById('panelCommentInput');if(live){live.disabled=false;if(ok)live.value='';}};
 addChapterComment=async function(){if(!authUser){requestCommentLogin('bình luận');return}const input=document.getElementById('chapterCommentInput'),text=input?.value.trim();if(!text)return;input.disabled=true;const ok=await insertCloudComment(chapterGeneralKey(),text);input.disabled=false;if(ok)input.value='';};
-submitCommentReply=async function(){if(!authUser||!activeReply)return;const input=document.getElementById('replyCommentInput'),text=input?.value.trim();if(!text)return;const {key,targetId,rootId}=activeReply,list=normalizedComments(key),target=list.find(r=>String(r.id)===String(targetId));if(!target)return;input.disabled=true;const ok=await insertCloudComment(key,text,{parentId:rootId,replyToUserId:target.userId});input.disabled=false;if(ok){activeReply=null;refreshCommentViews();}};
+submitCommentReply=async function(){if(!authUser||!activeReply)return;const input=document.getElementById('replyCommentInput'),text=input?.value.trim();if(!text)return;const {key,targetId,rootId}=activeReply,list=normalizedComments(key),target=list.find(r=>String(r.id)===String(targetId));if(!target)return;input.disabled=true;const ok=await insertCloudComment(key,text,{parentId:rootId,replyToUserId:target.userId});if(ok){activeReply=null;refreshCommentViews();}else{const live=document.getElementById('replyCommentInput');if(live)live.disabled=false;}};
 saveEditComment=async function(key,id,item){const list=comments[key]||[],comment=list.find(r=>String(r.id)===String(id));if(!comment||!isOwnComment(comment))return;const text=item?.querySelector('.comment-edit-box textarea')?.value.trim();if(!text)return;const {error}=await sb.from('comments').update({content:text,edited_at:new Date().toISOString()}).eq('id',id).eq('user_id',authUser.id);if(error){alert('Chưa sửa được bình luận.');return}await loadCloudComments();};
 deleteCommentById=async function(key,id){const list=comments[key]||[],comment=list.find(r=>String(r.id)===String(id));if(!comment||!canDeleteComment(comment)||!confirm('Xóa bình luận này nha?'))return;const {error}=await sb.from('comments').delete().eq('id',id);if(error){alert('Chưa xóa được bình luận.');return}await loadCloudComments();};
 toggleCommentLike=async function(key,id){if(!authUser){requestCommentLogin('thả tim bình luận');return}const comment=(comments[key]||[]).find(r=>String(r.id)===String(id));if(!comment)return;const liked=(comment.likedBy||[]).includes(authUser.id);let res;if(liked)res=await sb.from('comment_likes').delete().eq('comment_id',id).eq('user_id',authUser.id);else res=await sb.from('comment_likes').insert({comment_id:id,user_id:authUser.id});if(res.error){console.warn(res.error);return}await loadCloudComments();};

@@ -1016,6 +1016,54 @@ body.purplenight .account-menu,body.purplenight .notif-panel{
 .home-review-more{border:0;background:transparent;color:var(--accent);padding:4px 0 0;cursor:pointer;font:inherit;font-size:12px}
 .home-review-more[hidden]{display:none!important}
 @media(max-width:640px){.home-review-head{display:flex;align-items:flex-start}.home-review-story{margin-top:0;width:88px;min-width:88px;max-width:88px}.home-review-story-cover{width:88px}}
+
+/* V21.22 — editor review accordion + true full-width justified body */
+.editor-review-content[hidden]{display:none !important;}
+.editor-review-block .editor-review-content.editor-review-simple{display:block;width:100% !important;max-width:none !important;padding:18px !important;box-sizing:border-box !important;}
+.editor-review-block .editor-review-content.editor-review-simple > .review-body.editor-review-body{display:block !important;width:100% !important;inline-size:100% !important;max-width:none !important;margin:0 !important;padding:0 !important;box-sizing:border-box !important;text-align:justify !important;text-justify:inter-word !important;white-space:pre-line !important;line-height:1.9 !important;}
+.editor-review-block .editor-review-body div,.editor-review-block .editor-review-body p{width:100% !important;max-width:none !important;text-align:justify !important;text-justify:inter-word !important;margin:0 0 1.25em !important;}
+
+/* V21.23 — full-width justified intro + editor review */
+#introAboutView.story-about-text{
+  display:block !important;
+  width:100% !important;
+  max-width:none !important;
+  min-width:0 !important;
+  box-sizing:border-box !important;
+  text-align:justify !important;
+  text-align-last:left !important;
+  text-justify:inter-word !important;
+  line-height:1.9 !important;
+}
+#introAboutView.story-about-text p{
+  display:block !important;
+  width:100% !important;
+  max-width:none !important;
+  margin:0 0 1.25em !important;
+  text-align:justify !important;
+  text-align-last:left !important;
+  text-justify:inter-word !important;
+}
+.editor-review-block .editor-review-content.editor-review-simple,
+.editor-review-block .review-body.editor-review-body{
+  width:100% !important;
+  max-width:none !important;
+  min-width:0 !important;
+  box-sizing:border-box !important;
+}
+.editor-review-block .review-body.editor-review-body,
+.editor-review-block .review-body.editor-review-body p{
+  text-align:justify !important;
+  text-align-last:left !important;
+  text-justify:inter-word !important;
+  line-height:1.9 !important;
+}
+.editor-review-block .review-body.editor-review-body p{
+  width:100% !important;
+  max-width:none !important;
+  margin:0 0 1.25em !important;
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Nhà có Alex V21.21 -->
@@ -1573,13 +1621,11 @@ function chooseSort(e,type,value,label){e.stopPropagation();storyFilter[type]=va
 document.addEventListener('click',e=>{if(!e.target.closest('.sort-wrap'))document.getElementById('sortMenu')?.classList.remove('open')});
 let introStory=null;
 function openStory(id,updateRoute=true){let s=stories.find(x=>x.id===id);if(!s)return;if(updateRoute)setRoute(storyPath(s));introStory=s;displayPage('storyIntro');document.getElementById('introTitle').textContent=s.title;document.getElementById('introAuthor').textContent='Tác giả: '+s.author;document.getElementById('introGenre').textContent=s.mainGenre||s.genre;document.getElementById('introStatus').textContent=s.status==='completed'?'Đã hoàn thành':'Đang làm';document.getElementById('introSubtags').innerHTML=(s.subtags||[]).map(t=>`<span class="intro-subtag">${esc(t)}</span>`).join('');const introSummaryEl=document.getElementById('introSummary');introSummaryEl.textContent=s.summary||'';introSummaryEl.style.whiteSpace='pre-line';introSummaryEl.style.display=s.summary?'':'none';document.getElementById('introStats').innerHTML=`<span class="stat">${icon('eye')} ${s.views||0}</span><span class="stat">${icon('heart')} ${storyLikeTotal(s)}</span><span class="stat">${icon('comment')} ${storyCommentCount(s)}</span>`;document.getElementById('introCover').innerHTML=s.cover?`<img src="${esc(s.cover)}" alt="Bìa ${esc(s.title)}">`:`Nhà có Alex<br>${esc(s.title)}`;let pr=progress[id];document.getElementById('introReadBtn').textContent=pr?'Đọc tiếp · '+s.chapters[Math.min(pr.chapter||0,s.chapters.length-1)].title.split(':')[0]:'Bắt đầu đọc';document.getElementById('introSaveBtn').textContent=saved.includes(id)?'★ Đã lưu':'☆ Lưu truyện';document.getElementById('introChapters').innerHTML=s.chapters.map((c,i)=>`<button onclick="read(${s.id},${i})">${esc(c.title)}</button>`).join('');renderStoryAbout();storyCommentPage=1;reviewComposerOpen=false;renderStoryReviews();renderAllStoryComments();showIntroTab('about',document.querySelector('.intro-tabs button'));window.scrollTo(0,0)}
-function renderStoryAbout(){if(!introStory)return;const v=document.getElementById('introAboutView'),b=document.getElementById('introAboutEditBtn'),e=document.getElementById('introAboutEdit');if(v)v.innerHTML=esc(introStory.longIntro||'Chưa có phần giới thiệu chi tiết.').replace(/\n/g,'<br>');if(b)b.style.display=isSiteAdmin()?'inline-flex':'none';if(e)e.hidden=true;if(v)v.hidden=false}
+function readableParagraphs(text){const raw=String(text||'').replace(/\r\n?/g,'\n').trim();if(!raw)return '';return raw.split(/\n\s*\n+/).map(p=>'<p>'+esc(p.replace(/\n+/g,' ').replace(/\s+/g,' ').trim())+'</p>').join('')}
+function renderStoryAbout(){if(!introStory)return;const v=document.getElementById('introAboutView'),b=document.getElementById('introAboutEditBtn'),e=document.getElementById('introAboutEdit');if(v)v.innerHTML=readableParagraphs(introStory.longIntro||'Chưa có phần giới thiệu chi tiết.');if(b)b.style.display=isSiteAdmin()?'inline-flex':'none';if(e)e.hidden=true;if(v)v.hidden=false}
 function editStoryAbout(){if(!introStory||!isSiteAdmin())return;document.getElementById('introAboutInput').value=introStory.longIntro||'';document.getElementById('introAboutView').hidden=true;document.getElementById('introAboutEdit').hidden=false;document.getElementById('introAboutEditBtn').style.display='none'}
 function cancelStoryAboutEdit(){renderStoryAbout()}
-async function saveStoryAbout(){if(!introStory||!isSiteAdmin())return;const text=document.getElementById('introAboutInput').value.trim();introStory.longIntro=text;let r=await sb.from('stories').update({long_intro:text}).eq('id',introStory.id);
-if(r.error)r=await sb.from('stories').update({introduction:text}).eq('id',introStory.id);
-if(r.error)console.warn('long intro cloud save',r.error);
-renderStoryAbout()}
+async function saveStoryAbout(){if(!introStory||!isSiteAdmin())return;const text=document.getElementById('introAboutInput').value.trim();const r=await sb.from('stories').update({long_description:text}).eq('id',introStory.id);if(r.error){console.warn('long_description cloud save',r.error);alert('Chưa lưu được Giới thiệu chi tiết: '+(r.error.message||'Supabase từ chối cập nhật.'));return}introStory.longIntro=text;renderStoryAbout()}
 function showIntroTab(name,btn){document.querySelectorAll('.intro-pane').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.intro-tabs button').forEach(x=>x.classList.remove('active'));document.getElementById('intro'+name[0].toUpperCase()+name.slice(1))?.classList.add('active');btn?.classList.add('active')}
 function startFromIntro(){if(!introStory)return;let pr=progress[introStory.id]||{chapter:0,scroll:0};read(introStory.id,pr.chapter||0);if(pr.scroll)setTimeout(()=>window.scrollTo(0,pr.scroll),30)}
 function toggleIntroSave(){if(!introStory)return;toggleSave(introStory.id);document.getElementById('introSaveBtn').textContent=saved.includes(introStory.id)?'★ Đã lưu':'☆ Lưu truyện'}
@@ -1629,6 +1675,7 @@ function safeReviewHTML(raw){
 function reviewEditorCommand(cmd,value=null){document.getElementById('storyReviewEditor')?.focus();document.execCommand(cmd,false,value)}
 function markReviewSpoiler(){const ed=document.getElementById('storyReviewEditor');ed?.focus();const sel=window.getSelection();if(!sel||sel.isCollapsed||!ed?.contains(sel.anchorNode)){alert('Bôi đen đoạn muốn ẩn spoil trước nha.');return}document.execCommand('insertHTML',false,`<span class="review-spoiler">${sel.toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>`)}
 function toggleReviewSpoiler(el){el.classList.toggle('revealed')}
+function toggleEditorReview(button){const body=button?.nextElementSibling;if(!body)return;const willOpen=body.hasAttribute('hidden');if(willOpen)body.removeAttribute('hidden');else body.setAttribute('hidden','');button.setAttribute('aria-expanded',String(willOpen));button.classList.toggle('open',willOpen)}
 function toggleReaderReview(button){
  const body=button.closest('.review-card')?.querySelector('.review-body');if(!body)return;
  const open=body.classList.toggle('expanded');button.textContent=open?'Thu gọn':'Xem thêm';
@@ -1640,7 +1687,7 @@ function renderStoryReviews(){
  const initial=mine?(mine.html||esc(mine.text||'').replace(/\n/g,'<br>')):'';
  composer.innerHTML=reviewComposerOpen?`<form class="intro-compose" onsubmit="submitStoryReview(event)"><div class="editor-toolbar"><select aria-label="Cỡ chữ" onchange="reviewEditorCommand('fontSize',this.value);this.selectedIndex=0"><option value="">Cỡ chữ</option><option value="2">Nhỏ</option><option value="3">Vừa</option><option value="4">Lớn</option><option value="5">Rất lớn</option></select><button type="button" onclick="reviewEditorCommand('bold')"><b>B</b></button><button type="button" onclick="reviewEditorCommand('italic')"><i>I</i></button><button type="button" onclick="reviewEditorCommand('underline')"><u>U</u></button><button type="button" onclick="markReviewSpoiler()">Spoil</button></div><div id="storyReviewEditor" class="review-editor" contenteditable="true" data-placeholder="Chia sẻ cảm nhận của bạn về truyện này…">${initial}</div><div class="intro-compose-actions">${emojiPickerHTML('storyReviewEditor')}<button type="button" onclick="reviewComposerOpen=false;renderStoryReviews()">Hủy</button><button type="submit">${mine?'Lưu':'Đăng review'}</button></div></form>`:'';
  const rows=[...storyReviews()],admin=rows.find(isAdminReview),others=rows.filter(r=>!isAdminReview(r)).sort((a,b)=>(Date.parse(a.createdAt)||0)-(Date.parse(b.createdAt)||0));
- let html='';if(admin){const adminBody=admin.html?safeReviewHTML(admin.html):esc(admin.text||'').replace(/\n/g,'<br>');html+=`<div class="editor-review-block"><button class="editor-review-toggle" type="button" aria-expanded="false" onclick="const x=this.nextElementSibling,open=x.hidden;x.hidden=!open;this.setAttribute('aria-expanded',String(open));this.classList.toggle('open',open)"><span>Review của người edit</span><svg class="review-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 9 5 5 5-5"/></svg></button><div class="editor-review-content editor-review-simple" hidden><div class="review-body editor-review-body" onclick="if(event.target.classList.contains('review-spoiler'))toggleReviewSpoiler(event.target)">${adminBody}</div></div></div>`;}
+ let html='';if(admin){const adminBody=(admin.text&&String(admin.text).trim())?readableParagraphs(admin.text):(admin.html?safeReviewHTML(admin.html):'');html+=`<div class="editor-review-block"><button class="editor-review-toggle" type="button" aria-expanded="false" onclick="toggleEditorReview(this)"><span>Review của người edit</span><svg class="review-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 9 5 5 5-5"/></svg></button><div class="editor-review-content editor-review-simple" hidden><div class="review-body editor-review-body" onclick="if(event.target.classList.contains('review-spoiler'))toggleReviewSpoiler(event.target)">${adminBody}</div></div></div>`;}
  if(others.length)html+=`<div class="review-section-label">Review của mọi người</div>${others.map(r=>reviewCardHTML(r)).join('')}`;else if(!admin)html='<p class="muted">Chưa có review nào cho truyện này.</p>';else html+='<p class="muted">Chưa có review nào khác.</p>';
  listBox.innerHTML=html;
  requestAnimationFrame(()=>{listBox.querySelectorAll('.review-card').forEach(card=>{const body=card.querySelector('.reader-review-clamp'),btn=card.querySelector('.reader-review-more');if(body&&btn)btn.hidden=body.scrollHeight<=body.clientHeight+2})});
@@ -2213,7 +2260,7 @@ async function loadCloudStories(){
    mainGenre:['Hiện đại','Cổ đại','Tương lai','Huyền ảo'].includes(r.main_genre||r.genre)?(r.main_genre||r.genre):'',
    genre:r.genre||r.main_genre||'',subtags:Array.isArray(r.subtags)?r.subtags:(Array.isArray(r.tags)?r.tags:[]),
    status:['completed','complete','done','Đã hoàn thành'].includes(r.status)?'completed':'ongoing',
-   summary:r.summary||r.description||'',longIntro:r.long_intro||r.introduction||r.long_description||r.detailed_description||r.full_description||'',cover:r.cover_url||r.cover||'',views:Number(r.views)||0,likes:Number(r.likes)||0,
+   summary:r.summary||r.description||'',longIntro:r.long_description||'',cover:r.cover_url||r.cover||'',views:Number(r.views)||0,likes:Number(r.likes)||0,
    updatedAt:r.updated_at||r.created_at||'',
    chapters:(chaptersByStory[r.id]||[]).map(c=>({id:c.id,chapterNumber:Number(c.chapter_number)||null,title:c.title||`Chương ${c.chapter_number||''}`,publishState:'published',paras:[],_parasLoaded:false,_chapterContent:c.content||c.body||c.text||''}))
   }));
@@ -2363,7 +2410,7 @@ async function saveManagedStory(mode){
      if(baseResult.error){console.warn('story base update cloud',baseResult.error);alert('Chưa áp dụng được thông tin truyện: '+(baseResult.error.message||'Supabase từ chối cập nhật.'));return}
      const metadataWrites=[
        ['description',row.summary],
-       ['introduction',row.longIntro||''],
+       ['long_description',row.longIntro||''],
        ['tags',row.subtags||[]]
      ];
      for(const [field,value] of metadataWrites){
@@ -2400,7 +2447,7 @@ async function saveManagedStory(mode){
      row.mainGenre=(cv.main_genre||cv.genre||row.mainGenre);
      row.genre=cv.genre||cv.main_genre||row.mainGenre;
      row.status=['completed','complete','done','Đã hoàn thành'].includes(cv.status)?'completed':'ongoing';
-     row.summary=cv.summary??cv.description??row.summary??'';row.longIntro=cv.long_intro??cv.introduction??cv.long_description??cv.detailed_description??cv.full_description??row.longIntro??'';
+     row.summary=cv.summary??cv.description??row.summary??'';row.longIntro=cv.long_description??'';
      row.subtags=Array.isArray(cv.subtags)?cv.subtags:(Array.isArray(cv.tags)?cv.tags:row.subtags||[]);
      row.cover=cv.cover_url||cv.cover||'';
      target[idx]=row;

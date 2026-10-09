@@ -1085,6 +1085,39 @@ body.purplenight .account-menu,body.purplenight .notif-panel{
   #memberArea{gap:6px!important}
   #memberArea .notif-wrap{margin-left:0!important;margin-right:5px!important}
 }
+
+/* ===== mobile story covers: show the full cover like desktop ===== */
+@media (max-width:700px){
+  #stories .story-cover{
+    aspect-ratio:3/4!important;
+    height:auto!important;
+    overflow:hidden!important;
+  }
+  #stories .story-cover img{
+    width:100%!important;
+    height:100%!important;
+    object-fit:contain!important;
+    object-position:center!important;
+    display:block!important;
+  }
+}
+
+/* ===== reader paragraph comment badge: move slightly outside text ===== */
+.reader-paragraph .para-comment-indicator,
+.reader-paragraph .paragraph-comment-indicator,
+.reader-paragraph .comment-indicator{
+  transform:translateX(18px)!important;
+}
+/* mobile comment bubble: end of paragraph, right edge, no text reflow */
+@media (max-width:700px){
+ .reader-paragraph{position:relative!important}
+ .reader-paragraph .para-comment-indicator,
+ .reader-paragraph .paragraph-comment-indicator,
+ .reader-paragraph .comment-indicator{
+  position:absolute!important;right:-2px!important;top:auto!important;bottom:-24px!important;
+  transform:none!important;margin:0!important;z-index:2
+ }
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Nhà có Alex V21.21 -->

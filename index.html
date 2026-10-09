@@ -2018,7 +2018,7 @@ async function loadCloudStories(){
    status:['completed','complete','done','Đã hoàn thành'].includes(r.status)?'completed':'ongoing',
    summary:r.summary||r.description||r.introduction||'',cover:r.cover_url||r.cover||'',views:Number(r.views)||0,likes:Number(r.likes)||0,
    updatedAt:r.updated_at||r.created_at||'',
-   chapters:(chaptersByStory[r.id]||[]).map(c=>({id:Number(c.id),title:c.title||`Chương ${c.chapter_number||''}`,publishState:'published',paras:[],_parasLoaded:false}))
+   chapters:(chaptersByStory[r.id]||[]).map(c=>({id:c.id,chapterNumber:Number(c.chapter_number)||null,title:c.title||`Chương ${c.chapter_number||''}`,publishState:'published',paras:[],_parasLoaded:false,_chapterContent:c.content||c.body||c.text||''}))
   }));
   if(mapped.length){
    stories=mapped.sort((a,b)=>(Date.parse(b.updatedAt)||0)-(Date.parse(a.updatedAt)||0));
@@ -2035,9 +2035,25 @@ async function ensureChapterContent(story,chapterIndex){
  if(ch._parasLoading)return ch._parasLoading;
  ch._parasLoading=(async()=>{
   try{
-   const {data,error}=await sb.from('paragraphs').select('*').eq('chapter_id',ch.id).order('paragraph_number',{ascending:true});
+   // Giữ nguyên ID Supabase (kể cả UUID/string). Ép Number() có thể làm ID thành NaN,
+   // khiến các chương tạo sau không tìm thấy paragraph trên một số thiết bị.
+   let {data,error}=await sb.from('paragraphs').select('*').eq('chapter_id',ch.id).order('paragraph_number',{ascending:true});
    if(error)throw error;
-   ch.paras=(data||[]).flatMap(p=>String(p.content||'').replace(/\r\n?/g,'\n').split(/\n+/).map(x=>x.trim()).filter(Boolean));
+   let paras=(data||[]).flatMap(p=>String(p.content||'').replace(/\r\n?/g,'\n').split(/\n+/).map(x=>x.trim()).filter(Boolean));
+   // Một số chương cũ có thể lưu nội dung trực tiếp ở row chapters thay vì paragraphs.
+   // Chỉ dùng cloud chapter content làm fallback; tuyệt đối không lấy local/demo.
+   if(!paras.length){
+     let chapterRow=null;
+     const byId=await sb.from('chapters').select('*').eq('id',ch.id).maybeSingle();
+     if(!byId.error)chapterRow=byId.data;
+     if(!chapterRow && ch.chapterNumber!=null){
+       const byNo=await sb.from('chapters').select('*').eq('story_id',story.id).eq('chapter_number',ch.chapterNumber).maybeSingle();
+       if(!byNo.error)chapterRow=byNo.data;
+     }
+     const raw=chapterRow?.content||chapterRow?.body||chapterRow?.text||ch._chapterContent||'';
+     paras=String(raw).replace(/\r\n?/g,'\n').split(/\n+/).map(x=>x.trim()).filter(Boolean);
+   }
+   ch.paras=paras;
    ch._parasLoaded=true;
    return true;
   }catch(e){console.warn('paragraph cloud read',e);return false}
@@ -2594,7 +2610,7 @@ deleteStoryReview=async function(id){if(!introStory||!authUser||!confirm('Xóa r
 const toggleSaveV179=toggleSave;
 toggleSave=function(id){toggleSaveV179(id);queueCloudMemberState()};
 
-console.info('Nhà có Alex V21.15 · Fast cloud loading + lazy chapter content');
+console.info('Nhà có Alex V21.16 · Robust lazy chapter loading from Supabase');
 render();
 // Do not resolve protected routes before auth session restoration.
 initAuth().catch(()=>{updateAuthUI(); if(!location.pathname.startsWith('/quan-ly-thu-vien')) routeFromLocation();});

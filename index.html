@@ -419,7 +419,6 @@ body.smoky{
   border-radius:12px;padding:8px 10px;font:inherit
 }
 .home-more{display:flex;justify-content:center;margin:20px auto 44px}
-.home-more button{border-radius:999px}
 
 /* Review/comment feed styling */
 .community-feed{
@@ -1601,7 +1600,7 @@ if(location.pathname==='/' || location.pathname===''){const b=document.getElemen
     </div>
   </div>
   <div id="stories" class="grid"></div>
-  <div class="home-more"><button id="moreStoriesBtn" onclick="toggleAllStories()">Xem thêm truyện</button></div>
+  <div class="home-more"><button id="moreStoriesBtn" class="home-feed-list-more" onclick="toggleAllStories()">Xem thêm truyện</button></div>
 </section>
 <section id="reviewsPanel" class="home-panel"><div class="community-feed"></div></section>
 <section id="commentsPanel" class="home-panel"><div class="community-feed"></div></section>

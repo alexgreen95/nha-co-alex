@@ -33,7 +33,7 @@ test('chapter images use real row numbers and IDs without changing paragraph key
    await page.setViewportSize({width,height:844});
    await page.locator('#chapter .chapter-image img').evaluateAll(async imgs=>{await Promise.all(imgs.map(img=>img.decode()));});
    const sizes=await page.locator('#chapter .chapter-image img').evaluateAll(imgs=>imgs.map(img=>{const r=img.getBoundingClientRect(),box=document.getElementById('chapter').getBoundingClientRect();return {w:r.width,h:r.height,left:r.left,right:r.right,boxLeft:box.left,boxRight:box.right};}));
-   for(const size of sizes){assert(Math.abs(size.w/size.h-2)<.01);assert(size.left>=size.boxLeft-1&&size.right<=size.boxRight+1);assert(Math.abs((size.left+size.right)-(size.boxLeft+size.boxRight))<2);}
+   for(const size of sizes){assert(size.w<=(size.boxRight-size.boxLeft)*2/3+1);assert(Math.abs(size.w/size.h-2)<.01);assert(size.left>=size.boxLeft-1&&size.right<=size.boxRight+1);assert(Math.abs((size.left+size.right)-(size.boxLeft+size.boxRight))<2);}
   }
   const before=requests.filter(url=>url.pathname.endsWith('/chapter_images')).length;
   await page.evaluate(async()=>{await ensureChapterContent(currentStory,0);renderChapter(123);});

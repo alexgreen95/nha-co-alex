@@ -1273,40 +1273,22 @@ const seed=[
  {id:6,title:'Ngày Chúng Ta Vẫn Còn Là Những Đứa Trẻ',author:'Alex',mainGenre:'Hiện đại',genre:'Thanh xuân · Đời thường',status:'completed',chapters:[{title:'Chương 1: Con đường cũ',paras:['Con đường về nhà năm ấy ngắn hơn trong trí nhớ.','Chúng tôi từng nghĩ mùa hè sẽ chẳng bao giờ kết thúc.']}],views:319,likes:58}
 ];
 
-const DATA_VERSION=4;
-let oldVersion=Number(localStorage.getItem('nha_data_version')||0);
-let stories;
-if(oldVersion<DATA_VERSION){
- stories=seed;
- localStorage.setItem('nha_co_alex_stories',JSON.stringify(stories));
- localStorage.setItem('nha_data_version',DATA_VERSION);
-}else{
- stories=JSON.parse(localStorage.getItem('nha_co_alex_stories')||'null')||seed;
-}
-// V20.3: migrate old genre labels without resetting any story data.
-stories.forEach(st=>{if(st.mainGenre==='Tiên hiệp'||st.mainGenre==='Huyền huyễn')st.mainGenre='Huyền ảo'});
-localStorage.setItem('nha_co_alex_stories',JSON.stringify(stories));
-let comments=JSON.parse(localStorage.getItem('nha_co_alex_comments')||'{}');
-let reviews=JSON.parse(localStorage.getItem('nha_co_alex_reviews')||'{}');
-let chapterLikes=JSON.parse(localStorage.getItem('nha_co_alex_chapter_likes')||'{}');
-let likedChapters=JSON.parse(localStorage.getItem('nha_co_alex_liked_chapters')||'[]');
-// Preserve the old displayed story-heart totals as chapter totals on first migration.
-if(!Object.keys(chapterLikes).length){stories.forEach(st=>{if(st.chapters?.length)chapterLikes[`${st.id}_0`]=Number(st.likes)||0});localStorage.setItem('nha_co_alex_chapter_likes',JSON.stringify(chapterLikes));}
+// V21.13 — Supabase is the single source of truth for site data.
+// localStorage is reserved ONLY for reader appearance preferences below.
+let stories=[...seed];
+let comments={};
+let reviews={};
+let chapterLikes={};
+let likedChapters=[];
 let storyCommentPage=1, reviewComposerOpen=false;
-let saved=JSON.parse(localStorage.getItem('nha_co_alex_saved')||'[]');
-let liked=JSON.parse(localStorage.getItem('nha_co_alex_liked')||'[]');
-let progress=JSON.parse(localStorage.getItem('nha_co_alex_progress')||'{}');
+let saved=[];
+let liked=[];
+let progress={};
 let currentStory=null,currentChapter=0,saveScrollTimer;
 
 function save(){
- localStorage.setItem('nha_co_alex_stories',JSON.stringify(stories));
- localStorage.setItem('nha_co_alex_comments',JSON.stringify(comments));
- localStorage.setItem('nha_co_alex_reviews',JSON.stringify(reviews));
- localStorage.setItem('nha_co_alex_chapter_likes',JSON.stringify(chapterLikes));
- localStorage.setItem('nha_co_alex_liked_chapters',JSON.stringify(likedChapters));
- localStorage.setItem('nha_co_alex_saved',JSON.stringify(saved));
- localStorage.setItem('nha_co_alex_liked',JSON.stringify(liked));
- localStorage.setItem('nha_co_alex_progress',JSON.stringify(progress));
+ // Business data is never persisted to localStorage. Member state is queued to Supabase
+ // by the cloud wrapper installed later in this file.
 }
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function icon(type){
@@ -1361,7 +1343,7 @@ function displayPage(id){
  if(homeNavBtn)homeNavBtn.style.display=id==='home'?'none':'';
 }
 
-function requestCommentLogin(kind='bình luận'){localStorage.setItem('nha_return_path',location.pathname);show('login');let m=document.getElementById('authMessage');if(m)m.textContent='Đăng nhập để '+kind+'.'}
+function requestCommentLogin(kind='bình luận'){sessionStorage.setItem('nha_return_path',location.pathname);show('login');let m=document.getElementById('authMessage');if(m)m.textContent='Đăng nhập để '+kind+'.'}
 const EMOJIS='😀 😃 😄 😁 😂 🥹 😊 😍 🥰 😘 😭 🥺 😳 🤭 🤣 😌 😎 🤔 😴 😤 😡 🤍 ❤️ 🩷 🧡 💛 💚 🩵 💙 💜 🤎 🖤 💕 💖 💗 💓 💞 💘 💝 👍 👏 🙌 🫶 🤝 👀 ✨ ⭐ 🌙 ☀️ 🌷 🌸 🌼 🌿 🍀 🎀 🎉 🥳 ☕ 📚 🐰 🐱'.split(' ');
 let emojiTargetInput=null,emojiTargetTrigger=null;
 function emojiPickerHTML(inputId){return `<button type="button" class="emoji-trigger" aria-controls="emojiPopup" aria-expanded="false" aria-haspopup="dialog" onclick="toggleEmojiPicker(event,this,'${inputId}')" aria-label="Chọn emoji">☺</button>`}
@@ -1472,7 +1454,7 @@ function openStory(id,updateRoute=true){let s=stories.find(x=>x.id===id);if(!s)r
 function renderStoryAbout(){if(!introStory)return;const v=document.getElementById('introAboutView'),b=document.getElementById('introAboutEditBtn'),e=document.getElementById('introAboutEdit');if(v)v.innerHTML=esc(introStory.summary||'Chưa có phần giới thiệu.').replace(/\n/g,'<br>');if(b)b.style.display=isSiteAdmin()?'inline-flex':'none';if(e)e.hidden=true;if(v)v.hidden=false}
 function editStoryAbout(){if(!introStory||!isSiteAdmin())return;document.getElementById('introAboutInput').value=introStory.summary||'';document.getElementById('introAboutView').hidden=true;document.getElementById('introAboutEdit').hidden=false;document.getElementById('introAboutEditBtn').style.display='none'}
 function cancelStoryAboutEdit(){renderStoryAbout()}
-async function saveStoryAbout(){if(!introStory||!isSiteAdmin())return;const text=document.getElementById('introAboutInput').value.trim();introStory.summary=text;localStorage.setItem('nha_co_alex_stories',JSON.stringify(stories));const r=await sb.from('stories').update({summary:text}).eq('id',introStory.id);if(r.error)console.warn('summary cloud save',r.error);renderStoryAbout()}
+async function saveStoryAbout(){if(!introStory||!isSiteAdmin())return;const text=document.getElementById('introAboutInput').value.trim();introStory.summary=text;const r=await sb.from('stories').update({summary:text}).eq('id',introStory.id);if(r.error)console.warn('summary cloud save',r.error);renderStoryAbout()}
 function showIntroTab(name,btn){document.querySelectorAll('.intro-pane').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.intro-tabs button').forEach(x=>x.classList.remove('active'));document.getElementById('intro'+name[0].toUpperCase()+name.slice(1))?.classList.add('active');btn?.classList.add('active')}
 function startFromIntro(){if(!introStory)return;let pr=progress[introStory.id]||{chapter:0,scroll:0};read(introStory.id,pr.chapter||0);if(pr.scroll)setTimeout(()=>window.scrollTo(0,pr.scroll),30)}
 function toggleIntroSave(){if(!introStory)return;toggleSave(introStory.id);document.getElementById('introSaveBtn').textContent=saved.includes(introStory.id)?'★ Đã lưu':'☆ Lưu truyện'}
@@ -2058,8 +2040,8 @@ storyLikeTotal=function(story){
 };
 async function loadCloudStories(){try{const results=await Promise.allSettled([fetchAllRows('stories','id'),fetchAllRows('chapters','id'),fetchAllRows('paragraphs','id')]);const storyRows=results[0].status==='fulfilled'?results[0].value:[];const chapterRows=results[1].status==='fulfilled'?results[1].value:[];const paragraphRows=results[2].status==='fulfilled'?results[2].value:[];if(results[1].status==='rejected')console.warn('chapter cloud read',results[1].reason);if(results[2].status==='rejected')console.warn('paragraph cloud read',results[2].reason);if(!storyRows.length){console.warn('Không đọc được truyện công khai từ Supabase hoặc bảng stories đang trống.');return false;}const parasByChapter={};for(const p of paragraphRows){(parasByChapter[p.chapter_id]||(parasByChapter[p.chapter_id]=[])).push(p)}Object.values(parasByChapter).forEach(a=>a.sort((x,y)=>(Number(x.paragraph_number)||0)-(Number(y.paragraph_number)||0)));const chaptersByStory={};for(const c of chapterRows){if(c.published===false)continue;(chaptersByStory[c.story_id]||(chaptersByStory[c.story_id]=[])).push(c)}Object.values(chaptersByStory).forEach(a=>a.sort((x,y)=>(Number(x.chapter_number)||0)-(Number(y.chapter_number)||0)));const mapped=storyRows.filter(r=>r.published!==false).map(r=>({id:Number(r.id),title:r.title||r.name||`Truyện ${r.id}`,author:r.author||'Alex',mainGenre:['Hiện đại','Cổ đại','Tương lai','Huyền ảo'].includes(r.main_genre||r.genre)?(r.main_genre||r.genre):'Hiện đại',genre:r.genre||r.main_genre||'Hiện đại',subtags:Array.isArray(r.subtags)?r.subtags:(Array.isArray(r.tags)?r.tags:[]),status:['completed','complete','done','Đã hoàn thành'].includes(r.status)?'completed':'ongoing',summary:r.summary||r.description||r.introduction||'',cover:r.cover_url||r.cover||'',views:Number(r.views)||0,likes:Number(r.likes)||0,updatedAt:r.updated_at||r.created_at||'',chapters:(chaptersByStory[r.id]||[]).map(c=>({id:Number(c.id),title:c.title||`Chương ${c.chapter_number||''}`,publishState:'published',paras:(parasByChapter[c.id]||[]).flatMap(p=>String(p.content||'').replace(/\r\n?/g,'\n').split(/\n+/).map(x=>x.trim()).filter(Boolean))}))}));if(mapped.length){stories=mapped.sort((a,b)=>(Date.parse(b.updatedAt)||0)-(Date.parse(a.updatedAt)||0));
  const realStory=stories.find(x=>Number(x.id)===2&&String(x.title).toLowerCase().includes('làm xác sống'));
- if(realStory && Number(chapterLikes['2_0'])===17){chapterLikes['2_0']=0;likedChapters=likedChapters.filter(x=>x!=='2_0');localStorage.setItem('nha_co_alex_chapter_likes',JSON.stringify(chapterLikes));localStorage.setItem('nha_co_alex_liked_chapters',JSON.stringify(likedChapters));}
- localStorage.setItem('nha_co_alex_stories',JSON.stringify(stories));render();if(introStory){const fresh=stories.find(x=>Number(x.id)===Number(introStory.id));if(fresh)introStory=fresh}return true;}return false;}catch(e){console.warn('story cloud sync',e);return false;}}
+ if(realStory && Number(chapterLikes['2_0'])===17){chapterLikes['2_0']=0;likedChapters=likedChapters.filter(x=>x!=='2_0');}
+ render();if(introStory){const fresh=stories.find(x=>Number(x.id)===Number(introStory.id));if(fresh)introStory=fresh}return true;}return false;}catch(e){console.warn('story cloud sync',e);return false;}}
 async function initAuth(){
  const {data}=await sb.auth.getSession();
  authUser=data.session?.user||null;
@@ -2072,8 +2054,8 @@ async function initAuth(){
   await Promise.allSettled([loadCloudComments(),loadCloudReviews()]);
   // Route only after Supabase has restored the session. This is required for admin pages after a full reload.
   if(location.pathname!=='/') routeFromLocation();
- const returnPath=localStorage.getItem('nha_return_path');
- if(authUser&&returnPath){localStorage.removeItem('nha_return_path');if(/^\/(truyen|user)\//.test(returnPath)){setRoute(returnPath,true);routeFromLocation()}}
+ const returnPath=sessionStorage.getItem('nha_return_path');
+ if(authUser&&returnPath){sessionStorage.removeItem('nha_return_path');if(/^\/(truyen|user)\//.test(returnPath)){setRoute(returnPath,true);routeFromLocation()}}
  else if(location.pathname.startsWith('/user/'))routeFromLocation();
  sb.auth.onAuthStateChange(async(_event,session)=>{
    authUser=session?.user||null;
@@ -2083,10 +2065,10 @@ async function initAuth(){
  });
 }
 function isSiteAdmin(){const u=profileUsername(),n=slugify(authUser?.user_metadata?.full_name||authUser?.user_metadata?.name||'');return !!authUser && (u==='alex'||u==='thao-tran'||n==='alex'||n==='thao-tran')}
-let adminLibraryTab='published',managedDrafts=JSON.parse(localStorage.getItem('nha_managed_drafts')||'[]'),editingManagedStoryId=null,activeManagedStory=null,activeManagedSource='published',activeManagedChapter=-1,chapterAutosaveTimer=null;
+let adminLibraryTab='published',managedDrafts=[],editingManagedStoryId=null,activeManagedStory=null,activeManagedSource='published',activeManagedChapter=-1,chapterAutosaveTimer=null;
 managedDrafts.forEach(st=>{if(st.mainGenre==='Tiên hiệp'||st.mainGenre==='Huyền huyễn')st.mainGenre='Huyền ảo'});
-localStorage.setItem('nha_managed_drafts',JSON.stringify(managedDrafts));
-function persistManaged(){localStorage.setItem('nha_managed_drafts',JSON.stringify(managedDrafts));save()}
+
+function persistManaged(){save()}
 function ensureChapterStates(st){(st.chapters||[]).forEach(ch=>{if(!ch.publishState)ch.publishState='published'});return st}
 function chapterCounts(st){ensureChapterStates(st);let pub=0,draft=0;(st.chapters||[]).forEach(ch=>ch.publishState==='draft'?draft++:pub++);return {pub,draft}}
 function openAdminLibrary(updateRoute=true){if(!isSiteAdmin()){goHome();return}if(updateRoute)setRoute('/quan-ly-thu-vien');displayPage('adminLibrary');adminLibraryTab='published';document.querySelectorAll('.admin-library-tabs button').forEach((b,i)=>b.classList.toggle('active',i===0));renderAdminLibrary();window.scrollTo(0,0)}
@@ -2134,7 +2116,7 @@ function publishManagedChapter(){if(!activeManagedStory||activeManagedChapter<0)
 function backToStoryAdmin(){if(!activeManagedStory)return;openStoryAdmin(String(activeManagedStory.id),activeManagedSource)}
 function deleteManagedChapter(i){if(!activeManagedStory?.chapters?.[i]||!confirm(`Xóa “${activeManagedStory.chapters[i].title}”?`))return;activeManagedStory.chapters.splice(i,1);persistManaged();renderStoryAdmin()}
 let draggedChapterIndex=null;function chapterDragStart(e){draggedChapterIndex=Number(e.currentTarget.dataset.index);e.currentTarget.classList.add('dragging')}function chapterDrop(e){e.preventDefault();const to=Number(e.currentTarget.dataset.index);if(draggedChapterIndex===null||draggedChapterIndex===to)return;const [m]=activeManagedStory.chapters.splice(draggedChapterIndex,1);activeManagedStory.chapters.splice(to,0,m);draggedChapterIndex=null;persistManaged();renderStoryAdmin()}
-function openStoryComposer(id=null,source='draft'){if(!isSiteAdmin())return;editingManagedStoryId=id?{id:String(id),source}:null;let s=null;if(id){s=source==='published'?stories.find(x=>String(x.id)===String(id)):managedDrafts.find(x=>String(x.id)===String(id));if(source!=='published'){try{const d=JSON.parse(localStorage.getItem('nca_story_edit_drafts')||'{}');if(d[String(id)])s=d[String(id)]}catch(e){}}}document.getElementById('storyComposerTitle').textContent=s?'Sửa thông tin truyện':'Truyện mới';document.getElementById('manageTitle').value=s?.title||'';document.getElementById('manageGenre').value=s?.mainGenre||'Hiện đại';document.getElementById('manageStatus').value=s?.status||'ongoing';document.getElementById('manageSummary').value=s?.summary||'';document.getElementById('manageTags').value=(s?.subtags||[]).join(', ');const cp=document.getElementById('manageCoverPreview');if(cp)cp.innerHTML=s?.cover?`<img src="${esc(s.cover)}" alt="Ảnh bìa hiện tại">`:'Chưa có bìa';const ci=document.getElementById('manageCover');if(ci)ci.value='';document.getElementById('storyComposerModal').classList.remove('hidden')}
+function openStoryComposer(id=null,source='draft'){if(!isSiteAdmin())return;editingManagedStoryId=id?{id:String(id),source}:null;let s=null;if(id){s=source==='published'?stories.find(x=>String(x.id)===String(id)):managedDrafts.find(x=>String(x.id)===String(id));}document.getElementById('storyComposerTitle').textContent=s?'Sửa thông tin truyện':'Truyện mới';document.getElementById('manageTitle').value=s?.title||'';document.getElementById('manageGenre').value=s?.mainGenre||'Hiện đại';document.getElementById('manageStatus').value=s?.status||'ongoing';document.getElementById('manageSummary').value=s?.summary||'';document.getElementById('manageTags').value=(s?.subtags||[]).join(', ');const cp=document.getElementById('manageCoverPreview');if(cp)cp.innerHTML=s?.cover?`<img src="${esc(s.cover)}" alt="Ảnh bìa hiện tại">`:'Chưa có bìa';const ci=document.getElementById('manageCover');if(ci)ci.value='';document.getElementById('storyComposerModal').classList.remove('hidden')}
 function closeStoryComposer(){document.getElementById('storyComposerModal').classList.add('hidden');editingManagedStoryId=null}
 function managedStoryFromForm(base={}){return {...base,title:document.getElementById('manageTitle').value.trim(),author:'Alex',mainGenre:document.getElementById('manageGenre').value,genre:document.getElementById('manageGenre').value,status:document.getElementById('manageStatus').value,summary:document.getElementById('manageSummary').value.trim(),subtags:document.getElementById('manageTags').value.split(',').map(x=>x.trim()).filter(Boolean),chapters:base.chapters||[],views:base.views||0,likes:base.likes||0}}
 async function saveManagedStory(mode){
@@ -2143,7 +2125,7 @@ async function saveManagedStory(mode){
  const row=managedStoryFromForm(base);const sourceBefore=editingManagedStoryId?.source||'draft';
  try{const coverUrl=await uploadManagedCover(row.id);if(coverUrl)row.cover=coverUrl}catch(e){console.warn('cover upload',e);alert('Ảnh bìa chưa tải lên được. Nội dung truyện chưa bị mất nha bà.');return}
  if(mode==='draft'){
-   const drafts=JSON.parse(localStorage.getItem('nca_story_edit_drafts')||'{}');drafts[String(row.id)]=row;localStorage.setItem('nca_story_edit_drafts',JSON.stringify(drafts));
+   
    if(!editingManagedStoryId){managedDrafts.unshift(row);persistManaged();editingManagedStoryId={id:String(row.id),source:'draft'}}
    alert('Đã lưu thay đổi. Bản đang hiển thị cho độc giả chưa đổi.');return;
  }
@@ -2177,7 +2159,7 @@ async function saveManagedStory(mode){
      }
    }
  }else{stories.unshift(row);activeManagedSource='published'}
- const drafts=JSON.parse(localStorage.getItem('nca_story_edit_drafts')||'{}');delete drafts[String(row.id)];localStorage.setItem('nca_story_edit_drafts',JSON.stringify(drafts));
+ 
  persistManaged();closeStoryComposer();activeManagedStory=row;render();openStoryAdmin(String(row.id),editingManagedStoryId?.source||'published');
 }
 function publishDraft(id){const st=managedDrafts.find(x=>String(x.id)===String(id));if(!st)return;managedDrafts=managedDrafts.filter(x=>String(x.id)!==String(id));stories.unshift(st);persistManaged();renderAdminLibrary()}
@@ -2516,7 +2498,7 @@ async function loadCloudComments(){
   const likeMap={}; for(const x of likes)(likeMap[x.comment_id]||(likeMap[x.comment_id]=[])).push(x.user_id);
   const next={};
   for(const r of rows){const p=prof[r.user_id]||{},key=cloudCommentKey(r);(next[key]||(next[key]=[])).push({id:r.id,userId:r.user_id,username:slugify(p.display_name||'thanh-vien'),name:p.display_name||'Thành viên',avatar:p.avatar_url||'',text:r.content||'',createdAt:r.created_at,editedAt:r.edited_at,parentId:r.parent_id,replyTo:r.reply_to_user_id,likes:(likeMap[r.id]||[]).length,likedBy:likeMap[r.id]||[]});}
-  comments=next; localStorage.setItem('nha_co_alex_comments',JSON.stringify(comments)); refreshCommentViews();
+  comments=next;  refreshCommentViews();
 }
 async function insertCloudComment(key,text,extra={}){
   const c=cloudCommentContext(key), payload={user_id:authUser.id,content:text,scope:c.scope,story_id:c.story_id,chapter_index:c.chapter_index,paragraph_index:c.paragraph_index,parent_id:extra.parentId||null,reply_to_user_id:extra.replyToUserId||null};
@@ -2529,7 +2511,7 @@ async function loadCloudReviews(){
   if(error){console.warn('reviews sync',error.message||error,error);return}
   const rows=data||[],prof=await cloudProfiles(rows.map(r=>r.user_id)),next={};
   for(const r of rows){const p=prof[r.user_id]||{};(next[r.story_id]||(next[r.story_id]=[])).push({id:r.id,userId:r.user_id,username:slugify(p.display_name||'thanh-vien'),name:p.display_name||'Thành viên',avatar:p.avatar_url||'',text:r.content||'',html:r.content_html||'',createdAt:r.created_at,editedAt:r.edited_at,likes:0,comments:0});}
-  reviews=next;localStorage.setItem('nha_co_alex_reviews',JSON.stringify(reviews));renderHomeReviews();if(introStory)renderStoryReviews();
+  reviews=next;renderHomeReviews();if(introStory)renderStoryReviews();
 }
 let cloudChapterMap={};
 async function loadCloudChapterMap(){
@@ -2562,8 +2544,8 @@ async function loadCloudMemberState(){
     }
     progress=next;
   }
-  localStorage.setItem('nha_co_alex_saved',JSON.stringify(saved));
-  localStorage.setItem('nha_co_alex_progress',JSON.stringify(progress));
+  
+  
   render();
 }
 async function saveCloudMemberState(){

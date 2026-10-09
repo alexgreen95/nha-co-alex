@@ -1206,6 +1206,48 @@ body.purplenight .account-menu,body.purplenight .notif-panel{
 #reader .para-wrap .comment-btn .ico-comment{
   width:18px!important;height:18px!important;
 }
+
+/* ===== exact requested comment icon: square speech bubble + count ===== */
+.ico-comment{
+  width:1em!important;height:.82em!important;
+  display:inline-block!important;position:relative!important;
+  background:currentColor!important;border:0!important;border-radius:.12em!important;
+  clip-path:none!important;
+}
+.ico-comment:before{
+  content:""!important;display:block!important;position:absolute!important;
+  left:18%!important;bottom:-.28em!important;width:.34em!important;height:.34em!important;
+  background:currentColor!important;
+  clip-path:polygon(0 0,100% 0,0 100%)!important;
+}
+.ico-comment:after{content:none!important}
+
+/* Reader marker belongs visually to the paragraph ABOVE it. */
+@media(max-width:700px){
+  #reader .para-wrap .comment-btn{
+    right:0!important;
+    top:auto!important;
+    bottom:-7px!important;
+    transform:translateY(100%)!important;
+    border:0!important;background:transparent!important;box-shadow:none!important;
+    padding:0 2px!important;margin:0!important;
+    display:inline-flex!important;align-items:center!important;gap:4px!important;
+  }
+  #reader .para-wrap .comment-btn .ico-comment{
+    width:20px!important;height:16px!important;
+  }
+  #reader .para-wrap .comment-btn span{
+    display:inline!important;font-size:.72em!important;line-height:1!important;
+  }
+}
+
+/* ===== requested: comment bubble tail on top ===== */
+.ico-comment:before{
+  left:18%!important;
+  top:-.28em!important;
+  bottom:auto!important;
+  clip-path:polygon(0 100%,100% 100%,0 0)!important;
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Nhà có Alex V21.21 -->
@@ -1838,7 +1880,7 @@ function renderAllStoryComments(){
   const list=normalizedComments(key);
   for(const root of list.filter(c=>rootComment(list,c).id===c.id)) entries.push({key,root,list,time:Date.parse(root.createdAt)||0});
  }
- entries.sort((a,b)=>a.time-b.time);
+ entries.sort((a,b)=>b.time-a.time);
  const pageSize=20,totalPages=Math.max(1,Math.ceil(entries.length/pageSize));storyCommentPage=Math.min(Math.max(1,storyCommentPage),totalPages);
  const page=entries.slice((storyCommentPage-1)*pageSize,storyCommentPage*pageSize);
  box.innerHTML=page.map(({key,root,list})=>{const replies=list.filter(c=>c.id!==root.id&&rootComment(list,c).id===root.id);return `<div class="comment-group"><div class="comment-thread" data-comment-key="${esc(key)}" data-comment-surface="story">${commentMarkup(root,key,list,commentLocationHTMLForStory(key))}${replies.length?`<div class="comment-replies">${replies.map(reply=>commentMarkup(reply,key,list)).join('')}</div>`:''}${replyComposerHTML(key,root,'story')}</div></div>`}).join('')||'<p class="muted">Chưa có bình luận nào cho truyện này.</p>';

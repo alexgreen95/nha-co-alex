@@ -2645,8 +2645,8 @@ async function ensureChapterContent(story,chapterIndex){
 async function initAuth(){
  const {data}=await sb.auth.getSession();
  authUser=data.session?.user||null;
- if(authUser)await syncProfile(authUser);
  updateAuthUI();
+ if(authUser)await syncProfile(authUser);
  // Community feeds are public: always hydrate comments/reviews from Supabase,
  // including visitors who are not signed in and devices with empty localStorage.
  const cloudStoriesReady=await loadCloudStories();
@@ -2661,8 +2661,8 @@ async function initAuth(){
  else if(location.pathname.startsWith('/user/'))routeFromLocation();
  sb.auth.onAuthStateChange(async(_event,session)=>{
    authUser=session?.user||null;
-   if(authUser)await syncProfile(authUser);
    updateAuthUI();
+   if(authUser)await syncProfile(authUser);
    if(location.pathname.startsWith('/user/'))routeFromLocation();
  });
 }
@@ -3235,7 +3235,18 @@ function queueCloudMemberState(){if(!authUser||!cloudSyncReady)return;clearTimeo
 const localSaveV179=save;
 save=function(){localSaveV179();queueCloudMemberState()};
 const syncProfileV179=syncProfile;
-syncProfile=async function(u){await syncProfileV179(u);await loadCloudMemberState();await refreshPublicStoryCloudFields();cloudSyncReady=true;Promise.allSettled([loadCloudComments(),loadCloudReviews()]);};
+syncProfile=async function(u){
+ await syncProfileV179(u);
+ /* Restore account UI first; heavy cloud state must never make the user look logged out. */
+ updateAuthUI();
+ Promise.allSettled([
+   loadCloudMemberState(),
+   refreshPublicStoryCloudFields(),
+   loadCloudComments(),
+   loadCloudReviews()
+ ]).then(()=>{cloudSyncReady=true;render();});
+ return memberProfile;
+};
 
 submitStoryComment=async function(event){event.preventDefault();if(!introStory||!authUser)return;const input=document.getElementById('storyCommentInput'),text=input?.value.trim();if(!text)return;input.disabled=true;const ok=await insertCloudComment(storyCommentKey(introStory.id),text);input.disabled=false;if(ok){input.value='';storyCommentPage=1;renderAllStoryComments();renderHomeComments();}};
 addParaComment=async function(key){if(!authUser){requestCommentLogin('bình luận');return}const input=document.getElementById('panelCommentInput'),text=input?.value.trim();if(!text)return;input.disabled=true;const ok=await insertCloudComment(key,text);const live=document.getElementById('panelCommentInput');if(live){live.disabled=false;if(ok)live.value='';}};

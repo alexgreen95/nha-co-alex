@@ -1248,6 +1248,9 @@ body.purplenight .account-menu,body.purplenight .notif-panel{
   bottom:auto!important;
   clip-path:polygon(0 100%,100% 100%,0 0)!important;
 }
+
+/* Chapter comment list: location line hidden; paragraph comments themselves are clickable. */
+#chapterCommentsList .unified-comment-group[data-chapter-comment-jump]{cursor:pointer}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Nhà có Alex V21.21 -->
@@ -2325,7 +2328,7 @@ function renderChapterComments(){
  const select=document.getElementById('chapterCommentSort');if(select)select.value=chapterCommentSort;
  const box=document.getElementById('chapterCommentsList');if(!box||!currentStory)return;
  const entries=chapterCommentEntries();
- box.innerHTML=entries.map(({key,list,root,replies})=>`<div class="comment-group unified-comment-group">${key===chapterGeneralKey()?'':commentLocationHTML(key)}<div class="comment-thread" data-comment-key="${esc(key)}" data-comment-surface="chapter">${commentMarkup(root,key,list)}${replies.length?`<div class="comment-replies">${replies.map(reply=>commentMarkup(reply,key,list)).join('')}</div>`:''}${replyComposerHTML(key,root,'chapter')}</div></div>`).join('')||'<p class="muted">Chưa có bình luận nào trong chương này.</p>';
+ box.innerHTML=entries.map(({key,list,root,replies})=>`<div class="comment-group unified-comment-group"${key===chapterGeneralKey()?'':` data-chapter-comment-jump="${esc(key)}"`}><div class="comment-thread" data-comment-key="${esc(key)}" data-comment-surface="chapter">${commentMarkup(root,key,list)}${replies.length?`<div class="comment-replies">${replies.map(reply=>commentMarkup(reply,key,list)).join('')}</div>`:''}${replyComposerHTML(key,root,'chapter')}</div></div>`).join('')||'<p class="muted">Chưa có bình luận nào trong chương này.</p>';
 }
 
 function addChapterComment(){
@@ -2335,6 +2338,12 @@ function addChapterComment(){
 }
 
 function jumpToParagraph(k){let el=document.getElementById('para_'+k);if(!el)return;el.scrollIntoView({behavior:'smooth',block:'center'});el.classList.add('jump-flash');toggleComments(k,true);setTimeout(()=>el.classList.remove('jump-flash'),1700)}
+function jumpToParagraphOnly(k){const el=document.getElementById('para_'+k);if(!el)return;el.scrollIntoView({behavior:'smooth',block:'center'});el.classList.add('jump-flash');setTimeout(()=>el.classList.remove('jump-flash'),1700)}
+document.addEventListener('click',event=>{
+ const group=event.target.closest('[data-chapter-comment-jump]');
+ if(!group||event.target.closest('button,a,input,textarea,select,form,.comment-owner-menu'))return;
+ jumpToParagraphOnly(group.dataset.chapterCommentJump);
+});
 function toggleSave(id){saved.includes(id)?saved=saved.filter(x=>x!==id):saved.push(id);save();render()}
 function toggleLike(id){
  let s=stories.find(x=>x.id===id);if(!s)return;

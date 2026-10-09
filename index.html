@@ -1000,6 +1000,22 @@ body.purplenight .account-menu,body.purplenight .notif-panel{
   box-shadow:0 14px 34px rgba(0,0,0,.28)!important;
 }
 
+
+/* V21.21 — home review feed: hide editor review, compact reader reviews, story identity */
+.home-review-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:8px}
+.home-review-reader{display:flex;align-items:center;gap:9px;min-width:0}
+.home-review-story{display:flex;align-items:center;gap:9px;min-width:220px;max-width:330px;cursor:pointer;text-align:left}
+.home-review-story-cover{width:42px;aspect-ratio:3/4;border-radius:7px;overflow:hidden;background:var(--soft);border:1px solid var(--line);flex:0 0 auto;display:grid;place-items:center;font-size:8px;text-align:center}
+.home-review-story-cover img{width:100%;height:100%;object-fit:cover;display:block}
+.home-review-story-text{min-width:0}
+.home-review-story-title{display:block;font-weight:700;color:var(--fg);line-height:1.3;cursor:pointer}
+.home-review-story-title:hover{text-decoration:underline;text-underline-offset:2px}
+.home-review-story-author{display:block;margin-top:3px;font-size:12px;color:var(--muted);line-height:1.3}
+.home-review-clamp{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden;text-align:justify;text-justify:inter-word}
+.home-review-clamp.expanded{display:block;overflow:visible}
+.home-review-more{border:0;background:transparent;color:var(--accent);padding:4px 0 0;cursor:pointer;font:inherit;font-size:12px}
+.home-review-more[hidden]{display:none!important}
+@media(max-width:640px){.home-review-head{display:block}.home-review-story{margin-top:10px;min-width:0;max-width:none}.home-review-story-cover{width:38px}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Nhà có Alex V21.21 -->
@@ -1758,22 +1774,27 @@ function newComment(text,extra={}){
  return {id:crypto.randomUUID(),userId:authUser.id,username:profileUsername(),name:userDisplayName(authUser),avatar:userAvatar(authUser),text,createdAt:new Date().toISOString(),likes:0,likedBy:[],...extra};
 }
 
+function toggleHomeReview(button){
+ const body=button.closest('.community-card')?.querySelector('.home-review-clamp');if(!body)return;
+ const open=body.classList.toggle('expanded');button.textContent=open?'Thu gọn':'Xem thêm';
+}
 function renderHomeReviews(){
  const panel=document.getElementById('reviewsPanel');if(!panel)return;
  const rows=[];
- for(const [storyId,list] of Object.entries(reviews||{}))for(const review of (list||[]))rows.push({storyId:Number(storyId),review});
+ for(const [storyId,list] of Object.entries(reviews||{}))for(const review of (list||[]))if(!isAdminReview(review))rows.push({storyId:Number(storyId),review});
  rows.sort((a,b)=>(Date.parse(b.review.createdAt)||0)-(Date.parse(a.review.createdAt)||0));
  panel.querySelector('.demo-label')?.classList.add('hidden');
  const feed=panel.querySelector('.community-feed');if(!feed)return;
  feed.innerHTML=rows.length?rows.slice(0,6).map(({storyId,review})=>{
    const story=stories.find(s=>Number(s.id)===Number(storyId));
    const avatar=review.avatar?`<img class="community-avatar" src="${esc(review.avatar)}" alt="">`:`<div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">${esc(Array.from(review.name||'T')[0])}</div>`;
-   const admin=isAdminReview(review)?'<span class="admin-badge admin-badge-home">ADMIN</span>':'';
-   const storyLink=story?`<span class="review-title-link" onclick="openStory(${Number(story.id)})">${esc(story.title)}</span>`:'Truyện';
    const body=review.html?safeReviewHTML(review.html):esc(review.text||'').replace(/\n/g,'<br>');
-   return `<article class="community-card"><div class="community-head">${avatar}<div class="community-meta"><strong>${esc(review.name||'Thành viên')}${admin}</strong><span class="community-sub">${commentTime(review)} · ${storyLink}</span></div></div><div class="community-body" onclick="if(event.target.classList.contains('review-spoiler'))toggleReviewSpoiler(event.target)">${body}</div></article>`;
+   const storyBox=story?`<div class="home-review-story" onclick="openStory(${Number(story.id)})" role="link" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openStory(${Number(story.id)})}"><div class="home-review-story-cover">${story.cover?`<img src="${esc(story.cover)}" alt="Bìa ${esc(story.title)}">`:'Nhà có Alex'}</div><div class="home-review-story-text"><span class="home-review-story-title">${esc(story.title)}</span><span class="home-review-story-author">Tác giả: ${esc(story.author||'')}</span></div></div>`:'';
+   return `<article class="community-card home-review-card"><div class="home-review-head"><div class="home-review-reader">${avatar}<div class="community-meta"><strong>${esc(review.name||'Thành viên')}</strong><span class="community-sub">${commentTime(review)}</span></div></div>${storyBox}</div><div class="community-body home-review-clamp" onclick="if(event.target.classList.contains('review-spoiler'))toggleReviewSpoiler(event.target)">${body}</div><button class="home-review-more" type="button" onclick="toggleHomeReview(this)">Xem thêm</button></article>`;
  }).join(''):'<p class="muted panel-empty">Chưa có review nào.</p>';
+ requestAnimationFrame(()=>{feed.querySelectorAll('.home-review-card').forEach(card=>{const body=card.querySelector('.home-review-clamp'),btn=card.querySelector('.home-review-more');if(body&&btn)btn.hidden=body.scrollHeight<=body.clientHeight+2})});
 }
+
 function renderHomeComments(){
  const panel=document.getElementById('commentsPanel');if(!panel)return;
  const keys=Object.keys(comments).filter(key=>!key.startsWith('demo_')&&comments[key].length);

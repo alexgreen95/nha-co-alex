@@ -2067,7 +2067,7 @@ function rootComment(list,comment){
  const visited=new Set([comment.id]);
  let root=comment;
  while(root.parentId){
-  const parent=list.find(row=>row.id===root.parentId);
+  const parent=list.find(row=>String(row.id)===String(root.parentId));
   if(!parent||visited.has(parent.id))break;
   visited.add(parent.id);root=parent;
  }
@@ -2217,9 +2217,20 @@ function toggleCommentLike(key,id){
 function beginCommentReply(key,id,surface){
  if(!authUser){requestCommentLogin('trả lời bình luận');return}
  const list=normalizedComments(key),target=list.find(row=>String(row.id)===String(id));if(!target)return;
- const oldInput=document.getElementById('replyCommentInput');if(oldInput)oldInput.value='';
- activeReply={key,targetId:id,rootId:rootComment(list,target).id,surface};
- refreshCommentViews();document.getElementById('replyCommentInput')?.focus({preventScroll:true});
+ activeReply={key,targetId:String(id),rootId:String(rootComment(list,target).id),surface};
+ closeEmojiPicker();
+ if(surface==='paragraph'){
+   const panel=ensureCommentPanel();
+   activeCommentKey=key;
+   document.getElementById('paragraphCommentPanelBody').innerHTML=renderParaComments(key,commentList(key));
+   panel.classList.add('open');
+   requestAnimationFrame(()=>positionParagraphPanel(key));
+ }else if(surface==='chapter'){
+   renderChapterComments();
+ }else{
+   renderAllStoryComments();
+ }
+ setTimeout(()=>document.getElementById('replyCommentInput')?.focus({preventScroll:true}),0);
 }
 function submitCommentReply(){
  if(!authUser){requestCommentLogin('trả lời bình luận');return}
@@ -2276,6 +2287,13 @@ function closeParagraphComments(){
  document.querySelectorAll('.para-wrap.comment-active').forEach(x=>x.classList.remove('comment-active'));activeCommentKey=null;
 }
 function openParagraphComposer(k){toggleComments(k,true);setTimeout(()=>document.getElementById('panelCommentInput')?.focus(),20)}
+document.addEventListener('pointerdown',event=>{
+ const panel=document.getElementById('paragraphCommentPanel');
+ if(!panel?.classList.contains('open'))return;
+ if(panel.contains(event.target))return;
+ if(event.target.closest?.('.comment-btn'))return;
+ closeParagraphComments();
+});
 let longPressTimer=null;function startLongPress(e,k){if(e.pointerType==='mouse')return;cancelLongPress();longPressTimer=setTimeout(()=>openParagraphComposer(k),520)}function cancelLongPress(){clearTimeout(longPressTimer);longPressTimer=null}
 function addParaComment(key){
  if(!authUser){requestCommentLogin('bình luận');return}

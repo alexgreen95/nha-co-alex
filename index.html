@@ -946,8 +946,7 @@ body.pastel .chapter-end-nav #nextChapter{background:#dcebf4;border-color:#c6dfe
 #memberArea .notif-wrap{margin-left:-2px;margin-right:1px}
 @media(max-width:640px){#memberArea .notif-wrap{margin-left:0;margin-right:0}}
 
-.home-comment-card{cursor:pointer}
-.home-comment-card:active{transform:translateY(1px)}
+.home-comment-card{cursor:default}
 
 /* v21.4 — reader paragraph spacing + exact shared reading column */
 #reader .reader{width:min(760px,100%)!important;max-width:760px!important;margin-inline:auto!important}
@@ -2360,14 +2359,6 @@ document.addEventListener('click',event=>{
  }
 });
 document.addEventListener('click',event=>{
- const card=event.target.closest('.home-comment-card');
- if(!card||event.target.closest('a,button'))return;
- const key=card.dataset.homeCommentKey,commentId=card.dataset.homeCommentId||null;
- if(key?.startsWith('story_')){openCommentLocation(Number(key.split('_')[1]),null,null,commentId);return}
- const parts=String(key||'').replace(/^chapter_/,'').split('_').map(Number);
- if(parts.length>=2)openCommentLocation(parts[0],parts[1],key.startsWith('chapter_')?null:parts[2],commentId);
-});
-document.addEventListener('click',event=>{
  if(event.target.closest('.comment-owner-menu'))return;
  document.querySelectorAll('.comment-owner-menu.open').forEach(menu=>menu.classList.remove('open'));
 });
@@ -3344,6 +3335,13 @@ initAuth().catch(()=>{updateAuthUI(); if(!location.pathname.startsWith('/quan-ly
    setupActivityClamps(feed);
  };
  document.addEventListener('click',function(e){
+   const homeCard=e.target.closest('#commentsPanel .home-comment-card');
+   if(homeCard && !e.target.closest('[data-comment-location],.activity-more')){
+     e.preventDefault();e.stopPropagation();
+     const body=homeCard.querySelector('.activity-clamp'),btn=homeCard.querySelector('.activity-more');
+     if(body?.classList.contains('expanded')){body.classList.remove('expanded');homeCard.classList.remove('expanded');if(btn)btn.hidden=false;}
+     return;
+   }
    const more=e.target.closest('.activity-more');
    if(more){e.preventDefault();e.stopPropagation();const card=more.closest('.activity-card'),body=card?.querySelector('.activity-clamp');if(!card||!body)return;body.classList.add('expanded');card.classList.add('expanded');more.hidden=true;return;}
    const card=e.target.closest('.activity-card.expanded');

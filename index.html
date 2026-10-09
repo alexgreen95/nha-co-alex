@@ -3255,6 +3255,78 @@ render();
 initAuth().catch(()=>{updateAuthUI(); if(!location.pathname.startsWith('/quan-ly-thu-vien')) routeFromLocation();});
 </script>
 
+
+<style id="v-profile-activity-clamp-fix">
+/* Activity + homepage community cards: keep long text inside the card. */
+.community-card{min-width:0;max-width:100%;overflow:hidden}
+.community-body,.activity-clamp{min-width:0;max-width:100%;overflow-wrap:anywhere;word-break:break-word}
+.activity-clamp:not(.expanded){display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+.activity-more{display:inline-block;margin-top:6px;padding:0;border:0;background:transparent;color:var(--accent);font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.activity-card.expanded{cursor:pointer}
+.activity-card .comment-location{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom}
+.profile-activity-location{margin-top:6px;font-size:12px;color:var(--muted);min-width:0}
+.profile-activity-location .comment-location{font-size:12px}
+</style>
+<script id="v-profile-activity-clamp-fix-js">
+(function(){
+ function clampCardHTML(bodyHTML, extraClass){
+   return '<div class="community-body activity-clamp '+(extraClass||'')+'">'+bodyHTML+'</div><button class="activity-more" type="button">Xem thêm</button>';
+ }
+ function setupActivityClamps(root){
+   root=root||document;
+   requestAnimationFrame(function(){
+     root.querySelectorAll('.activity-card').forEach(function(card){
+       var body=card.querySelector('.activity-clamp'),btn=card.querySelector('.activity-more');
+       if(!body||!btn)return;
+       body.classList.remove('expanded');card.classList.remove('expanded');
+       btn.hidden=body.scrollHeight<=body.clientHeight+2;
+     });
+   });
+ }
+ window.renderProfileActivity=function(kind='all'){
+   const c=document.getElementById('profileContent');if(!c||!authUser)return;
+   const rows=[];
+   if(kind!=='reviews')for(const [key,list] of Object.entries(comments||{}))for(const row of (list||[]))if(row?.userId===authUser.id)rows.push({type:'comment',text:row.text||'',createdAt:row.createdAt||'',key,id:row.id});
+   if(kind!=='comments')for(const [storyId,list] of Object.entries(reviews||{}))for(const row of (list||[]))if(row?.userId===authUser.id)rows.push({type:'review',text:row.text||'',html:row.html||'',createdAt:row.createdAt||'',storyId:Number(storyId)});
+   rows.sort((a,b)=>(Date.parse(b.createdAt)||0)-(Date.parse(a.createdAt)||0));
+   const label=kind==='comments'?'Bình luận':kind==='reviews'?'Review':'Hoạt động';
+   c.innerHTML='<h3>'+label+'</h3>'+(rows.length?rows.map(function(r){
+     let location='';
+     if(r.type==='comment') location=commentLocationHTML(r.key).replace('data-comment-location=', 'data-comment-id="'+esc(r.id)+'" data-comment-location=');
+     else {const st=stories.find(x=>Number(x.id)===Number(r.storyId));if(st)location='<button type="button" class="comment-location" onclick="event.stopPropagation();openStory('+Number(st.id)+')">'+esc(st.title)+'</button>'}
+     const body=r.type==='review'?(r.html?safeReviewHTML(r.html):esc(r.text).replace(/\n/g,'<br>')):commentTextHTML(r.text);
+     return '<article class="community-card activity-card">'+clampCardHTML(body,'')+(location?'<div class="profile-activity-location">'+(r.type==='review'?'Review · ':'Bình luận · ')+location+'</div>':'')+'<div class="muted" style="margin-top:6px;font-size:12px">'+(r.type==='review'?'Review':'Bình luận')+' · '+(r.createdAt?commentTime(r):'')+'</div></article>';
+   }).join(''):'<p class="muted">Chưa có hoạt động nào.</p>');
+   setupActivityClamps(c);
+ };
+ const oldHomeComments=window.renderHomeComments;
+ window.renderHomeComments=function(){
+   const panel=document.getElementById('commentsPanel');if(!panel)return;
+   const keys=Object.keys(comments).filter(key=>!key.startsWith('demo_')&&comments[key].length),rows=[];
+   keys.forEach(key=>commentList(key).forEach(comment=>rows.push({key,comment})));
+   rows.sort((a,b)=>(Date.parse(b.comment.createdAt)||0)-(Date.parse(a.comment.createdAt)||0));
+   panel.querySelector('.demo-label')?.classList.add('hidden');
+   const feed=panel.querySelector('.community-feed');if(!feed)return;
+   feed.innerHTML=rows.length?rows.slice(0,6).map(({key,comment})=>{
+     const avatar=comment.avatar?'<img class="community-avatar" src="'+esc(comment.avatar)+'" alt="">':'<div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">'+esc(Array.from(comment.name||'T')[0])+'</div>';
+     const location=commentLocationHTML(key).replace('data-comment-location=', 'data-comment-id="'+esc(comment.id)+'" data-comment-location=');
+     return '<article class="community-card home-comment-card activity-card" data-home-comment-key="'+esc(key)+'" data-home-comment-id="'+esc(comment.id)+'"><div class="community-head">'+avatar+'<div class="community-meta"><strong>'+esc(comment.name||'Thành viên')+(isAdminComment(comment)?'<span class="admin-badge admin-badge-home">ADMIN</span>':'')+'</strong><span class="community-sub">'+commentTime(comment)+' · '+location+'</span></div></div>'+clampCardHTML(commentTextHTML(comment.text),'')+'</article>';
+   }).join(''):'<p class="muted panel-empty">Chưa có bình luận nào.</p>';
+   setupActivityClamps(feed);
+ };
+ document.addEventListener('click',function(e){
+   const more=e.target.closest('.activity-more');
+   if(more){e.preventDefault();e.stopPropagation();const card=more.closest('.activity-card'),body=card?.querySelector('.activity-clamp');if(!card||!body)return;body.classList.add('expanded');card.classList.add('expanded');more.hidden=true;return;}
+   const card=e.target.closest('.activity-card.expanded');
+   if(card && !e.target.closest('a,button,input,textarea,select')){const body=card.querySelector('.activity-clamp'),moreBtn=card.querySelector('.activity-more');body?.classList.remove('expanded');card.classList.remove('expanded');if(moreBtn)moreBtn.hidden=false;}
+ },true);
+ // Existing home reviews already have Xem thêm; make an expanded review collapse when any blank area in its card is clicked.
+ document.addEventListener('click',function(e){
+   const card=e.target.closest('.home-review-card');if(!card||e.target.closest('a,button,.review-spoiler,.home-review-story'))return;
+   const body=card.querySelector('.home-review-clamp');if(body?.classList.contains('expanded')){body.classList.remove('expanded');card.classList.remove('expanded');const b=card.querySelector('.home-review-more');if(b){b.hidden=false;b.textContent='Xem thêm'}}
+ });
+})();
+</script>
 </body></html>
 <style id="alex-cover-comment-position-20261009">
 /* Requested polish: slightly taller home covers without widening the cards. */

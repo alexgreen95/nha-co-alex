@@ -1189,6 +1189,11 @@ body.purplenight .account-menu,body.purplenight .notif-panel{
 }
 
 </style>
+
+<style id="v21-24-editor-review-collapse-fix">
+/* V21.24 — keep the existing review layout, only restore accordion collapsing */
+.editor-review-block .editor-review-content.editor-review-simple[hidden] { display: none !important; }
+</style>
 </head>
 <body class="gate-locked gate-checking">
 <div id="secretGate" aria-live="polite">

@@ -3294,6 +3294,9 @@ initAuth().catch(()=>{updateAuthUI(); if(!location.pathname.startsWith('/quan-ly
      });
    });
  }
+ // Shared by the later homepage pagination renderer as well.
+ window.clampCardHTML=clampCardHTML;
+ window.setupActivityClamps=setupActivityClamps;
  window.renderProfileActivity=function(kind='all'){
    const c=document.getElementById('profileContent');if(!c||!authUser)return;
    const rows=[];

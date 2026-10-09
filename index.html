@@ -1508,12 +1508,13 @@ function focusExactComment(commentId){
  setTimeout(()=>el.classList.remove('jump-flash'),1800);
 }
 
-function read(id,chapterOverride=null,updateRoute=true){
+async function read(id,chapterOverride=null,updateRoute=true){
  let s=stories.find(x=>x.id===id); if(!s)return;
  currentStory=s;
  let pr=progress[id]||{chapter:0,scroll:0};
  currentChapter=chapterOverride===null?Math.min(pr.chapter||0,s.chapters.length-1):chapterOverride;
  if(updateRoute)setRoute(chapterPath(s,currentChapter));
+ await ensureChapterContent(s,currentChapter);
  s.views=(s.views||0)+1; save();
  renderChapter(chapterOverride===null ? (pr.scroll||0) : 0);
 }
@@ -1998,10 +1999,52 @@ storyLikeTotal=function(story){
  const chapterTotal=_storyLikeTotalV219(story);
  return Math.max(Number(story.cloudLikes)||0, chapterTotal);
 };
-async function loadCloudStories(){try{const results=await Promise.allSettled([fetchAllRows('stories','id'),fetchAllRows('chapters','id'),fetchAllRows('paragraphs','id')]);const storyRows=results[0].status==='fulfilled'?results[0].value:[];const chapterRows=results[1].status==='fulfilled'?results[1].value:[];const paragraphRows=results[2].status==='fulfilled'?results[2].value:[];if(results[1].status==='rejected')console.warn('chapter cloud read',results[1].reason);if(results[2].status==='rejected')console.warn('paragraph cloud read',results[2].reason);if(!storyRows.length){console.warn('Không đọc được truyện công khai từ Supabase hoặc bảng stories đang trống.');return false;}const parasByChapter={};for(const p of paragraphRows){(parasByChapter[p.chapter_id]||(parasByChapter[p.chapter_id]=[])).push(p)}Object.values(parasByChapter).forEach(a=>a.sort((x,y)=>(Number(x.paragraph_number)||0)-(Number(y.paragraph_number)||0)));const chaptersByStory={};for(const c of chapterRows){if(c.published===false)continue;(chaptersByStory[c.story_id]||(chaptersByStory[c.story_id]=[])).push(c)}Object.values(chaptersByStory).forEach(a=>a.sort((x,y)=>(Number(x.chapter_number)||0)-(Number(y.chapter_number)||0)));const mapped=storyRows.filter(r=>r.published!==false).map(r=>({id:Number(r.id),title:r.title||r.name||`Truyện ${r.id}`,author:r.author||'Alex',mainGenre:['Hiện đại','Cổ đại','Tương lai','Huyền ảo'].includes(r.main_genre||r.genre)?(r.main_genre||r.genre):'Hiện đại',genre:r.genre||r.main_genre||'Hiện đại',subtags:Array.isArray(r.subtags)?r.subtags:(Array.isArray(r.tags)?r.tags:[]),status:['completed','complete','done','Đã hoàn thành'].includes(r.status)?'completed':'ongoing',summary:r.summary||r.description||r.introduction||'',cover:r.cover_url||r.cover||'',views:Number(r.views)||0,likes:Number(r.likes)||0,updatedAt:r.updated_at||r.created_at||'',chapters:(chaptersByStory[r.id]||[]).map(c=>({id:Number(c.id),title:c.title||`Chương ${c.chapter_number||''}`,publishState:'published',paras:(parasByChapter[c.id]||[]).flatMap(p=>String(p.content||'').replace(/\r\n?/g,'\n').split(/\n+/).map(x=>x.trim()).filter(Boolean))}))}));if(mapped.length){stories=mapped.sort((a,b)=>(Date.parse(b.updatedAt)||0)-(Date.parse(a.updatedAt)||0));
- const realStory=stories.find(x=>Number(x.id)===2&&String(x.title).toLowerCase().includes('làm xác sống'));
- if(realStory && Number(chapterLikes['2_0'])===17){chapterLikes['2_0']=0;likedChapters=likedChapters.filter(x=>x!=='2_0');}
- render();if(introStory){const fresh=stories.find(x=>Number(x.id)===Number(introStory.id));if(fresh)introStory=fresh}return true;}return false;}catch(e){console.warn('story cloud sync',e);return false;}}
+async function loadCloudStories(){
+ try{
+  // V21.15: tải metadata + danh sách chương trước để Trang chủ hiện nhanh.
+  // Nội dung paragraph chỉ tải khi người đọc thật sự mở chương đó.
+  const results=await Promise.allSettled([fetchAllRows('stories','id'),fetchAllRows('chapters','id')]);
+  const storyRows=results[0].status==='fulfilled'?results[0].value:[];
+  const chapterRows=results[1].status==='fulfilled'?results[1].value:[];
+  if(results[1].status==='rejected')console.warn('chapter cloud read',results[1].reason);
+  if(!storyRows.length){console.warn('Không đọc được truyện công khai từ Supabase hoặc bảng stories đang trống.');return false;}
+  const chaptersByStory={};
+  for(const c of chapterRows){if(c.published===false)continue;(chaptersByStory[c.story_id]||(chaptersByStory[c.story_id]=[])).push(c)}
+  Object.values(chaptersByStory).forEach(a=>a.sort((x,y)=>(Number(x.chapter_number)||0)-(Number(y.chapter_number)||0)));
+  const mapped=storyRows.filter(r=>r.published!==false).map(r=>({
+   id:Number(r.id),title:r.title||r.name||`Truyện ${r.id}`,author:r.author||'Alex',
+   mainGenre:['Hiện đại','Cổ đại','Tương lai','Huyền ảo'].includes(r.main_genre||r.genre)?(r.main_genre||r.genre):'Hiện đại',
+   genre:r.genre||r.main_genre||'Hiện đại',subtags:Array.isArray(r.subtags)?r.subtags:(Array.isArray(r.tags)?r.tags:[]),
+   status:['completed','complete','done','Đã hoàn thành'].includes(r.status)?'completed':'ongoing',
+   summary:r.summary||r.description||r.introduction||'',cover:r.cover_url||r.cover||'',views:Number(r.views)||0,likes:Number(r.likes)||0,
+   updatedAt:r.updated_at||r.created_at||'',
+   chapters:(chaptersByStory[r.id]||[]).map(c=>({id:Number(c.id),title:c.title||`Chương ${c.chapter_number||''}`,publishState:'published',paras:[],_parasLoaded:false}))
+  }));
+  if(mapped.length){
+   stories=mapped.sort((a,b)=>(Date.parse(b.updatedAt)||0)-(Date.parse(a.updatedAt)||0));
+   render();
+   if(introStory){const fresh=stories.find(x=>Number(x.id)===Number(introStory.id));if(fresh)introStory=fresh}
+   return true;
+  }
+  return false;
+ }catch(e){console.warn('story cloud sync',e);return false;}
+}
+async function ensureChapterContent(story,chapterIndex){
+ const ch=story?.chapters?.[chapterIndex];
+ if(!ch||ch._parasLoaded)return true;
+ if(ch._parasLoading)return ch._parasLoading;
+ ch._parasLoading=(async()=>{
+  try{
+   const {data,error}=await sb.from('paragraphs').select('*').eq('chapter_id',ch.id).order('paragraph_number',{ascending:true});
+   if(error)throw error;
+   ch.paras=(data||[]).flatMap(p=>String(p.content||'').replace(/\r\n?/g,'\n').split(/\n+/).map(x=>x.trim()).filter(Boolean));
+   ch._parasLoaded=true;
+   return true;
+  }catch(e){console.warn('paragraph cloud read',e);return false}
+  finally{ch._parasLoading=null}
+ })();
+ return ch._parasLoading;
+}
 async function initAuth(){
  const {data}=await sb.auth.getSession();
  authUser=data.session?.user||null;
@@ -2010,10 +2053,12 @@ async function initAuth(){
  // Community feeds are public: always hydrate comments/reviews from Supabase,
  // including visitors who are not signed in and devices with empty localStorage.
  const cloudStoriesReady=await loadCloudStories();
- await refreshPublicStoryCloudFields();
-  await Promise.allSettled([loadCloudComments(),loadCloudReviews()]);
-  // Route only after Supabase has restored the session. This is required for admin pages after a full reload.
+  // Route ngay sau khi metadata truyện về; stats/bình luận/review tải nền, không chặn Trang chủ.
   if(location.pathname!=='/') routeFromLocation();
+  Promise.allSettled([refreshPublicStoryCloudFields(),loadCloudComments(),loadCloudReviews()]).then(()=>{
+    render();
+    if(introStory) openStory(introStory.id,false);
+  });
  const returnPath=sessionStorage.getItem('nha_return_path');
  if(authUser&&returnPath){sessionStorage.removeItem('nha_return_path');if(/^\/(truyen|user)\//.test(returnPath)){setRoute(returnPath,true);routeFromLocation()}}
  else if(location.pathname.startsWith('/user/'))routeFromLocation();
@@ -2535,7 +2580,7 @@ function queueCloudMemberState(){if(!authUser||!cloudSyncReady)return;clearTimeo
 const localSaveV179=save;
 save=function(){localSaveV179();queueCloudMemberState()};
 const syncProfileV179=syncProfile;
-syncProfile=async function(u){await syncProfileV179(u);await Promise.all([loadCloudMemberState(),loadCloudComments(),loadCloudReviews()]);cloudSyncReady=true;};
+syncProfile=async function(u){await syncProfileV179(u);await loadCloudMemberState();cloudSyncReady=true;Promise.allSettled([loadCloudComments(),loadCloudReviews()]);};
 
 submitStoryComment=async function(event){event.preventDefault();if(!introStory||!authUser)return;const input=document.getElementById('storyCommentInput'),text=input?.value.trim();if(!text)return;input.disabled=true;const ok=await insertCloudComment(storyCommentKey(introStory.id),text);input.disabled=false;if(ok){input.value='';storyCommentPage=1;renderAllStoryComments();renderHomeComments();}};
 addParaComment=async function(key){if(!authUser){requestCommentLogin('bình luận');return}const input=document.getElementById('panelCommentInput'),text=input?.value.trim();if(!text)return;input.disabled=true;const ok=await insertCloudComment(key,text);input.disabled=false;if(ok)input.value='';};
@@ -2549,7 +2594,7 @@ deleteStoryReview=async function(id){if(!introStory||!authUser||!confirm('Xóa r
 const toggleSaveV179=toggleSave;
 toggleSave=function(id){toggleSaveV179(id);queueCloudMemberState()};
 
-console.info('Nhà có Alex V20.9 · Preserve chapter line breaks + Đang làm');
+console.info('Nhà có Alex V21.15 · Fast cloud loading + lazy chapter content');
 render();
 // Do not resolve protected routes before auth session restoration.
 initAuth().catch(()=>{updateAuthUI(); if(!location.pathname.startsWith('/quan-ly-thu-vien')) routeFromLocation();});

@@ -1206,6 +1206,19 @@ body.purplenight .hero-fade-top{
 @media(max-width:700px){
  body.night .hero-fade-top,body.purplenight .hero-fade-top{height:54px!important}
 }
+
+/* ===== V21.27: seamless compact top fade for Night themes only ===== */
+body.night .hero-fade-top{
+  height:54px!important;
+  background:linear-gradient(to bottom,#171717 0%,rgba(23,23,23,.82) 16%,rgba(23,23,23,.58) 34%,rgba(23,23,23,.30) 56%,rgba(23,23,23,.10) 78%,rgba(23,23,23,0) 100%)!important;
+}
+body.purplenight .hero-fade-top{
+  height:54px!important;
+  background:linear-gradient(to bottom,#1d1928 0%,rgba(29,25,40,.82) 16%,rgba(29,25,40,.58) 34%,rgba(29,25,40,.30) 56%,rgba(29,25,40,.10) 78%,rgba(29,25,40,0) 100%)!important;
+}
+@media(max-width:700px){
+ body.night .hero-fade-top,body.purplenight .hero-fade-top{height:46px!important}
+}
 </style>
 </head>
 <body class="gate-locked gate-checking">

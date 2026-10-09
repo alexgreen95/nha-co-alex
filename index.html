@@ -1001,6 +1001,14 @@ body.purplenight .account-menu,body.purplenight .notif-panel{
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Nhà có Alex V21.9 -->
+
+<style id="v2120-fixes">
+/* V21.20 — account menu is one flat panel, not a stack of buttons */
+.account-menu{padding:6px 0!important;overflow:hidden!important}
+.account-menu button{display:block!important;width:100%!important;margin:0!important;padding:10px 14px!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;outline:0!important;transform:none!important;text-align:left!important}
+.account-menu button:hover,.account-menu button:focus,.account-menu button:active{background:transparent!important;box-shadow:none!important;transform:none!important}
+.account-menu .logout{margin-top:4px!important;padding-top:12px!important;border-top:1px solid var(--line)!important}
+</style>
 </head>
 <body class="gate-locked">
 <div id="secretGate" aria-live="polite">
@@ -1508,6 +1516,15 @@ function focusExactComment(commentId){
  setTimeout(()=>el.classList.remove('jump-flash'),1800);
 }
 
+async function recordStoryView(storyId){
+ try{
+   if(!/^\d+$/.test(String(storyId)))return false;
+   const payload={story_id:Number(storyId),user_id:authUser?.id||null};
+   const {error}=await sb.from('story_views').insert(payload);
+   if(error){console.warn('story view cloud insert',error);return false}
+   return true;
+ }catch(e){console.warn('story view cloud insert',e);return false}
+}
 async function read(id,chapterOverride=null,updateRoute=true){
  let s=stories.find(x=>x.id===id); if(!s)return;
  currentStory=s;
@@ -1515,7 +1532,7 @@ async function read(id,chapterOverride=null,updateRoute=true){
  currentChapter=chapterOverride===null?Math.min(pr.chapter||0,s.chapters.length-1):chapterOverride;
  if(updateRoute)setRoute(chapterPath(s,currentChapter));
  await ensureChapterContent(s,currentChapter);
- s.views=(s.views||0)+1; save();
+ if(await recordStoryView(s.id))s.views=(s.views||0)+1;
  renderChapter(chapterOverride===null ? (pr.scroll||0) : 0);
 }
 function isImportedChapterMetadata(text,index=0){
@@ -1994,6 +2011,7 @@ async function refreshPublicStoryCloudFields(){
      const r=(storyRows||[]).find(x=>String(x.id)===String(st.id));
      if(r){
        st.cover=r.cover_url||r.cover||st.cover||'';
+        st.subtags=Array.isArray(r.tags)?r.tags:(Array.isArray(r.subtags)?r.subtags:(st.subtags||[]));
        const cloudMainGenre=r.main_genre||r.genre;
        if(cloudMainGenre && ['Hiện đại','Cổ đại','Tương lai','Huyền ảo'].includes(cloudMainGenre)) st.mainGenre=cloudMainGenre;
        if(Array.isArray(r.subtags)) st.subtags=r.subtags;
@@ -2173,7 +2191,8 @@ async function saveManagedStory(mode){
      let baseResult=await sb.from('stories').update(basePatch).eq('id',Number(row.id));
      if(baseResult.error){console.warn('story base update cloud',baseResult.error);alert('Chưa áp dụng được thông tin truyện: '+(baseResult.error.message||'Supabase từ chối cập nhật.'));return}
      const metadataWrites=[
-       ['description',row.summary]
+       ['description',row.summary],
+       ['tags',row.subtags||[]]
      ];
      for(const [field,value] of metadataWrites){
        const result=await sb.from('stories').update({[field]:value}).eq('id',Number(row.id));

@@ -120,6 +120,8 @@ body.night .status-ongoing{color:#dfbd80}
 body.gate-locked > :not(#secretGate){visibility:hidden}
 #secretGate{position:fixed;inset:0;z-index:99999;display:none;place-items:center;padding:24px;background:var(--bg,#fff);color:var(--fg,#2f2f2f)}
 body.gate-locked #secretGate{display:grid;visibility:visible}
+body.gate-checking #secretGate .gate-card{display:none}
+body.gate-checking #secretGate::after{content:'Đang mở Nhà có Alex…';font-size:14px;color:var(--muted,#777)}
 #secretGate{transition:opacity .7s ease,visibility .7s ease}#secretGate.gate-opening{opacity:0;visibility:hidden;pointer-events:none}.gate-card{width:min(430px,100%);text-align:center;border:1px solid var(--line,#ddd);border-radius:18px;padding:32px 26px;background:var(--bg,#fff);box-shadow:0 18px 60px rgba(0,0,0,.12)}
 .gate-card h1{margin:0 0 8px;font-size:28px}.gate-card p{margin:0 0 22px;color:var(--muted,#777)}
 .gate-form{display:flex;gap:8px}.gate-form input{min-width:0;flex:1;padding:12px 14px;border:1px solid var(--line,#ddd);border-radius:9px;background:var(--bg,#fff);color:var(--fg,#2f2f2f);font:inherit}
@@ -1023,7 +1025,7 @@ body.purplenight .account-menu,body.purplenight .notif-panel{
 .reader-review-more[hidden]{display:none!important}
 </style>
 </head>
-<body class="gate-locked">
+<body class="gate-locked gate-checking">
 <div id="secretGate" aria-live="polite">
   <div class="gate-card">
     <h1>Nhà có Alex</h1>
@@ -1036,12 +1038,12 @@ body.purplenight .account-menu,body.purplenight .notif-panel{
   </div>
 </div>
 <script>
-document.body.classList.add('gate-locked');
+document.body.classList.add('gate-locked','gate-checking');
 (async function(){
   const form=document.getElementById('gateForm'), input=document.getElementById('gatePassword'), msg=document.getElementById('gateMsg');
   async function unlockIfValid(){
-    try{const r=await fetch('/api/gate-check',{credentials:'same-origin',cache:'no-store'});if(r.ok){document.body.classList.remove('gate-locked');return true}}catch(e){}
-    input.focus(); return false;
+    try{const r=await fetch('/api/gate-check',{credentials:'same-origin',cache:'no-store'});if(r.ok){document.body.classList.remove('gate-locked','gate-checking');return true}}catch(e){}
+    document.body.classList.remove('gate-checking'); input.focus(); return false;
   }
   form.addEventListener('submit',async e=>{
     e.preventDefault(); const password=input.value; if(!password)return;
@@ -1057,7 +1059,7 @@ document.body.classList.add('gate-locked');
         await new Promise(resolve=>setTimeout(resolve,1000));
         document.getElementById('secretGate').classList.add('gate-opening');
         await new Promise(resolve=>setTimeout(resolve,700));
-        document.body.classList.remove('gate-locked');
+        document.body.classList.remove('gate-locked','gate-checking');
       }
       else{msg.textContent='Sai mật mã rồi. Nhà không quen người này 👀';input.select()}
     }catch(err){msg.textContent='Chưa hỏi được bức tranh. Thử lại một chút nha.'}
@@ -1217,7 +1219,7 @@ document.body.classList.add('gate-locked');
 
 <div id="storyComposerModal" class="story-composer-modal hidden" onclick="if(event.target===this)closeStoryComposer()"><div class="story-composer-card">
   <div class="story-composer-head"><h2 id="storyComposerTitle">Truyện mới</h2><button onclick="closeStoryComposer()">×</button></div>
-  <div class="story-form-grid"><label>Tên truyện<input id="manageTitle" placeholder="Tên truyện"></label><label>Thể loại chính<select id="manageGenre"><option>Hiện đại</option><option>Cổ đại</option><option>Tương lai</option><option>Huyền ảo</option></select></label><label>Tình trạng<select id="manageStatus"><option value="ongoing">Đang làm</option><option value="completed">Đã hoàn thành</option></select></label><label>Ảnh bìa<div class="cover-edit-row"><div id="manageCoverPreview" class="cover-edit-preview">Chưa có bìa</div><div class="cover-edit-file"><input id="manageCover" type="file" accept="image/*" onchange="previewManagedCover(this)"><div id="manageCoverNote" class="cover-upload-note">JPG, PNG, WEBP · ảnh sẽ lưu vào Supabase</div></div></div></label></div>
+  <div class="story-form-grid"><label>Tên truyện<input id="manageTitle" placeholder="Tên truyện"></label><label>Tác giả<input id="manageAuthor" placeholder="Tên tác giả"></label><label>Thể loại chính<select id="manageGenre"><option>Hiện đại</option><option>Cổ đại</option><option>Tương lai</option><option>Huyền ảo</option></select></label><label>Tình trạng<select id="manageStatus"><option value="ongoing">Đang làm</option><option value="completed">Đã hoàn thành</option></select></label><label>Ảnh bìa<div class="cover-edit-row"><div id="manageCoverPreview" class="cover-edit-preview">Chưa có bìa</div><div class="cover-edit-file"><input id="manageCover" type="file" accept="image/*" onchange="previewManagedCover(this)"><div id="manageCoverNote" class="cover-upload-note">JPG, PNG, WEBP · ảnh sẽ lưu vào Supabase</div></div></div></label></div>
   <label>Giới thiệu ngắn<textarea id="manageSummary" rows="3" placeholder="Đoạn giới thiệu ngắn hiển thị cạnh bìa..."></textarea></label>
   <label>Giới thiệu chi tiết<textarea id="manageLongIntro" rows="8" placeholder="Viết phần giới thiệu dài hiển thị trong tab Giới thiệu..."></textarea></label>
   <label>Tag phụ<input id="manageTags" placeholder="Tận thế, Nữ cường, Ngọt sủng, Sảng văn"></label>
@@ -2050,6 +2052,7 @@ async function refreshPublicStoryCloudFields(){
      const r=(storyRows||[]).find(x=>String(x.id)===String(st.id));
      if(r){
        st.cover=r.cover_url||r.cover||st.cover||'';
+       if(r.author!==undefined && r.author!==null) st.author=r.author;
         st.subtags=Array.isArray(r.tags)?r.tags:(Array.isArray(r.subtags)?r.subtags:(st.subtags||[]));
        const cloudMainGenre=r.main_genre||r.genre;
        if(cloudMainGenre && ['Hiện đại','Cổ đại','Tương lai','Huyền ảo'].includes(cloudMainGenre)) st.mainGenre=cloudMainGenre;
@@ -2058,6 +2061,7 @@ async function refreshPublicStoryCloudFields(){
        if(r.summary!==undefined && r.summary!==null) st.summary=r.summary;
        else if(r.description!==undefined && r.description!==null) st.summary=r.description;
        if(r.introduction!==undefined && r.introduction!==null) st.longIntro=r.introduction;
+       else if(r.long_intro!==undefined && r.long_intro!==null) st.longIntro=r.long_intro;
        if(r.status) st.status=['completed','complete','done','Đã hoàn thành'].includes(r.status)?'completed':'ongoing';
      }
      st.views=Number(views[st.id]||0);
@@ -2084,7 +2088,7 @@ async function loadCloudStories(){
    mainGenre:['Hiện đại','Cổ đại','Tương lai','Huyền ảo'].includes(r.main_genre||r.genre)?(r.main_genre||r.genre):'',
    genre:r.genre||r.main_genre||'',subtags:Array.isArray(r.subtags)?r.subtags:(Array.isArray(r.tags)?r.tags:[]),
    status:['completed','complete','done','Đã hoàn thành'].includes(r.status)?'completed':'ongoing',
-   summary:r.summary||r.description||'',longIntro:r.introduction||'',cover:r.cover_url||r.cover||'',views:Number(r.views)||0,likes:Number(r.likes)||0,
+   summary:r.summary||r.description||'',longIntro:r.introduction||r.long_intro||'',cover:r.cover_url||r.cover||'',views:Number(r.views)||0,likes:Number(r.likes)||0,
    updatedAt:r.updated_at||r.created_at||'',
    chapters:(chaptersByStory[r.id]||[]).map(c=>({id:c.id,chapterNumber:Number(c.chapter_number)||null,title:c.title||`Chương ${c.chapter_number||''}`,publishState:'published',paras:[],_parasLoaded:false,_chapterContent:c.content||c.body||c.text||''}))
   }));
@@ -2205,9 +2209,9 @@ function publishManagedChapter(){if(!activeManagedStory||activeManagedChapter<0)
 function backToStoryAdmin(){if(!activeManagedStory)return;openStoryAdmin(String(activeManagedStory.id),activeManagedSource)}
 function deleteManagedChapter(i){if(!activeManagedStory?.chapters?.[i]||!confirm(`Xóa “${activeManagedStory.chapters[i].title}”?`))return;activeManagedStory.chapters.splice(i,1);persistManaged();renderStoryAdmin()}
 let draggedChapterIndex=null;function chapterDragStart(e){draggedChapterIndex=Number(e.currentTarget.dataset.index);e.currentTarget.classList.add('dragging')}function chapterDrop(e){e.preventDefault();const to=Number(e.currentTarget.dataset.index);if(draggedChapterIndex===null||draggedChapterIndex===to)return;const [m]=activeManagedStory.chapters.splice(draggedChapterIndex,1);activeManagedStory.chapters.splice(to,0,m);draggedChapterIndex=null;persistManaged();renderStoryAdmin()}
-function openStoryComposer(id=null,source='draft'){if(!isSiteAdmin())return;editingManagedStoryId=id?{id:String(id),source}:null;let s=null;if(id){s=source==='published'?stories.find(x=>String(x.id)===String(id)):managedDrafts.find(x=>String(x.id)===String(id));}document.getElementById('storyComposerTitle').textContent=s?'Sửa thông tin truyện':'Truyện mới';document.getElementById('manageTitle').value=s?.title||'';document.getElementById('manageGenre').value=s?.mainGenre||'Hiện đại';document.getElementById('manageStatus').value=s?.status||'ongoing';document.getElementById('manageSummary').value=s?.summary||'';document.getElementById('manageLongIntro').value=s?.longIntro||'';document.getElementById('manageTags').value=(s?.subtags||[]).join(', ');const cp=document.getElementById('manageCoverPreview');if(cp)cp.innerHTML=s?.cover?`<img src="${esc(s.cover)}" alt="Ảnh bìa hiện tại">`:'Chưa có bìa';const ci=document.getElementById('manageCover');if(ci)ci.value='';document.getElementById('storyComposerModal').classList.remove('hidden')}
+function openStoryComposer(id=null,source='draft'){if(!isSiteAdmin())return;editingManagedStoryId=id?{id:String(id),source}:null;let s=null;if(id){s=source==='published'?stories.find(x=>String(x.id)===String(id)):managedDrafts.find(x=>String(x.id)===String(id));}document.getElementById('storyComposerTitle').textContent=s?'Sửa thông tin truyện':'Truyện mới';document.getElementById('manageTitle').value=s?.title||'';document.getElementById('manageAuthor').value=s?.author||'';document.getElementById('manageGenre').value=s?.mainGenre||'Hiện đại';document.getElementById('manageStatus').value=s?.status||'ongoing';document.getElementById('manageSummary').value=s?.summary||'';document.getElementById('manageLongIntro').value=s?.longIntro||'';document.getElementById('manageTags').value=(s?.subtags||[]).join(', ');const cp=document.getElementById('manageCoverPreview');if(cp)cp.innerHTML=s?.cover?`<img src="${esc(s.cover)}" alt="Ảnh bìa hiện tại">`:'Chưa có bìa';const ci=document.getElementById('manageCover');if(ci)ci.value='';document.getElementById('storyComposerModal').classList.remove('hidden')}
 function closeStoryComposer(){document.getElementById('storyComposerModal').classList.add('hidden');editingManagedStoryId=null}
-function managedStoryFromForm(base={}){return {...base,title:document.getElementById('manageTitle').value.trim(),author:base.author||'',mainGenre:document.getElementById('manageGenre').value,genre:document.getElementById('manageGenre').value,status:document.getElementById('manageStatus').value,summary:document.getElementById('manageSummary').value.trim(),longIntro:document.getElementById('manageLongIntro').value.trim(),subtags:document.getElementById('manageTags').value.split(',').map(x=>x.trim()).filter(Boolean),chapters:base.chapters||[],views:base.views||0,likes:base.likes||0}}
+function managedStoryFromForm(base={}){return {...base,title:document.getElementById('manageTitle').value.trim(),author:document.getElementById('manageAuthor').value.trim(),mainGenre:document.getElementById('manageGenre').value,genre:document.getElementById('manageGenre').value,status:document.getElementById('manageStatus').value,summary:document.getElementById('manageSummary').value.trim(),longIntro:document.getElementById('manageLongIntro').value.trim(),subtags:document.getElementById('manageTags').value.split(',').map(x=>x.trim()).filter(Boolean),chapters:base.chapters||[],views:base.views||0,likes:base.likes||0}}
 async function saveManagedStory(mode){
  if(!isSiteAdmin())return;const title=document.getElementById('manageTitle').value.trim();if(!title){alert('Nhập tên truyện trước nha bà.');return}
  let base={id:'draft-'+Date.now(),chapters:[]};if(editingManagedStoryId)base=getManagedStory(editingManagedStoryId.id,editingManagedStoryId.source)||base;
@@ -2223,7 +2227,7 @@ async function saveManagedStory(mode){
    if(sourceBefore==='published' && /^\d+$/.test(String(row.id))){
      // Cập nhật các cột nền trước; ảnh bìa thử cover_url rồi fallback sang cover
      // để tương thích schema hiện tại của dự án.
-     const basePatch={title:row.title,genre:row.mainGenre,status:(row.status==='completed'?'completed':'writing')};
+     const basePatch={title:row.title,author:row.author,genre:row.mainGenre,status:(row.status==='completed'?'completed':'writing')};
      let baseResult=await sb.from('stories').update(basePatch).eq('id',Number(row.id));
      if(baseResult.error){console.warn('story base update cloud',baseResult.error);alert('Chưa áp dụng được thông tin truyện: '+(baseResult.error.message||'Supabase từ chối cập nhật.'));return}
      const metadataWrites=[
@@ -2233,7 +2237,13 @@ async function saveManagedStory(mode){
      ];
      for(const [field,value] of metadataWrites){
        const result=await sb.from('stories').update({[field]:value}).eq('id',Number(row.id));
-       if(result.error)console.warn(field+' update skipped',result.error);
+       if(result.error){
+         console.warn(field+' update skipped',result.error);
+         if(field==='introduction'){
+           const fallback=await sb.from('stories').update({long_intro:value}).eq('id',Number(row.id));
+           if(fallback.error)console.warn('long_intro update skipped',fallback.error);
+         }
+       }
      }
      if(row.cover){
        let coverResult=await sb.from('stories').update({cover_url:row.cover}).eq('id',Number(row.id));
@@ -2255,11 +2265,11 @@ async function saveManagedStory(mode){
      }
      const cv=cloudVerify.data;
      row.title=cv.title||cv.name||row.title;
-     row.author=cv.author||row.author||'Alex';
+     row.author=cv.author||row.author||'';
      row.mainGenre=(cv.main_genre||cv.genre||row.mainGenre);
      row.genre=cv.genre||cv.main_genre||row.mainGenre;
      row.status=['completed','complete','done','Đã hoàn thành'].includes(cv.status)?'completed':'ongoing';
-     row.summary=cv.summary??cv.description??row.summary??'';row.longIntro=cv.introduction??row.longIntro??'';
+     row.summary=cv.summary??cv.description??row.summary??'';row.longIntro=cv.introduction??cv.long_intro??row.longIntro??'';
      row.subtags=Array.isArray(cv.subtags)?cv.subtags:(Array.isArray(cv.tags)?cv.tags:row.subtags||[]);
      row.cover=cv.cover_url||cv.cover||'';
      target[idx]=row;

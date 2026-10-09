@@ -2743,10 +2743,84 @@ function renderInlineChapterFormatting(text){
         .replace(/\*([^*\n]+?)\*/g,'<em>$1</em>');
  return out;
 }
-function openChapterAdmin(id,index,updateRoute=true){if(!isSiteAdmin())return;id=decodeURIComponent(String(id));let st=getManagedStory(id,'published'),source='published';if(!st){st=getManagedStory(id,'draft');source='draft'}if(!st||!st.chapters?.[index]){openAdminLibrary();return}activeManagedStory=ensureChapterStates(st);activeManagedSource=source;activeManagedChapter=index;const ch=st.chapters[index];if(updateRoute)setRoute(`/quan-ly-thu-vien/truyen/${encodeURIComponent(id)}/chuong/${index}`);displayPage('chapterAdmin');document.getElementById('chapterEditorHeading').textContent=`Sửa ${ch.title||'chương'}`;document.getElementById('chapterEditTitle').value=ch.title||'';document.getElementById('chapterEditBody').value=(ch.paras||[]).join('\n\n');document.getElementById('chapterAutosaveState').textContent=ch.publishState==='draft'?'Bản thảo · Đã tải nội dung':'Đã đăng · Autosave sẽ lưu thay đổi thành bản thảo';['chapterEditTitle','chapterEditBody'].forEach(id=>document.getElementById(id).oninput=scheduleChapterAutosave);window.scrollTo(0,0)}
-function scheduleChapterAutosave(){clearTimeout(chapterAutosaveTimer);document.getElementById('chapterAutosaveState').textContent='Đang chờ tự động lưu…';chapterAutosaveTimer=setTimeout(()=>saveChapterDraftNow(true),900)}
-function saveChapterDraftNow(auto=false){if(!activeManagedStory||activeManagedChapter<0)return;const ch=activeManagedStory.chapters[activeManagedChapter];ch.title=document.getElementById('chapterEditTitle').value.trim()||`Chương ${activeManagedChapter+1}`;ch.paras=document.getElementById('chapterEditBody').value.replace(/\r\n?/g,'\n').split(/\n+/).map(x=>x.trim()).filter(Boolean);ch.publishState='draft';persistManaged();const t=new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});document.getElementById('chapterAutosaveState').textContent=`${auto?'Đã tự động lưu':'Đã lưu bản thảo'} lúc ${t}`}
-function publishManagedChapter(){if(!activeManagedStory||activeManagedChapter<0)return;saveChapterDraftNow(false);activeManagedStory.chapters[activeManagedChapter].publishState='published';persistManaged();document.getElementById('chapterAutosaveState').textContent='Đã đăng chương · thay đổi đã được lưu';}
+let chapterEditorReady=false,chapterEditorLoad=0,chapterPublishing=false;
+async function loadChapterEditorRows(ch){
+ const rows=[];
+ for(let from=0;;from+=1000){
+  const {data,error}=await sb.from('paragraphs').select('*').eq('chapter_id',ch.id).order('paragraph_number',{ascending:true}).range(from,from+999);
+  if(error)throw error;
+  rows.push(...(data||[]));if((data||[]).length<1000)break;
+ }
+ ch._editorRows=rows;
+ return rows;
+}
+async function openChapterAdmin(id,index,updateRoute=true){
+ if(!isSiteAdmin())return;
+ clearTimeout(chapterAutosaveTimer);
+ const load=++chapterEditorLoad;chapterEditorReady=false;
+ id=decodeURIComponent(String(id));let st=getManagedStory(id,'published'),source='published';
+ if(!st){st=getManagedStory(id,'draft');source='draft'}
+ if(!st||!st.chapters?.[index]){openAdminLibrary();return}
+ activeManagedStory=ensureChapterStates(st);activeManagedSource=source;activeManagedChapter=index;
+ const ch=st.chapters[index],body=document.getElementById('chapterEditBody'),title=document.getElementById('chapterEditTitle'),state=document.getElementById('chapterAutosaveState');
+ if(updateRoute)setRoute(`/quan-ly-thu-vien/truyen/${encodeURIComponent(id)}/chuong/${index}`);
+ displayPage('chapterAdmin');document.getElementById('chapterEditorHeading').textContent=`Sửa ${ch.title||'chương'}`;
+ title.value=ch.title||'';body.value='';body.disabled=title.disabled=true;state.textContent='Đang tải nội dung…';
+ try{
+  let text=ch._editorBody;
+  if(text===undefined){
+   if(ch.id!=null){const rows=await loadChapterEditorRows(ch);text=rows.length?rows.map(row=>String(row.content||'').replace(/\r\n?/g,'\n')).join('\n\n'):(ch.paras||[]).join('\n\n')||ch._chapterContent||'';}
+   else text=(ch.paras||[]).join('\n\n');
+  }
+  if(load!==chapterEditorLoad||activeManagedStory!==st||activeManagedChapter!==index)return;
+  body.value=text;body.disabled=title.disabled=false;chapterEditorReady=true;
+  state.textContent=ch.publishState==='draft'?'Bản thảo · Đã tải nội dung':'Đã đăng · Autosave sẽ lưu thay đổi thành bản thảo';
+  [title,body].forEach(el=>el.oninput=scheduleChapterAutosave);
+ }catch(error){if(load===chapterEditorLoad)state.textContent='Chưa tải được nội dung: '+error.message;console.warn('chapter editor load',error)}
+ window.scrollTo(0,0);
+}
+function scheduleChapterAutosave(){if(!chapterEditorReady||chapterPublishing)return;clearTimeout(chapterAutosaveTimer);document.getElementById('chapterAutosaveState').textContent='Đang chờ tự động lưu…';chapterAutosaveTimer=setTimeout(()=>saveChapterDraftNow(true),900)}
+function saveChapterDraftNow(auto=false){
+ if(!chapterEditorReady||chapterPublishing||!activeManagedStory||activeManagedChapter<0)return false;
+ clearTimeout(chapterAutosaveTimer);
+ const ch=activeManagedStory.chapters[activeManagedChapter];
+ ch.title=document.getElementById('chapterEditTitle').value.trim()||`Chương ${activeManagedChapter+1}`;
+ ch._editorBody=document.getElementById('chapterEditBody').value.replace(/\r\n?/g,'\n');
+ if(ch.id==null)ch.paras=ch._editorBody.split(/\n+/).map(x=>x.trim()).filter(Boolean);
+ ch.publishState='draft';persistManaged();
+ const t=new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
+ document.getElementById('chapterAutosaveState').textContent=`${auto?'Đã tự động lưu':'Đã lưu bản thảo'} lúc ${t}`;
+ return true;
+}
+async function publishManagedChapter(){
+ if(!saveChapterDraftNow(false))return;
+ const st=activeManagedStory,index=activeManagedChapter,ch=st.chapters[index],state=document.getElementById('chapterAutosaveState');
+ chapterPublishing=true;
+ const body=document.getElementById('chapterEditBody'),title=document.getElementById('chapterEditTitle');body.disabled=title.disabled=true;
+ try{
+  if(ch.id!=null){
+   const rows=ch._editorRows||await loadChapterEditorRows(ch);
+   const original=rows.map(row=>String(row.content||'').replace(/\r\n?/g,'\n')).join('\n\n');
+   const parts=ch._editorBody===original?rows.map(row=>row.content||''):ch._editorBody.split(/\n{2,}/);
+   if(!rows.length||parts.length!==rows.length)throw new Error('Cần giữ nguyên số đoạn và dòng trống ngăn giữa các đoạn để bảo toàn bình luận và vị trí ảnh. Chưa đăng thay đổi.');
+   const textParts=text=>String(text||'').replace(/\r\n?/g,'\n').split(/\n+/).map(x=>x.trim()).filter(Boolean).length;
+   if(parts.some((part,i)=>textParts(part)!==textParts(rows[i].content)))throw new Error('Cần giữ nguyên số dòng đoạn để bảo toàn chỉ số bình luận. Chưa đăng thay đổi.');
+   for(let i=0;i<rows.length;i++){
+    if(String(rows[i].content||'')===parts[i])continue;
+    const {error}=await sb.from('paragraphs').update({content:parts[i]}).eq('id',rows[i].id).eq('chapter_id',ch.id);
+    if(error)throw error;
+   }
+   const {error}=await sb.from('chapters').update({title:ch.title}).eq('id',ch.id);
+   if(error)throw error;
+   ch._editorRows=rows.map((row,i)=>({...row,content:parts[i]}));
+   ch._parasLoaded=false;
+   if(!await ensureChapterContent(st,index))throw new Error("Nội dung đã gửi nhưng chưa tải lại được từ Supabase. Hãy mở lại chương để kiểm tra.");
+  }
+  ch.publishState='published';delete ch._editorBody;persistManaged();
+  if(activeManagedStory===st&&activeManagedChapter===index)state.textContent='Đã đăng chương · thay đổi đã được lưu';
+ }catch(error){if(activeManagedStory===st&&activeManagedChapter===index)state.textContent='Chưa đăng xong: '+error.message;console.warn('chapter publish',error)}
+ finally{chapterPublishing=false;if(activeManagedStory===st&&activeManagedChapter===index)body.disabled=title.disabled=false;}
+}
 function backToStoryAdmin(){if(!activeManagedStory)return;openStoryAdmin(String(activeManagedStory.id),activeManagedSource)}
 function deleteManagedChapter(i){if(!activeManagedStory?.chapters?.[i]||!confirm(`Xóa “${activeManagedStory.chapters[i].title}”?`))return;activeManagedStory.chapters.splice(i,1);persistManaged();renderStoryAdmin()}
 let draggedChapterIndex=null;function chapterDragStart(e){draggedChapterIndex=Number(e.currentTarget.dataset.index);e.currentTarget.classList.add('dragging')}function chapterDrop(e){e.preventDefault();const to=Number(e.currentTarget.dataset.index);if(draggedChapterIndex===null||draggedChapterIndex===to)return;const [m]=activeManagedStory.chapters.splice(draggedChapterIndex,1);activeManagedStory.chapters.splice(to,0,m);draggedChapterIndex=null;persistManaged();renderStoryAdmin()}

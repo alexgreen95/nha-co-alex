@@ -2169,13 +2169,11 @@ async function saveManagedStory(mode){
    if(sourceBefore==='published' && /^\d+$/.test(String(row.id))){
      // Cập nhật các cột nền trước; ảnh bìa thử cover_url rồi fallback sang cover
      // để tương thích schema hiện tại của dự án.
-     const basePatch={title:row.title,author:row.author||'Alex',genre:row.mainGenre,status:row.status};
+     const basePatch={title:row.title,author:row.author||'Alex',genre:row.mainGenre,status:(row.status==='completed'?'completed':'writing')};
      let baseResult=await sb.from('stories').update(basePatch).eq('id',Number(row.id));
      if(baseResult.error){console.warn('story base update cloud',baseResult.error);alert('Chưa áp dụng được thông tin truyện: '+(baseResult.error.message||'Supabase từ chối cập nhật.'));return}
      const metadataWrites=[
-       ['main_genre',row.mainGenre],
-       ['summary',row.summary],
-       ['subtags',row.subtags]
+       ['description',row.summary]
      ];
      for(const [field,value] of metadataWrites){
        const result=await sb.from('stories').update({[field]:value}).eq('id',Number(row.id));

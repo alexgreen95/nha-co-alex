@@ -1193,6 +1193,19 @@ body.purplenight .account-menu,body.purplenight .notif-panel{
 <style id="v21-24-editor-review-collapse-fix">
 /* V21.24 — keep the existing review layout, only restore accordion collapsing */
 .editor-review-block .editor-review-content.editor-review-simple[hidden] { display: none !important; }
+
+/* ===== V21.25: smoother top banner fade only ===== */
+body.night .hero-fade-top{
+  height:110px!important;
+  background:linear-gradient(to bottom,rgba(23,23,23,.72) 0%,rgba(23,23,23,.58) 16%,rgba(23,23,23,.42) 34%,rgba(23,23,23,.27) 52%,rgba(23,23,23,.14) 70%,rgba(23,23,23,.05) 86%,rgba(23,23,23,0) 100%)!important;
+}
+body.purplenight .hero-fade-top{
+  height:110px!important;
+  background:linear-gradient(to bottom,rgba(29,25,40,.72) 0%,rgba(29,25,40,.58) 16%,rgba(29,25,40,.42) 34%,rgba(29,25,40,.27) 52%,rgba(29,25,40,.14) 70%,rgba(29,25,40,.05) 86%,rgba(29,25,40,0) 100%)!important;
+}
+@media(max-width:700px){
+ body.night .hero-fade-top,body.purplenight .hero-fade-top{height:82px!important}
+}
 </style>
 </head>
 <body class="gate-locked gate-checking">

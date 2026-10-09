@@ -21,3 +21,13 @@ NODE_PATH="/tmp/nha-db-tests/node_modules:$NODE_PATH" node --test tests/notifica
 ```
 
 The database test runs real PostgreSQL trigger/RLS logic in PGlite using `tests/helpers/notifications-schema.sql`, derived from the supplied database export. Browser tests use synthetic API rows and check recipient filters, unread counts, mark-read, reply navigation and migration compatibility.
+
+## Admin comments and moderation
+
+After the first migration, apply `migrations/20261009_admin_comment_notifications.sql` separately in Supabase SQL Editor. No existing notification function/trigger is replaced. The existing `comment` type notifies every profile with `role='admin'` for a non-admin top-level comment. Story/chapter/comment references are retained; paragraph context remains on the referenced comment. A redundant mention to the same admin for the same new comment is suppressed; other mentions and all reply/like notifications keep their behavior.
+
+Comment DELETE is allowed for the owner or a profile-role admin. A restrictive policy also prevents older permissive policies from granting deletion to other users. The existing parent foreign key cascades replies; likes, mentions and related notifications also cascade through their existing foreign keys. No data is deleted by the migration itself.
+
+Profile role changes are blocked for browser clients, and new client-created profiles start as readers. This closes the existing permissive profile policies' self-promotion loophole; display-name/avatar/bio edits remain allowed. Assign admin roles through trusted database administration, not through frontend profile fields.
+
+Additional tests: `tests/admin-comments-db.test.cjs` and `tests/admin-comments.test.cjs`.

@@ -2197,7 +2197,7 @@ function commentLocationHTML(key){
 }
 function isAdminComment(comment){return (!!authUser && String(comment.userId||comment.user_id||'')===String(authUser.id) && isSiteAdmin()) || ['alex','thao-tran'].includes(comment.username||slugify(comment.name||''))}
 function isOwnComment(comment){return !!authUser&&!!comment.userId&&comment.userId===authUser.id}
-function canDeleteComment(comment){return isOwnComment(comment)||profileUsername()==='thao-tran'}
+function canDeleteComment(comment){return isOwnComment(comment)||(!!authUser&&memberProfile?.id===authUser.id&&memberProfile.role==='admin')}
 function commentOwnerMenu(comment){
  if(!isOwnComment(comment)&&!canDeleteComment(comment))return '';
  return `<span class="comment-owner-menu"><button type="button" class="comment-more" data-comment-action="menu" aria-label="Tùy chọn bình luận">⋯</button><span class="comment-menu-pop">${isOwnComment(comment)?`<button type="button" data-comment-action="edit" data-comment-id="${esc(comment.id)}">Sửa</button>`:''}${canDeleteComment(comment)?`<button type="button" class="danger" data-comment-action="delete" data-comment-id="${esc(comment.id)}">Xóa</button>`:''}</span></span>`;
@@ -2534,7 +2534,7 @@ function userDisplayName(u){ return (u?.id===authUser?.id?memberProfile?.display
 function userAvatar(u){ return (u?.id===authUser?.id?memberProfile?.avatar_url:'') || googleAvatar(u); }
 async function syncProfile(u){
  if(!u)return;
- const {data:existing}=await sb.from('profiles').select('id,display_name,avatar_url,bio,saved_stories_public').eq('id',u.id).maybeSingle();
+ const {data:existing}=await sb.from('profiles').select('id,display_name,avatar_url,bio,saved_stories_public,role').eq('id',u.id).maybeSingle();
  if(existing){ memberProfile=existing; return existing; }
  const row={id:u.id,display_name:googleDisplayName(u),avatar_url:googleAvatar(u),bio:''};
  const {data}=await sb.from('profiles').upsert(row,{onConflict:'id'}).select().maybeSingle();
@@ -2914,7 +2914,7 @@ function setNotifFilter(type){notifFilter=type;document.querySelectorAll('.notif
 function notifText(n){
  const labels={
    story_like:'đã thả tim truyện của bạn.',
-   comment:'đã bình luận về truyện của bạn.',
+   comment:stories.find(s=>String(s.id)===String(n.story_id))?`đã bình luận về ${stories.find(s=>String(s.id)===String(n.story_id)).title}.`:'đã bình luận về truyện của bạn.',
    reply:'đã trả lời bình luận của bạn.',
    mention:'đã nhắc đến bạn trong một bình luận.',
    comment_like:'đã thả tim bình luận của bạn.',
@@ -3398,7 +3398,7 @@ addParaComment=async function(key){if(!authUser){requestCommentLogin('bình lu�
 addChapterComment=async function(){if(!authUser){requestCommentLogin('bình luận');return}const input=document.getElementById('chapterCommentInput'),text=input?.value.trim();if(!text)return;input.disabled=true;const ok=await insertCloudComment(chapterGeneralKey(),text);input.disabled=false;if(ok)input.value='';};
 submitCommentReply=async function(){if(!authUser||!activeReply)return;const input=document.getElementById('replyCommentInput'),text=input?.value.trim();if(!text)return;const {key,targetId,rootId}=activeReply,list=normalizedComments(key),target=list.find(r=>String(r.id)===String(targetId));if(!target)return;input.disabled=true;const ok=await insertCloudComment(key,text,{parentId:rootId,replyToUserId:target.userId});if(ok){activeReply=null;refreshCommentViews();}else{const live=document.getElementById('replyCommentInput');if(live)live.disabled=false;}};
 saveEditComment=async function(key,id,item){const list=comments[key]||[],comment=list.find(r=>String(r.id)===String(id));if(!comment||!isOwnComment(comment))return;const text=item?.querySelector('.comment-edit-box textarea')?.value.trim();if(!text)return;const {error}=await sb.from('comments').update({content:text,edited_at:new Date().toISOString()}).eq('id',id).eq('user_id',authUser.id);if(error){alert('Chưa sửa được bình luận.');return}await loadCloudComments();};
-deleteCommentById=async function(key,id){const list=comments[key]||[],comment=list.find(r=>String(r.id)===String(id));if(!comment||!canDeleteComment(comment)||!confirm('Xóa bình luận này nha?'))return;const {error}=await sb.from('comments').delete().eq('id',id);if(error){alert('Chưa xóa được bình luận.');return}await loadCloudComments();};
+deleteCommentById=async function(key,id){const list=comments[key]||[],comment=list.find(r=>String(r.id)===String(id));if(!comment||!canDeleteComment(comment)||!confirm('Xóa bình luận này nha?'))return;const {data,error}=await sb.from('comments').delete().eq('id',id).select('id');if(error||!data?.length){alert('Chưa xóa được bình luận.');return}const removed=new Set([String(id)]);let changed=true;while(changed){changed=false;for(const row of list){if(row.parentId&&removed.has(String(row.parentId))&&!removed.has(String(row.id))){removed.add(String(row.id));changed=true}}}if(activeReply?.key===key&&(removed.has(String(activeReply.targetId))||removed.has(String(activeReply.rootId))))activeReply=null;comments[key]=list.filter(row=>!removed.has(String(row.id)));refreshCommentViews();await loadCloudComments();await loadNotifications();};
 toggleCommentLike=async function(key,id){if(!authUser){requestCommentLogin('thả tim bình luận');return}const comment=(comments[key]||[]).find(r=>String(r.id)===String(id));if(!comment)return;const liked=(comment.likedBy||[]).includes(authUser.id);let res;if(liked)res=await sb.from('comment_likes').delete().eq('comment_id',id).eq('user_id',authUser.id);else res=await sb.from('comment_likes').insert({comment_id:id,user_id:authUser.id});if(res.error){console.warn(res.error);return}await loadCloudComments();};
 submitStoryReview=async function(event){event.preventDefault();if(!introStory||!authUser)return;const ed=document.getElementById('storyReviewEditor'),html=safeReviewHTML(ed?.innerHTML||''),text=(ed?.innerText||'').trim();if(!text)return;const mine=myStoryReview();let q;if(mine)q=sb.from('reviews').update({content:text,content_html:html,edited_at:new Date().toISOString()}).eq('id',mine.id).eq('user_id',authUser.id);else q=sb.from('reviews').insert({story_id:introStory.id,user_id:authUser.id,content:text,content_html:html});const {error}=await q;if(error){console.error(error);alert('Chưa lưu được review lên tài khoản. Thử lại nha.');return}reviewComposerOpen=false;await loadCloudReviews();};
 deleteStoryReview=async function(id){if(!introStory||!authUser||!confirm('Xóa review này nha?'))return;const {error}=await sb.from('reviews').delete().eq('id',id).eq('user_id',authUser.id);if(error){alert('Chưa xóa được review.');return}await loadCloudReviews();};

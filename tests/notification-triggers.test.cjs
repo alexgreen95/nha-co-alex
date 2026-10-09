@@ -39,10 +39,32 @@ test('database triggers: recipients, self actions, unlike/re-like, nested replie
    await as(B);await assert.rejects(db.query("insert into notifications(user_id,actor_id,type,comment_id) values ($1,$2,'comment_like',$3)",[A,B,root]));
    await assert.rejects(db.query("select nca_create_comment_notification($1,$2,'comment_like',1,$3)",[A,B,root]));
   }
+  // Current frontend flattens all reply levels onto the root.
+  const flatRoot=await comment(A,'story');
+  const flatB=await comment(B,'story',flatRoot,A);
+  const flatC=await comment(C,'story',flatRoot,B);
+  const flatDeep=await comment(B,'story',flatRoot,C);
+  assert.equal((await notifications(C)).filter(n=>n.comment_id===flatDeep&&n.type==='reply').length,1);
+  assert.equal((await notifications(A)).filter(n=>n.comment_id===flatDeep).length,0);
+  // Existing deep parent chains: recipient may be an ancestor or sibling author.
+  const chainRoot=await comment(A,'chapter');
+  const chainB=await comment(B,'chapter',chainRoot,A);
+  const chainC=await comment(C,'chapter',chainB,B);
+  const chainDeep=await comment(B,'chapter',chainC,A);
+  assert.equal((await notifications(A)).filter(n=>n.comment_id===chainDeep&&n.type==='reply').length,1);
+  assert.equal((await notifications(C)).filter(n=>n.comment_id===chainDeep).length,0);
+  const chainSibling=await comment(A,'chapter',chainB,C);
+  assert.equal((await notifications(C)).filter(n=>n.comment_id===chainSibling&&n.type==='reply').length,1);
+  const invalidRoot=await comment(A,'paragraph');
+  const invalid=await comment(B,'paragraph',invalidRoot,C);
+  assert.equal((await notifications(A)).filter(n=>n.comment_id===invalid&&n.type==='reply').length,1);
+  assert.equal((await notifications(C)).filter(n=>n.comment_id===invalid).length,0);
   const mine=await notifications(A);assert(mine.every(n=>n.user_id===A&&n.actor_id!==A));
   await db.query('update notifications set is_read=true where id=$1',[mine[0].id]);assert((await notifications(A)).find(n=>n.id===mine[0].id).is_read);
   await as(B);assert.equal((await db.query('select * from notifications where user_id=$1',[A])).rows.length,0);
   assert.equal((await db.query('update notifications set is_read=false where user_id=$1 returning id',[A])).rows.length,0);
   await db.exec('SET ROLE anon');assert.equal((await db.query('select * from notifications')).rows.length,0);
+  await db.exec('RESET ROLE');const oldRows=(await db.query('select * from notifications order by id')).rows;
+  await db.exec(migration);assert.deepEqual((await db.query('select * from notifications order by id')).rows,oldRows);
  }finally{await db.close();}
 });

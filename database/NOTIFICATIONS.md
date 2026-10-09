@@ -5,7 +5,7 @@ Apply `migrations/20261009_comment_notifications.sql` in the Supabase SQL Editor
 The migration uses the actual columns, constraints and policies exported from this project on 2026-10-09. It keeps existing data, notification types, and recipient SELECT/UPDATE/DELETE policies. It installs triggers on comments, comment_likes and comment_mentions, and tightens their client INSERT permissions. No service-role key is used in the browser.
 
 - Like: one notification per actor/recipient/comment for the lifetime of that notification, including unlike/re-like; existing read status is retained.
-- Reply: notify the replied-to user, validated against the parent thread, or the parent owner when no valid explicit reply target exists. The notification points to the new reply.
+- Reply: notify the replied-to user, validated against the entire thread by first finding its root and then traversing descendants, or the parent owner when no valid explicit reply target exists. The notification points to the new reply.
 - Mention: keep mention rows; skip self notifications and dedupe against the reply notification for the same recipient, actor and comment.
 - Inserts and notification creation run in the same transaction. Existing notifications are not backfilled or deleted.
 - Functions use a fixed empty search path. Only trigger functions can call the notification writer. Client-side reply/like/mention notification inserts are blocked after migration; existing other notification types keep their INSERT policy.

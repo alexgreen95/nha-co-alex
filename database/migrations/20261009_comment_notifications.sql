@@ -47,11 +47,19 @@ BEGIN
   IF NEW.parent_id IS NULL THEN RETURN NEW; END IF;
   SELECT * INTO parent FROM public.comments WHERE id = NEW.parent_id;
   IF NOT FOUND THEN RETURN NEW; END IF;
-  -- Validate a reply-to-reply recipient against the actual parent thread.
+  -- Frontend stores rootId in parent_id, even when replying to another reply.
+  -- Walk up first to also support existing rows stored as a deep parent chain,
+  -- then walk down from the root to validate against the entire thread.
   recipient := parent.user_id;
   IF NEW.reply_to_user_id IS NOT NULL AND EXISTS (
-    WITH RECURSIVE thread(id,user_id) AS (
-      SELECT id,user_id FROM public.comments WHERE id = NEW.parent_id
+    WITH RECURSIVE ancestors(id,user_id,parent_id) AS (
+      SELECT id,user_id,parent_id FROM public.comments WHERE id = NEW.parent_id
+      UNION
+      SELECT c.id,c.user_id,c.parent_id FROM public.comments c
+      JOIN ancestors a ON c.id = a.parent_id
+      WHERE c.id <> NEW.id
+    ), thread(id,user_id) AS (
+      SELECT id,user_id FROM ancestors WHERE parent_id IS NULL
       UNION
       SELECT c.id,c.user_id FROM public.comments c JOIN thread t ON c.parent_id = t.id
       WHERE c.id <> NEW.id

@@ -1121,34 +1121,8 @@ document.body.classList.add('gate-locked');
   <div id="stories" class="grid"></div>
   <div class="home-more"><button id="moreStoriesBtn" onclick="toggleAllStories()">Xem thêm truyện</button></div>
 </section>
-<section id="reviewsPanel" class="home-panel">
-  <div class="demo-label">Dữ liệu minh họa để căn giao diện</div>
-<div class="community-feed">
-  <article class="community-card">
-    <div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">L</div><div class="community-meta"><strong>Linh Đan</strong><span class="community-sub">2 giờ trước · <span class="review-title-link" onclick="openStory(1)">Mùa Hạ Có Em</span></span></div></div>
-    <div class="community-body">Truyện thật sự rất dễ thương, đọc xong thấy ấm lòng. Mình thích cách những chuyện nhỏ trong nhà được kể rất tự nhiên.</div>
-    <div class="community-actions"><button class="heart-demo">♡ 12</button><button onclick="this.closest('.community-card').querySelector('.review-thread').hidden=!this.closest('.community-card').querySelector('.review-thread').hidden">💬 2 bình luận</button></div>
-    <div class="review-thread" hidden><div><strong>Minh Anh</strong> <span class="community-sub">· 1 giờ trước</span><div>Mình cũng thích đoạn bữa cơm tối nhất á 🥹</div></div><div class="review-reply"><strong>Linh Đan</strong> <span class="community-sub">· 45 phút trước</span><div>Đúng rồi, đọc rất có cảm giác ở nhà luôn.</div></div></div>
-  </article>
-  <article class="community-card">
-    <div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">H</div><div class="community-meta"><strong>Hải Yến</strong><span class="community-sub">1 ngày trước · <span class="review-title-link" onclick="openStory(5)">Tiệm Hoa Mở Cửa Sau Nửa Đêm</span></span></div></div>
-    <div class="community-body">Không khí truyện nhẹ nhàng mà có chút kỳ ảo rất vừa đủ. Mong tác giả ra thêm chương mới sớm nha.</div>
-    <div class="community-actions"><button class="heart-demo">♡ 8</button><button>💬 1 bình luận</button></div>
-  </article>
-  <article class="community-card">
-    <div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">N</div><div class="community-meta"><strong>Ngọc Trâm</strong><span class="community-sub">3 ngày trước · <span class="review-title-link" onclick="openStory(3)">Chuyện Nhà Mình</span></span></div></div>
-    <div class="community-body">Một câu chuyện rất đời thường nhưng đọc xong lại nhớ lâu. Mấy chi tiết nhỏ làm nhân vật có cảm giác gần gũi ghê.</div>
-    <div class="community-actions"><button class="heart-demo">♡ 21</button><button>💬 4 bình luận</button></div>
-  </article>
-  <article class="community-card"><div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">A</div><div class="community-meta"><strong>An Nhiên</strong><span class="community-sub">4 ngày trước · <span class="review-title-link" onclick="openStory(2)">Sau Cơn Mưa</span></span></div></div><div class="community-body">Nhịp truyện chậm vừa đủ, đọc rất dễ chịu. Mình thích cách cảm xúc được để tự nhiên chứ không cố làm quá.</div><div class="community-actions"><button class="heart-demo">♡ 6</button><button>💬 1 bình luận</button></div></article>
-  <article class="community-card"><div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">P</div><div class="community-meta"><strong>Phương Anh</strong><span class="community-sub">5 ngày trước · <span class="review-title-link" onclick="openStory(4)">Dưới Bầu Trời Đêm Ấy</span></span></div></div><div class="community-body">Không khí buổi tối trong truyện rất đẹp, có cảm giác yên yên mà vẫn khiến mình tò mò muốn đọc tiếp.</div><div class="community-actions"><button class="heart-demo">♡ 10</button><button>💬 3 bình luận</button></div></article>
-  <article class="community-card"><div class="community-head"><div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">M</div><div class="community-meta"><strong>Mai Chi</strong><span class="community-sub">6 ngày trước · <span class="review-title-link" onclick="openStory(6)">Ngày Chúng Ta Vẫn Còn Là Những Đứa Trẻ</span></span></div></div><div class="community-body">Đọc xong nhớ mấy chuyện hồi nhỏ ghê. Truyện có nhiều chi tiết rất bình thường mà lại dễ chạm cảm xúc.</div><div class="community-actions"><button class="heart-demo">♡ 14</button><button>💬 2 bình luận</button></div></article>
-</div>
-</section>
-<section id="commentsPanel" class="home-panel">
-  <div class="demo-label">Dữ liệu minh họa để căn giao diện</div>
-<div class="community-feed"></div>
-</section>
+<section id="reviewsPanel" class="home-panel"><div class="community-feed"></div></section>
+<section id="commentsPanel" class="home-panel"><div class="community-feed"></div></section>
 </main>
 
 <main id="storyIntro" class="container hidden"><div class="story-intro">
@@ -1264,18 +1238,11 @@ document.body.classList.add('gate-locked');
 <aside id="toc" class="toc"><div class="toc-head"><h3>Mục lục</h3><button class="btn" style="width:auto;border:1px solid var(--line);padding:6px 10px" onclick="toggleToc(false)">Đóng</button></div><div id="tocList"></div></aside>
 
 <script>
-const seed=[
- {id:1,title:'Mùa Hạ Có Em',author:'Alex',mainGenre:'Hiện đại',genre:'Thanh xuân',subtags:['Tận thế','Nữ cường','Ngọt sủng','Sảng văn'],status:'completed',chapters:[{title:'Chương 1: Cơn mưa đầu hạ',paras:['Có những mùa hè đi qua rất nhanh, nhưng có một mùa hè mà tôi nhớ mãi.','Ngày đầu tiên gặp cậu, trời đổ một cơn mưa rất lớn.','Tôi không biết rằng khoảnh khắc ấy sẽ trở thành chương đầu tiên của câu chuyện dài nhất đời mình.']}],views:128,likes:24},
- {id:2,title:'Sau Cơn Mưa',author:'Alex',mainGenre:'Hiện đại',genre:'Chữa lành',status:'ongoing',chapters:[{title:'Chương 1: Trời vừa tạnh',paras:['Thành phố sau cơn mưa có mùi của đất ướt và những điều chưa kịp nói.','Cô đứng dưới mái hiên, nhìn những giọt nước cuối cùng rơi khỏi tán cây.']}],views:86,likes:17},
- {id:3,title:'Chuyện Nhà Mình',author:'Alex',mainGenre:'Hiện đại',genre:'Đời thường',status:'completed',chapters:[{title:'Chương 1: Bữa cơm tối',paras:['Nhà không lớn, nhưng tối nào đèn bếp cũng sáng.','Có những câu chuyện chỉ cần một mâm cơm và vài người chịu ngồi lại cùng nhau.']}],views:241,likes:39},
- {id:4,title:'Dưới Bầu Trời Đêm Ấy',author:'Alex',mainGenre:'Hiện đại',genre:'Lãng mạn',status:'ongoing',chapters:[{title:'Chương 1: Một vì sao muộn',paras:['Đêm ấy trời trong đến mức tưởng như chỉ cần đưa tay là chạm được một vì sao.','Chúng tôi ngồi cạnh nhau rất lâu mà chẳng ai muốn về trước.']}],views:153,likes:31},
- {id:5,title:'Tiệm Hoa Mở Cửa Sau Nửa Đêm',author:'Alex',mainGenre:'Huyền ảo',genre:'Kỳ ảo · Chữa lành',status:'ongoing',chapters:[{title:'Chương 1: Vị khách lúc 0 giờ',paras:['Chiếc chuông cửa reo đúng lúc kim đồng hồ chạm số mười hai.','Người khách đầu tiên của đêm mang theo một lá thư chưa từng được gửi.']}],views:64,likes:12},
- {id:6,title:'Ngày Chúng Ta Vẫn Còn Là Những Đứa Trẻ',author:'Alex',mainGenre:'Hiện đại',genre:'Thanh xuân · Đời thường',status:'completed',chapters:[{title:'Chương 1: Con đường cũ',paras:['Con đường về nhà năm ấy ngắn hơn trong trí nhớ.','Chúng tôi từng nghĩ mùa hè sẽ chẳng bao giờ kết thúc.']}],views:319,likes:58}
-];
+const seed=[];
 
-// V21.13 — Supabase is the single source of truth for site data.
+// V21.14 — Supabase is the single source of truth for site data; demo data removed.
 // localStorage is reserved ONLY for reader appearance preferences below.
-let stories=[...seed];
+let stories=[];
 let comments={};
 let reviews={};
 let chapterLikes={};
@@ -1625,14 +1592,7 @@ function renderParaComments(key,c){return `${commentThreadsHTML(key,'paragraph')
 // Comments retain the existing localStorage backing store.
 // One root level and one reply level; replies to replies stay in the same thread.
 let activeReply=null;
-const demoHomeComments=[
- {key:'demo_1',timeLabel:'10 phút trước',name:'Tuệ Anh',text:'Đoạn này dễ thương quá trời, mình cười xỉu luôn áaaa 🥹💗',likes:5,location:'Chương 12 · Mùa Hạ Có Em',storyId:1,para:1},
- {key:'demo_2',timeLabel:'45 phút trước',name:'Hoàng Nam',text:'Mình cũng nghĩ giống bạn, chi tiết này thật sự rất tinh tế.',likes:3,location:'Chương 5 · Sau Cơn Mưa',storyId:2,para:0},
- {key:'demo_3',timeLabel:'2 giờ trước',name:'Khánh Linh',text:'@Phương Anh Đúng rồi, mình cũng thấy vậy nè! Cảm ơn bạn đã phân tích kỹ quá.',likes:7,location:'Chương 3 · Dưới Bầu Trời Đêm Ấy',storyId:4,para:1},
- {key:'demo_4',timeLabel:'4 giờ trước',name:'Minh Anh',text:'Một chương nhẹ nhàng nhưng đọc xong thấy ấm lòng ghê. Thích cách tác giả viết về gia đình quá 💛',likes:9,location:'Chương 8 · Chuyện Nhà Mình',storyId:3,para:0},
- {key:'demo_5',timeLabel:'6 giờ trước',name:'Lan Vy',text:'Khúc này có không khí dễ thương ghê, mình đọc mà tưởng tượng ra cả mùi hoa luôn 🌷',likes:4,location:'Chương 2 · Tiệm Hoa Mở Cửa Sau Nửa Đêm',storyId:5,para:0},
- {key:'demo_6',timeLabel:'8 giờ trước',name:'Diệp Anh',text:'Câu này làm mình đứng lại đọc hai lần luôn á 🥹',likes:11,location:'Chương 4 · Ngày Chúng Ta Vẫn Còn Là Những Đứa Trẻ',storyId:6,para:1}
-];
+const demoHomeComments=[];
 function commentList(key){
  if(comments[key])return comments[key];
  const demo=demoHomeComments.find(row=>row.key===key);

@@ -1118,6 +1118,94 @@ body.purplenight .account-menu,body.purplenight .notif-panel{
   transform:none!important;margin:0!important;z-index:2
  }
 }
+
+/* ===== mobile-only final polish: paragraph comment bubble + full cover ===== */
+@media (max-width:700px){
+  /* Do not reserve any text width for the paragraph comment bubble. */
+  #reader .para-wrap:has(.comment-btn) .para{
+    padding-right:0!important;
+  }
+  #reader .para-wrap{
+    position:relative!important;
+    padding-right:0!important;
+  }
+  /* Put the bubble in the gap after the paragraph, at the right edge. */
+  #reader .para-wrap .comment-btn{
+    position:absolute!important;
+    right:0!important;
+    top:auto!important;
+    bottom:-22px!important;
+    transform:none!important;
+    margin:0!important;
+    z-index:3!important;
+  }
+
+  /* Fill the whole mobile cover box; no pastel strips behind the image. */
+  #stories .story-cover:has(img){
+    padding:0!important;
+    overflow:hidden!important;
+  }
+  #stories .story-cover img{
+    width:100%!important;
+    height:100%!important;
+    object-fit:cover!important;
+    object-position:center!important;
+    display:block!important;
+    border-radius:inherit!important;
+  }
+}
+
+/* ===== paragraph comment marker: icon only, never cover reader text ===== */
+#reader .para-wrap .comment-btn{
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  padding:2px!important;
+  width:28px!important;
+  height:28px!important;
+  border-radius:0!important;
+  right:-38px!important;
+  top:.45em!important;
+  bottom:auto!important;
+  transform:none!important;
+}
+#reader .para-wrap .comment-btn span{display:none!important}
+#reader .para-wrap .comment-btn .ico{width:20px!important;height:20px!important}
+#reader .para-wrap:has(.comment-btn) .para{padding-right:0!important}
+@media(max-width:700px){
+  #reader .para-wrap .comment-btn{
+    right:0!important;
+    top:auto!important;
+    bottom:-24px!important;
+  }
+}
+
+/* ===== requested chat-bubble icon: solid bubble + keep comment counts ===== */
+.ico-comment{
+  width:1em!important;height:1em!important;
+  border:0!important;border-radius:0!important;
+  background:currentColor!important;
+  display:inline-block!important;
+  position:relative!important;
+  clip-path:polygon(8% 7%,92% 7%,98% 14%,98% 68%,92% 77%,49% 77%,40% 89%,25% 98%,30% 77%,12% 77%,2% 68%,2% 16%)!important;
+}
+.ico-comment:before,.ico-comment:after{content:none!important}
+
+/* Paragraph marker: icon + count, no surrounding pill/border/background. */
+#reader .para-wrap .comment-btn{
+  border:0!important;background:transparent!important;box-shadow:none!important;
+  width:auto!important;height:auto!important;min-width:0!important;
+  padding:2px!important;display:inline-flex!important;align-items:center!important;gap:3px!important;
+}
+#reader .para-wrap .comment-btn span{
+  display:inline!important;
+  font-size:.72em!important;
+  line-height:1!important;
+  color:currentColor!important;
+}
+#reader .para-wrap .comment-btn .ico-comment{
+  width:18px!important;height:18px!important;
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Nhà có Alex V21.21 -->
@@ -1720,9 +1808,13 @@ function startFromIntro(){if(!introStory)return;let pr=progress[introStory.id]||
 function toggleIntroSave(){if(!introStory)return;toggleSave(introStory.id);document.getElementById('introSaveBtn').textContent=saved.includes(introStory.id)?'★ Đã lưu':'☆ Lưu truyện'}
 function storyCommentKey(storyId){return `story_${storyId}`}
 function storyCommentKeys(story){
- const keys=[storyCommentKey(story.id)];
- story.chapters.forEach((chapter,ci)=>{keys.push(`chapter_${story.id}_${ci}`);chapter.paras.forEach((para,pi)=>keys.push(`${story.id}_${ci}_${pi}`))});
- return keys;
+ const sid=String(story.id),keys=new Set([storyCommentKey(story.id)]);
+ story.chapters.forEach((chapter,ci)=>{keys.add(`chapter_${story.id}_${ci}`);chapter.paras.forEach((para,pi)=>keys.add(`${story.id}_${ci}_${pi}`))});
+ /* Include cloud paragraph/chapter comments even when chapter paragraphs are lazy-loaded. */
+ Object.keys(comments||{}).forEach(key=>{
+   if(key===`story_${sid}`||key.startsWith(`chapter_${sid}_`)||key.startsWith(`${sid}_`))keys.add(key);
+ });
+ return [...keys];
 }
 function commentLocationHTMLForStory(key){
  if(key.startsWith('story_')){const id=Number(key.split('_')[1]),story=stories.find(row=>row.id===id);return story?`<span class="comment-location">${esc(story.title)}</span>`:''}

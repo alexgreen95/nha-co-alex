@@ -34,6 +34,19 @@ test('admin top-level notification, role-based deletion, cascade, role protectio
   await db.query("update profiles set display_name='Tên mới' where id=$1",[B]);
   await db.exec('RESET ROLE');await db.query('delete from profiles where id=$1',[C]);await as(C);await assert.rejects(db.query("insert into profiles(id,role) values($1,'admin')",[C]));
   await db.query("insert into profiles(id,role) values($1,'reader')",[C]);
+  // Same payload as first-login syncProfile: role is omitted, default is reader.
+  await db.exec('RESET ROLE');await db.query('delete from profiles where id=$1',[C]);await as(C);
+  await db.query("insert into profiles(id,display_name,avatar_url,bio) values($1,'New reader','avatar','bio') on conflict(id) do update set display_name=excluded.display_name,avatar_url=excluded.avatar_url,bio=excluded.bio",[C]);
+  assert.equal((await db.query('select role from profiles where id=$1',[C])).rows[0].role,'reader');
+  await db.query("insert into profiles(id,display_name) values($1,'Reader again') on conflict(id) do update set display_name=excluded.display_name",[C]);
+  for(const id of [A,B]){
+   await as(id);assert.equal((await db.query("update profiles set display_name='Edited',avatar_url='new-avatar',bio='new-bio',saved_stories_public=true where id=$1 returning role",[id])).rows[0].role,id===A?'admin':'reader');
+  }
+  await as(B);assert.equal((await db.query("update profiles set display_name='Other' where id=$1 returning id",[A])).rows.length,0);
+  // A broad legacy permissive policy must not bypass the new role boundary.
+  await db.exec('RESET ROLE');await db.exec('CREATE POLICY test_legacy_broad_delete ON comments FOR DELETE TO authenticated USING (true)');
+  const protectedRoot=await add(C,'story');await as(B);assert.equal((await db.query('delete from comments where id=$1 returning id',[protectedRoot])).rows.length,0);
+  await as(A);assert.equal((await db.query('delete from comments where id=$1 returning id',[protectedRoot])).rows.length,1);
   const own=await add(B,'story');await as(B);assert.equal((await db.query('delete from comments where id=$1 returning id',[own])).rows.length,1);
  }finally{await db.close();}
 });

@@ -28,6 +28,10 @@ After the first migration, apply `migrations/20261009_admin_comment_notification
 
 Comment DELETE is allowed for the owner or a profile-role admin. A restrictive policy also prevents older permissive policies from granting deletion to other users. The existing parent foreign key cascades replies; likes, mentions and related notifications also cascade through their existing foreign keys. No data is deleted by the migration itself.
 
+Both new DELETE policies are intentional: the permissive policy grants profile-role admins access independently of legacy `is_admin()`, while the restrictive policy bounds the OR of all permissive grants. The exported existing DELETE policies are `Users or admin delete comments` (owner OR `is_admin()`) and `nca comments own delete` (owner). Their conditions are retained.
+
 Profile role changes are blocked for browser clients, and new client-created profiles start as readers. This closes the existing permissive profile policies' self-promotion loophole; display-name/avatar/bio edits remain allowed. Assign admin roles through trusted database administration, not through frontend profile fields.
+
+First-login profile creation omits role and receives the existing reader default. Profile editing updates only display name, avatar and bio, and now returns role as well so the frontend retains admin permissions. Local RLS tests cover default-role creation, reader upsert, reader/admin profile updates, nonowner update rejection, and a broad legacy DELETE grant that must remain bounded. Trusted database-owner signup triggers bypass RLS; no auth/signup trigger is modified by this migration.
 
 Additional tests: `tests/admin-comments-db.test.cjs` and `tests/admin-comments.test.cjs`.

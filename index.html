@@ -3031,12 +3031,12 @@ async function saveProfileChanges(){
  let {data,error}=await sb.from('profiles')
    .update({display_name,bio,avatar_url})
    .eq('id',authUser.id)
-   .select('id,display_name,avatar_url,bio,saved_stories_public')
+   .select('id,display_name,avatar_url,bio,saved_stories_public,role')
    .maybeSingle();
  if(!error && !data){
    const inserted=await sb.from('profiles')
      .insert({id:authUser.id,display_name,bio,avatar_url})
-     .select('id,display_name,avatar_url,bio,saved_stories_public')
+     .select('id,display_name,avatar_url,bio,saved_stories_public,role')
      .maybeSingle();
    data=inserted.data; error=inserted.error;
  }

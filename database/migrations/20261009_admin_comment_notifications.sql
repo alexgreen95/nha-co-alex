@@ -10,6 +10,9 @@ REVOKE ALL ON FUNCTION public.nca_current_profile_role() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.nca_current_profile_role() TO authenticated;
 
 DO $$ BEGIN
+ -- Existing owner-only permissive policies still determine which profile may
+ -- be inserted/updated. These checks only protect its role; omitted INSERT
+ -- roles use the existing 'reader' default, and normal UPDATEs retain the role.
  IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_policies WHERE schemaname='public' AND tablename='profiles' AND policyname='nca profile role unchanged') THEN
   CREATE POLICY "nca profile role unchanged" ON public.profiles AS RESTRICTIVE FOR UPDATE TO authenticated
   USING (true) WITH CHECK (role = public.nca_current_profile_role());
@@ -19,10 +22,14 @@ DO $$ BEGIN
   WITH CHECK (role = 'reader');
  END IF;
  IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_policies WHERE schemaname='public' AND tablename='comments' AND policyname='nca role admin delete comments') THEN
+  -- Grant access even if legacy is_admin() does not recognize profiles.role.
   CREATE POLICY "nca role admin delete comments" ON public.comments FOR DELETE TO authenticated
   USING (user_id = auth.uid() OR public.nca_current_profile_role() = 'admin');
  END IF;
  IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_policies WHERE schemaname='public' AND tablename='comments' AND policyname='nca comment delete owner or role admin') THEN
+  -- PostgreSQL ORs permissive policies, then ANDs restrictive policies. This
+  -- bounds both legacy DELETE policies (owner OR is_admin(), and owner-only)
+  -- without removing them; a restrictive policy alone cannot grant access.
   CREATE POLICY "nca comment delete owner or role admin" ON public.comments AS RESTRICTIVE FOR DELETE TO authenticated
   USING (user_id = auth.uid() OR public.nca_current_profile_role() = 'admin');
  END IF;

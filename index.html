@@ -1039,6 +1039,29 @@ body.purplenight .account-menu,body.purplenight .notif-panel{
 .reader-review-clamp.expanded{display:block;overflow:visible}
 .reader-review-more{border:0;background:transparent;color:var(--accent);padding:5px 0 0;cursor:pointer;font:inherit;font-size:12px}
 .reader-review-more[hidden]{display:none!important}
+
+/* ===== Editor review reading comfort: full width + clearer paragraph spacing ===== */
+.editor-review-content.editor-review-simple{
+  padding:16px 18px 18px;
+}
+.editor-review-simple .review-body,
+.editor-review-simple .editor-review-body{
+  width:100%;
+  max-width:none;
+  display:block;
+  line-height:1.85;
+}
+.editor-review-simple .review-body p,
+.editor-review-simple .editor-review-body p{
+  width:100%;
+  max-width:none;
+  margin:0 0 1.15em;
+}
+.editor-review-simple .review-body p:last-child,
+.editor-review-simple .editor-review-body p:last-child{
+  margin-bottom:0;
+}
+
 </style>
 </head>
 <body class="gate-locked gate-checking">

@@ -2205,7 +2205,8 @@ function commentOwnerMenu(comment){
 let mentionProfilesBySlug={};
 async function loadMentionProfiles(){try{const {data,error}=await sb.from('profiles').select('id,display_name,avatar_url');if(error)return;mentionProfilesBySlug={};for(const p of(data||[])){const u=slugify(p.display_name||'');if(u)mentionProfilesBySlug[u]=p}}catch(e){console.warn('mention profiles',e)}}
 function commentTextHTML(text){const raw=String(text||'');let out='',last=0,re=/@([A-Za-z0-9_-]+)/g,m;while((m=re.exec(raw))){out+=esc(raw.slice(last,m.index));const u=slugify(m[1]),p=mentionProfilesBySlug[u];if(p)out+=`<a class="comment-mention" href="/user/${u}" data-user-profile="${u}">${esc(p.display_name||m[1])}</a>`;else out+=esc(m[0]);last=m.index+m[0].length}return out+esc(raw.slice(last))}
-async function saveCommentMentions(commentId,text,ctx){if(!authUser||!commentId)return;const slugs=[...new Set([...String(text||'').matchAll(/@([A-Za-z0-9_-]+)/g)].map(m=>slugify(m[1])).filter(Boolean))];if(!slugs.length)return;if(!Object.keys(mentionProfilesBySlug).length)await loadMentionProfiles();const people=slugs.map(u=>mentionProfilesBySlug[u]).filter(Boolean).filter(p=>String(p.id)!==String(authUser.id));for(const p of people){const mr=await sb.from('comment_mentions').insert({comment_id:commentId,mentioned_user_id:p.id});if(mr.error)console.warn('comment mention',mr.error);const nr=await sb.from('notifications').insert({user_id:p.id,actor_id:authUser.id,type:'mention',story_id:ctx.story_id,comment_id:commentId});if(nr.error)console.warn('mention notification',nr.error)}}
+async function commentNotificationTriggersEnabled(){const {data,error}=await sb.rpc('nca_comment_notifications_enabled');return !error&&data===true;}
+async function saveCommentMentions(commentId,text,ctx){if(!authUser||!commentId)return;const slugs=[...new Set([...String(text||'').matchAll(/@([A-Za-z0-9_-]+)/g)].map(m=>slugify(m[1])).filter(Boolean))];if(!slugs.length)return;if(!Object.keys(mentionProfilesBySlug).length)await loadMentionProfiles();const people=slugs.map(u=>mentionProfilesBySlug[u]).filter(Boolean).filter(p=>String(p.id)!==String(authUser.id));for(const p of people){const mr=await sb.from('comment_mentions').insert({comment_id:commentId,mentioned_user_id:p.id});if(mr.error)console.warn('comment mention',mr.error);if(!mr.error && !(await commentNotificationTriggersEnabled())){const nr=await sb.from('notifications').insert({user_id:p.id,actor_id:authUser.id,type:'mention',story_id:ctx.story_id,comment_id:commentId});if(nr.error)console.warn('mention notification',nr.error)}}}
 function commentMarkup(comment,key,list,headerExtra=''){
  const username=slugify(comment.username||comment.name)||'thanh-vien';
  const profileLink='/user/'+username, liked=!!authUser&&(comment.likedBy||[]).includes(authUser.id);
@@ -2543,7 +2544,7 @@ function updateAuthUI(){
  const logged=!!authUser;
  document.getElementById('loginBtn').style.display=logged?'none':'inline-block';
  document.getElementById('memberArea').style.display=logged?'flex':'none';
- if(!logged)return;
+ if(!logged){loadNotifications();return;}
  const name=userDisplayName(authUser), avatar=userAvatar(authUser);
  document.getElementById('accountName').textContent=name;
  document.getElementById('accountAvatar').src=avatar;
@@ -2922,30 +2923,67 @@ function notifText(n){
  };
  return labels[n.type]||'có một hoạt động mới.';
 }
-async function loadNotifications(){
- if(!authUser)return;
- let q=sb.from('notifications').select('id,type,is_read,created_at,story_id,chapter_id,comment_id,actor_id').eq('user_id',authUser.id).order('created_at',{ascending:false}).limit(50);
- if(notifFilter==='like')q=q.in('type',['story_like','comment_like','review_like','chapter_like']);
- else if(notifFilter!=='all')q=q.eq('type',notifFilter);
- const {data,error}=await q;
- if(error)return;
- const list=document.getElementById('notifList');
- list.innerHTML=(data||[]).length ? data.map(n=>`<div class="notif-item ${n.is_read?'':'unread'}">${esc(notifText(n))}</div>`).join('') : '<div class="notif-empty">Chưa có thông báo ở mục này.</div>';
- const {count}=await sb.from('notifications').select('id',{count:'exact',head:true}).eq('user_id',authUser.id).eq('is_read',false);
- const badge=document.getElementById('notifBadge');
- badge.textContent=count>99?'99+':String(count||0);
- badge.classList.toggle('show',!!count);
+let notificationRows=new Map(),notificationLoad=0,notificationOwner=null;
+async function loadNotifications(badgeOnly=false){
+ const load=++notificationLoad,userId=authUser?.id,filter=notifFilter;
+ const list=document.getElementById('notifList'),badge=document.getElementById('notifBadge');
+ if(!userId||notificationOwner!==userId){notificationOwner=userId||null;notificationRows.clear();list.innerHTML='<div class="notif-empty">Chưa có thông báo.</div>';badge.textContent='0';badge.classList.remove('show');if(!userId)return;}
+ let q=sb.from('notifications').select('id,type,is_read,created_at,story_id,chapter_id,comment_id,actor_id').eq('user_id',userId).order('created_at',{ascending:false}).limit(50);
+ if(filter==='like')q=q.in('type',['story_like','comment_like','review_like','chapter_like']);
+ else if(filter!=='all')q=q.eq('type',filter);
+ const [rows,countResult]=await Promise.all([
+  badgeOnly?Promise.resolve(null):q,
+  sb.from('notifications').select('id',{count:'exact',head:true}).eq('user_id',userId).eq('is_read',false)
+ ]);
+ if(load!==notificationLoad||authUser?.id!==userId)return;
+ if(rows){
+  if(rows.error)console.warn('notification read',rows.error);
+  else{
+   notificationRows=new Map((rows.data||[]).map(n=>[String(n.id),n]));
+   list.innerHTML=(rows.data||[]).length?rows.data.map(n=>`<div class="notif-item ${n.is_read?'':'unread'}" data-notification-id="${esc(n.id)}" role="link" tabindex="0">${esc(notifText(n))}</div>`).join(''):'<div class="notif-empty">Chưa có thông báo ở mục này.</div>';
+  }
+ }
+ if(countResult.error){console.warn('notification unread count',countResult.error);return;}
+ const count=countResult.count||0;badge.textContent=count>99?'99+':String(count);badge.classList.toggle('show',!!count);
 }
 async function markNotificationsRead(){
- if(!authUser)return;
- let q=sb.from('notifications').update({is_read:true}).eq('user_id',authUser.id).eq('is_read',false);
+ const userId=authUser?.id;if(!userId)return;
+ let q=sb.from('notifications').update({is_read:true}).eq('user_id',userId).eq('is_read',false);
  if(notifFilter==='like')q=q.in('type',['story_like','comment_like','review_like','chapter_like']);
  else if(notifFilter!=='all')q=q.eq('type',notifFilter);
- await q;
- loadNotifications();
- if(currentStory)renderChapterComments();
- if(activeCommentKey&&document.getElementById('paragraphCommentPanel')?.classList.contains('open'))toggleComments(activeCommentKey,true);
+ const {error}=await q;if(error){console.warn('notification mark read',error);return;}
+ if(authUser?.id===userId)await loadNotifications();
 }
+async function openNotification(id){
+ const userId=authUser?.id,n=notificationRows.get(String(id));if(!userId||notificationOwner!==userId||!n)return;
+ const {error}=await sb.from('notifications').update({is_read:true}).eq('id',n.id).eq('user_id',userId);
+ if(error)console.warn('notification mark read',error);
+ if(authUser?.id!==userId)return;
+ await loadNotifications();document.getElementById('notifPanel').classList.remove('open');
+ if(n.comment_id){
+  const {data:comment,error}=await sb.from('comments').select('*').eq('id',n.comment_id).maybeSingle();
+  if(error||!comment||authUser?.id!==userId)return;
+  await loadCloudComments();if(authUser?.id!==userId)return;
+  const key=cloudCommentKey(comment),list=normalizedComments(key),target=list.find(c=>String(c.id)===String(comment.id));
+  if(!target)return;
+  const root=rootComment(list,target);
+  window.__alexReplyState?.set(key+'::'+root.id,list.length);
+  if(comment.scope==='story'){
+   openStory(Number(comment.story_id));
+   const entries=storyCommentKeys(introStory).flatMap(k=>{const rows=normalizedComments(k);return rows.filter(c=>rootComment(rows,c).id===c.id);}).sort((a,b)=>(Date.parse(b.createdAt)||0)-(Date.parse(a.createdAt)||0));
+   storyCommentPage=Math.floor(Math.max(0,entries.findIndex(c=>String(c.id)===String(root.id)))/20)+1;renderAllStoryComments();
+   showIntroTab('comments',document.querySelectorAll('.intro-tabs button')[3]);
+  }else{
+   await read(Number(comment.story_id),Number(comment.chapter_index));
+   if(comment.scope==='paragraph'){jumpToParagraphOnly(key);toggleComments(key,true);}
+  }
+  requestAnimationFrame(()=>focusExactComment(comment.id));
+ }else if(n.story_id)openStory(Number(n.story_id));
+}
+document.addEventListener('click',event=>{const item=event.target.closest('[data-notification-id]');if(item)openNotification(item.dataset.notificationId).catch(error=>console.warn('notification navigation',error));});
+document.addEventListener('keydown',event=>{const item=event.target.closest('[data-notification-id]');if(item&&(event.key==='Enter'||event.key===' ')){event.preventDefault();item.click();}});
+setInterval(()=>{if(authUser&&!document.hidden)loadNotifications(!document.getElementById('notifPanel').classList.contains('open')).catch(error=>console.warn('notification refresh',error));},30000);
+document.addEventListener('visibilitychange',()=>{if(authUser&&!document.hidden)loadNotifications().catch(error=>console.warn('notification refresh',error));});
 let pendingAvatarFile=null;
 function profileEditMarkup(){
  const name=esc(userDisplayName(authUser));

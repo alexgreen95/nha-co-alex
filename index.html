@@ -2027,8 +2027,8 @@ async function loadCloudStories(){
   Object.values(chaptersByStory).forEach(a=>a.sort((x,y)=>(Number(x.chapter_number)||0)-(Number(y.chapter_number)||0)));
   const mapped=storyRows.filter(r=>r.published!==false).map(r=>({
    id:Number(r.id),title:r.title||r.name||`Truyện ${r.id}`,author:r.author||'Alex',
-   mainGenre:['Hiện đại','Cổ đại','Tương lai','Huyền ảo'].includes(r.main_genre||r.genre)?(r.main_genre||r.genre):'Hiện đại',
-   genre:r.genre||r.main_genre||'Hiện đại',subtags:Array.isArray(r.subtags)?r.subtags:(Array.isArray(r.tags)?r.tags:[]),
+   mainGenre:['Hiện đại','Cổ đại','Tương lai','Huyền ảo'].includes(r.main_genre||r.genre)?(r.main_genre||r.genre):'',
+   genre:r.genre||r.main_genre||'',subtags:Array.isArray(r.subtags)?r.subtags:(Array.isArray(r.tags)?r.tags:[]),
    status:['completed','complete','done','Đã hoàn thành'].includes(r.status)?'completed':'ongoing',
    summary:r.summary||r.description||r.introduction||'',cover:r.cover_url||r.cover||'',views:Number(r.views)||0,likes:Number(r.likes)||0,
    updatedAt:r.updated_at||r.created_at||'',
@@ -2169,7 +2169,7 @@ async function saveManagedStory(mode){
    if(sourceBefore==='published' && /^\d+$/.test(String(row.id))){
      // Cập nhật các cột nền trước; ảnh bìa thử cover_url rồi fallback sang cover
      // để tương thích schema hiện tại của dự án.
-     const basePatch={title:row.title,genre:row.mainGenre,status:row.status};
+     const basePatch={title:row.title,author:row.author||'Alex',genre:row.mainGenre,status:row.status};
      let baseResult=await sb.from('stories').update(basePatch).eq('id',Number(row.id));
      if(baseResult.error){console.warn('story base update cloud',baseResult.error);alert('Chưa áp dụng được thông tin truyện: '+(baseResult.error.message||'Supabase từ chối cập nhật.'));return}
      const metadataWrites=[
@@ -2192,6 +2192,23 @@ async function saveManagedStory(mode){
        if(verify.error||!verify.data){alert('Ảnh đã tải lên nhưng chưa xác nhận được thay đổi trong Supabase. Bản ở trình duyệt này có thể thấy ảnh nhưng tab ẩn danh sẽ chưa thấy.');return}
        row.cover=verify.data.cover_url||verify.data.cover||row.cover;
      }
+     // V21.18: Supabase is authoritative. Re-read the saved row immediately so the UI
+     // never keeps a browser-only metadata/cover value that disappears on another device.
+     const cloudVerify=await sb.from('stories').select('*').eq('id',Number(row.id)).maybeSingle();
+     if(cloudVerify.error||!cloudVerify.data){
+       alert('Supabase chưa xác nhận được thông tin truyện. Tui không giữ một bản riêng trên máy để tránh lệch dữ liệu giữa laptop và điện thoại.');
+       return;
+     }
+     const cv=cloudVerify.data;
+     row.title=cv.title||cv.name||row.title;
+     row.author=cv.author||row.author||'Alex';
+     row.mainGenre=(cv.main_genre||cv.genre||row.mainGenre);
+     row.genre=cv.genre||cv.main_genre||row.mainGenre;
+     row.status=['completed','complete','done','Đã hoàn thành'].includes(cv.status)?'completed':'ongoing';
+     row.summary=cv.summary??cv.description??cv.introduction??row.summary??'';
+     row.subtags=Array.isArray(cv.subtags)?cv.subtags:(Array.isArray(cv.tags)?cv.tags:row.subtags||[]);
+     row.cover=cv.cover_url||cv.cover||'';
+     target[idx]=row;
    }
  }else{stories.unshift(row);activeManagedSource='published'}
  

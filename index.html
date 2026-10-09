@@ -2939,8 +2939,10 @@ async function loadNotifications(badgeOnly=false){
  if(rows){
   if(rows.error)console.warn('notification read',rows.error);
   else{
+   const actors=await cloudProfiles((rows.data||[]).map(n=>n.actor_id));
+   if(load!==notificationLoad||authUser?.id!==userId)return;
    notificationRows=new Map((rows.data||[]).map(n=>[String(n.id),n]));
-   list.innerHTML=(rows.data||[]).length?rows.data.map(n=>`<div class="notif-item ${n.is_read?'':'unread'}" data-notification-id="${esc(n.id)}" role="link" tabindex="0">${esc(notifText(n))}</div>`).join(''):'<div class="notif-empty">Chưa có thông báo ở mục này.</div>';
+   list.innerHTML=(rows.data||[]).length?rows.data.map(n=>`<div class="notif-item ${n.is_read?'':'unread'}" data-notification-id="${esc(n.id)}" role="link" tabindex="0">${esc((actors[n.actor_id]?.display_name||'').trim()||(n.actor_id?'Thành viên':'Hệ thống'))} ${esc(notifText(n))}</div>`).join(''):'<div class="notif-empty">Chưa có thông báo ở mục này.</div>';
   }
  }
  if(countResult.error){console.warn('notification unread count',countResult.error);return;}

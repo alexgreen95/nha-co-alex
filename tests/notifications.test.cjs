@@ -64,3 +64,31 @@ test('mention helper keeps legacy notifications until migration and delegates af
   assert.deepEqual(page.errors,[]);
  }finally{await page.close();}
 });
+test('all notification types show actor profile names across two recipient accounts',async()=>{
+ const page=await feedPage(0);const profileReads=[];
+ const types=['comment_like','reply','mention','story_like','comment','chapter_like','review_like'];
+ const rows=types.map((type,i)=>({id:'a-'+i,user_id:'reader-user',actor_id:'admin-user',type,is_read:false})).concat(types.map((type,i)=>({id:'b-'+i,user_id:'admin-user',actor_id:'reader-user',type,is_read:false})));
+ const headers={'access-control-allow-origin':'*','access-control-allow-headers':'*','access-control-expose-headers':'content-range'};
+ try{
+  await page.route('**/rest/v1/notifications**',route=>{
+   const req=route.request(),url=new URL(req.url());let selected=rows.filter(n=>'eq.'+n.user_id===url.searchParams.get('user_id'));
+   const filter=url.searchParams.get('type');if(filter)selected=selected.filter(n=>filter.startsWith('eq.')?filter==='eq.'+n.type:filter.includes(n.type));
+   return route.fulfill({status:200,headers:{...headers,'content-range':`0-${selected.length-1}/${selected.length}`},contentType:'application/json',body:req.method()==='HEAD'?'':JSON.stringify(selected)});
+  });
+  await page.route('**/rest/v1/profiles**',route=>{profileReads.push(new URL(route.request().url()));return route.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify([{id:'admin-user',display_name:'Alex',avatar_url:'https://example.invalid/avatar.png'},{id:'reader-user',display_name:'Bạn đọc <b>thử</b>'}])});});
+  await page.evaluate(async()=>{authUser={id:'reader-user'};await loadNotifications();});
+  assert.equal(await page.locator('#notifList .notif-item').count(),types.length);
+  assert((await page.locator('#notifList .notif-item').allTextContents()).every(text=>text.startsWith('Alex ')));
+  assert.equal(profileReads.length,1);assert.match(profileReads[0].searchParams.get('id'),/admin-user/);
+  assert.equal(await page.locator('#notifList img').count(),0);
+  for(const filter of ['like','reply','mention']){
+   await page.evaluate(async filter=>{notifFilter=filter;await loadNotifications();},filter);
+   assert((await page.locator('#notifList .notif-item').allTextContents()).every(text=>text.startsWith('Alex ')));
+  }
+  await page.evaluate(async()=>{authUser={id:'admin-user'};notifFilter='all';await loadNotifications();});
+  assert((await page.locator('#notifList .notif-item').allTextContents()).every(text=>text.startsWith('Bạn đọc <b>thử</b> ')));
+  assert.equal(await page.locator('#notifList b').count(),0);
+  assert.equal(await page.locator('#notifBadge').textContent(),String(types.length));
+  assert.deepEqual(page.errors,[]);
+ }finally{await page.close();}
+});

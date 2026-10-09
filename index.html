@@ -1595,7 +1595,7 @@ if(location.pathname==='/' || location.pathname===''){const b=document.getElemen
         <div class="sort-row"><button onclick="toggleSortSub(event,this)">Thời gian <span>›</span></button><div class="sort-submenu"><button class="sort-choice" data-sort="updated_desc" onclick="chooseSort(event,'time','updated_desc','Mới cập nhật nhất')">Mới cập nhật nhất</button><button class="sort-choice" data-sort="updated_asc" onclick="chooseSort(event,'time','updated_asc','Cũ nhất')">Cũ nhất</button></div></div>
         <div class="sort-row"><button onclick="toggleSortSub(event,this)">Tình trạng <span>›</span></button><div class="sort-submenu"><button onclick="chooseSort(event,'status','','Tất cả tình trạng')">Tất cả</button><button onclick="chooseSort(event,'status','ongoing','Đang làm')">Đang làm</button><button onclick="chooseSort(event,'status','completed','Đã hoàn thành')">Đã hoàn thành</button></div></div>
         <div class="sort-row"><button onclick="toggleSortSub(event,this)">Lượt đọc <span>›</span></button><div class="sort-submenu"><button onclick="chooseSort(event,'views','views_desc','Lượt đọc nhiều nhất')">Nhiều nhất → ít nhất</button><button onclick="chooseSort(event,'views','views_asc','Lượt đọc ít nhất')">Ít nhất → nhiều nhất</button></div></div>
-        <div class="sort-row"><button onclick="toggleSortSub(event,this)">Thể loại <span>›</span></button><div class="sort-submenu"><button onclick="chooseSort(event,'genre','','Tất cả thể loại')">Tất cả</button><button onclick="chooseSort(event,'genre','Hiện đại','Hiện đại')">Hiện đại</button><button onclick="chooseSort(event,'genre','Cổ đại','Cổ đại')">Cổ đại</button><button onclick="chooseSort(event,'genre','Tương lai','Tương lai')">Tương lai</button><button onclick="chooseSort(event,'genre','Huyền ảo','Huyền ảo')">Huyền ảo</button><button onclick="chooseSort(event,'genre','Tây huyễn','Tây huyễn')">Tây huyễn</button></div></div>
+        <div class="sort-row"><button onclick="toggleSortSub(event,this)">Thể loại <span>›</span></button><div class="sort-submenu"><button onclick="chooseSort(event,'genre','','Tất cả thể loại')">Tất cả</button><button onclick="chooseSort(event,'genre','Hiện đại','Hiện đại')">Hiện đại</button><button onclick="chooseSort(event,'genre','Cổ đại','Cổ đại')">Cổ đại</button><button onclick="chooseSort(event,'genre','Tương lai','Tương lai')">Tương lai</button><button onclick="chooseSort(event,'genre','Huyền ảo','Huyền ảo')">Huyền ảo</button><button onclick="chooseSort(event,'genre','Tây huyễn','Tây huyễn')">Tây huyễn</button><button onclick="chooseSort(event,'genre','Tu tiên','Tu tiên')">Tu tiên</button><button onclick="chooseSort(event,'genre','Tận thế','Tận thế')">Tận thế</button></div></div>
       </div>
     </div>
   </div>
@@ -1677,7 +1677,7 @@ if(location.pathname==='/' || location.pathname===''){const b=document.getElemen
 
 <div id="storyComposerModal" class="story-composer-modal hidden" onclick="if(event.target===this)closeStoryComposer()"><div class="story-composer-card">
   <div class="story-composer-head"><h2 id="storyComposerTitle">Truyện mới</h2><button onclick="closeStoryComposer()">×</button></div>
-  <div class="story-form-grid"><label>Tên truyện<input id="manageTitle" placeholder="Tên truyện"></label><label>Tác giả<input id="manageAuthor" placeholder="Tên tác giả"></label><label>Thể loại chính<select id="manageGenre"><option>Hiện đại</option><option>Cổ đại</option><option>Tương lai</option><option>Huyền ảo</option><option>Tây huyễn</option></select></label><label>Tình trạng<select id="manageStatus"><option value="ongoing">Đang làm</option><option value="completed">Đã hoàn thành</option></select></label><label>Ảnh bìa<div class="cover-edit-row"><div id="manageCoverPreview" class="cover-edit-preview">Chưa có bìa</div><div class="cover-edit-file"><input id="manageCover" type="file" accept="image/*" onchange="previewManagedCover(this)"><div id="manageCoverNote" class="cover-upload-note">JPG, PNG, WEBP · ảnh sẽ lưu vào Supabase</div></div></div></label></div>
+  <div class="story-form-grid"><label>Tên truyện<input id="manageTitle" placeholder="Tên truyện"></label><label>Tác giả<input id="manageAuthor" placeholder="Tên tác giả"></label><label>Thể loại chính<select id="manageGenre"><option>Hiện đại</option><option>Cổ đại</option><option>Tương lai</option><option>Huyền ảo</option><option>Tây huyễn</option><option>Tu tiên</option><option>Tận thế</option></select></label><label>Tình trạng<select id="manageStatus"><option value="ongoing">Đang làm</option><option value="completed">Đã hoàn thành</option></select></label><label>Ảnh bìa<div class="cover-edit-row"><div id="manageCoverPreview" class="cover-edit-preview">Chưa có bìa</div><div class="cover-edit-file"><input id="manageCover" type="file" accept="image/*" onchange="previewManagedCover(this)"><div id="manageCoverNote" class="cover-upload-note">JPG, PNG, WEBP · ảnh sẽ lưu vào Supabase</div></div></div></label></div>
   <label>Giới thiệu ngắn<textarea id="manageSummary" rows="3" placeholder="Đoạn giới thiệu ngắn hiển thị cạnh bìa..."></textarea></label>
   <label>Giới thiệu chi tiết<textarea id="manageLongIntro" rows="8" placeholder="Viết phần giới thiệu dài hiển thị trong tab Giới thiệu..."></textarea></label>
   <label>Tag phụ<input id="manageTags" placeholder="Tận thế, Nữ cường, Ngọt sủng, Sảng văn"></label>
@@ -2576,7 +2576,7 @@ async function refreshPublicStoryCloudFields(){
        if(r.author!==undefined && r.author!==null) st.author=r.author;
         st.subtags=Array.isArray(r.tags)?r.tags:(Array.isArray(r.subtags)?r.subtags:(st.subtags||[]));
        const cloudMainGenre=r.main_genre||r.genre;
-       if(cloudMainGenre && ['Hiện đại','Cổ đại','Tương lai','Huyền ảo','Tây huyễn'].includes(cloudMainGenre)) st.mainGenre=cloudMainGenre;
+       if(cloudMainGenre && ['Hiện đại','Cổ đại','Tương lai','Huyền ảo','Tây huyễn','Tu tiên','Tận thế'].includes(cloudMainGenre)) st.mainGenre=cloudMainGenre;
        if(Array.isArray(r.subtags)) st.subtags=r.subtags;
        else if(Array.isArray(r.tags)) st.subtags=r.tags;
        if(r.summary!==undefined && r.summary!==null) st.summary=r.summary;
@@ -2606,7 +2606,7 @@ async function loadCloudStories(){
   Object.values(chaptersByStory).forEach(a=>a.sort((x,y)=>(Number(x.chapter_number)||0)-(Number(y.chapter_number)||0)));
   const mapped=storyRows.filter(r=>r.published!==false).map(r=>({
    id:Number(r.id),title:r.title||r.name||`Truyện ${r.id}`,author:r.author||'',
-   mainGenre:['Hiện đại','Cổ đại','Tương lai','Huyền ảo','Tây huyễn'].includes(r.main_genre||r.genre)?(r.main_genre||r.genre):'',
+   mainGenre:['Hiện đại','Cổ đại','Tương lai','Huyền ảo','Tây huyễn','Tu tiên','Tận thế'].includes(r.main_genre||r.genre)?(r.main_genre||r.genre):'',
    genre:r.genre||r.main_genre||'',subtags:Array.isArray(r.subtags)?r.subtags:(Array.isArray(r.tags)?r.tags:[]),
    status:['completed','complete','done','Đã hoàn thành'].includes(r.status)?'completed':'ongoing',
    summary:r.summary||r.description||'',longIntro:r.long_description||'',cover:r.cover_url||r.cover||'',views:Number(r.views)||0,likes:Number(r.likes)||0,

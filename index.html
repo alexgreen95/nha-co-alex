@@ -1062,6 +1062,40 @@ body.purplenight .account-menu,body.purplenight .notif-panel{
   margin-bottom:0;
 }
 
+
+/* ===== Editor review: truly full-width + justified text ===== */
+.editor-review-block .editor-review-content.editor-review-simple{
+  width:100% !important;
+  max-width:none !important;
+  box-sizing:border-box !important;
+}
+.editor-review-block .editor-review-simple .review-body,
+.editor-review-block .editor-review-simple .editor-review-body{
+  width:100% !important;
+  max-width:none !important;
+  min-width:0 !important;
+  display:block !important;
+  box-sizing:border-box !important;
+  text-align:justify !important;
+  text-justify:inter-word !important;
+}
+.editor-review-block .editor-review-simple .review-body > *,
+.editor-review-block .editor-review-simple .editor-review-body > *{
+  max-width:none !important;
+}
+.editor-review-block .editor-review-simple .review-body p,
+.editor-review-block .editor-review-simple .editor-review-body p{
+  width:100% !important;
+  max-width:none !important;
+  margin:0 0 1.2em !important;
+  text-align:justify !important;
+  text-justify:inter-word !important;
+}
+.editor-review-block .editor-review-simple .review-body br,
+.editor-review-block .editor-review-simple .editor-review-body br{
+  content:"";
+}
+
 </style>
 </head>
 <body class="gate-locked gate-checking">

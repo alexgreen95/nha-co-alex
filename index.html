@@ -1069,6 +1069,22 @@ body.purplenight .account-menu,body.purplenight .notif-panel{
 @media (min-width:721px){
   #memberArea .notif-wrap{margin-right:9px;}
 }
+
+/* ===== requested tiny polish: comment address + header spacing only ===== */
+#introComments .comment-author-line{display:flex;align-items:center;gap:6px;min-width:0}
+#introComments .comment-author-line>.comment-location{
+  margin:0 34px 0 8px!important;padding:0!important;border:0!important;
+  background:transparent!important;box-shadow:none!important;color:var(--accent)!important;
+  font-size:11px!important;font-weight:600!important;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;flex:1 1 auto;text-align:right
+}
+#introComments .comment-author-line>.comment-location:hover{text-decoration:underline}
+@media (min-width:721px){
+  .nav{gap:7px}
+  .nav>.account-area{margin-left:5px}
+  #memberArea{gap:6px!important}
+  #memberArea .notif-wrap{margin-left:0!important;margin-right:5px!important}
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Nhà có Alex V21.21 -->
@@ -1700,7 +1716,7 @@ function renderAllStoryComments(){
  entries.sort((a,b)=>a.time-b.time);
  const pageSize=20,totalPages=Math.max(1,Math.ceil(entries.length/pageSize));storyCommentPage=Math.min(Math.max(1,storyCommentPage),totalPages);
  const page=entries.slice((storyCommentPage-1)*pageSize,storyCommentPage*pageSize);
- box.innerHTML=page.map(({key,root,list})=>{const replies=list.filter(c=>c.id!==root.id&&rootComment(list,c).id===root.id);return `<div class="comment-group">${commentLocationHTMLForStory(key)}<div class="comment-thread" data-comment-key="${esc(key)}" data-comment-surface="story">${commentMarkup(root,key,list)}${replies.length?`<div class="comment-replies">${replies.map(reply=>commentMarkup(reply,key,list)).join('')}</div>`:''}${replyComposerHTML(key,root,'story')}</div></div>`}).join('')||'<p class="muted">Chưa có bình luận nào cho truyện này.</p>';
+ box.innerHTML=page.map(({key,root,list})=>{const replies=list.filter(c=>c.id!==root.id&&rootComment(list,c).id===root.id);return `<div class="comment-group"><div class="comment-thread" data-comment-key="${esc(key)}" data-comment-surface="story">${commentMarkup(root,key,list,commentLocationHTMLForStory(key))}${replies.length?`<div class="comment-replies">${replies.map(reply=>commentMarkup(reply,key,list)).join('')}</div>`:''}${replyComposerHTML(key,root,'story')}</div></div>`}).join('')||'<p class="muted">Chưa có bình luận nào cho truyện này.</p>';
  pager.innerHTML=entries.length>pageSize?Array.from({length:totalPages},(_,i)=>i+1).map(n=>`<button type="button" class="${n===storyCommentPage?'active':''}" onclick="setStoryCommentPage(${n})">${n}</button>`).join(''):'';
 }
 function setStoryCommentPage(page){storyCommentPage=page;renderAllStoryComments();document.getElementById('introComments')?.scrollIntoView({behavior:'smooth',block:'start'})}
@@ -1919,14 +1935,14 @@ function commentOwnerMenu(comment){
  if(!isOwnComment(comment)&&!canDeleteComment(comment))return '';
  return `<span class="comment-owner-menu"><button type="button" class="comment-more" data-comment-action="menu" aria-label="Tùy chọn bình luận">⋯</button><span class="comment-menu-pop">${isOwnComment(comment)?`<button type="button" data-comment-action="edit" data-comment-id="${esc(comment.id)}">Sửa</button>`:''}${canDeleteComment(comment)?`<button type="button" class="danger" data-comment-action="delete" data-comment-id="${esc(comment.id)}">Xóa</button>`:''}</span></span>`;
 }
-function commentMarkup(comment,key,list){
+function commentMarkup(comment,key,list,headerExtra=''){
  const username=slugify(comment.username||comment.name)||'thanh-vien';
  const profileLink='/user/'+username, liked=!!authUser&&(comment.likedBy||[]).includes(authUser.id);
  const target=list.find(row=>row.id===comment.replyTo);
  const avatar=comment.avatar?`<img src="${esc(comment.avatar)}" alt="" loading="lazy">`:`<span aria-hidden="true">${esc(Array.from(comment.name||'T')[0])}</span>`;
  return `<article class="comment-item" data-comment-id="${esc(comment.id)}">
   <a class="comment-avatar" href="${profileLink}" data-user-profile="${username}" aria-label="Hồ sơ ${esc(comment.name||'Thành viên')}">${avatar}</a>
-  <div class="comment-main"><div class="comment-author-line"><a class="comment-author" href="${profileLink}" data-user-profile="${username}">${esc(comment.name||'Thành viên')}</a>${isAdminComment(comment)?'<span class="admin-badge">ADMIN</span>':''}${commentOwnerMenu(comment)}</div>
+  <div class="comment-main"><div class="comment-author-line"><a class="comment-author" href="${profileLink}" data-user-profile="${username}">${esc(comment.name||'Thành viên')}</a>${isAdminComment(comment)?'<span class="admin-badge">ADMIN</span>':''}${headerExtra}${commentOwnerMenu(comment)}</div>
    <div class="comment-bubble">${target?`<span class="comment-reply-to">Trả lời ${esc(target.name)}</span>`:''}<p class="comment-text">${esc(comment.text)}</p></div>
    <div class="comment-meta"><button type="button" data-comment-action="like" data-comment-id="${esc(comment.id)}" aria-pressed="${liked}" aria-label="Thả tim bình luận của ${esc(comment.name)}">${liked?'♥':'♡'} <span>${Math.max(0,Number(comment.likes)||0)}</span></button><button type="button" data-comment-action="reply" data-comment-id="${esc(comment.id)}">Trả lời</button>${commentTime(comment)}${comment.editedAt?'<span class="comment-edited">· Đã chỉnh sửa</span>':''}</div>
   </div></article>`;

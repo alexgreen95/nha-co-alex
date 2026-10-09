@@ -1573,17 +1573,31 @@ function renderChapter(restoreScroll=0){
  progress[s.id]={chapter:currentChapter,scroll:restoreScroll||0};save();
  requestAnimationFrame(()=>window.scrollTo(0,restoreScroll||0));
 }
-function moveChapter(n){
+async function moveChapter(n){
  if(!currentStory)return;
  let next=currentChapter+n;
  if(next<0||next>=currentStory.chapters.length)return;
- currentChapter=next;setRoute(chapterPath(currentStory,currentChapter));progress[currentStory.id]={chapter:currentChapter,scroll:0};save();renderChapter(0);
+ currentChapter=next;
+ setRoute(chapterPath(currentStory,currentChapter));
+ progress[currentStory.id]={chapter:currentChapter,scroll:0};save();
+ // V21.17: chương được tải lazy từ Supabase, nên phải đợi nội dung cloud trước khi render.
+ await ensureChapterContent(currentStory,currentChapter);
+ renderChapter(0);
 }
 function renderToc(){
  if(!currentStory)return;
  document.getElementById('tocList').innerHTML=currentStory.chapters.map((c,i)=>`<button class="${i===currentChapter?'active':''}" onclick="goChapter(${i})">${esc(c.title)}</button>`).join('');
 }
-function goChapter(i){currentChapter=i;setRoute(chapterPath(currentStory,i));progress[currentStory.id]={chapter:i,scroll:0};save();toggleToc(false);renderChapter(0)}
+async function goChapter(i){
+ if(!currentStory||i<0||i>=currentStory.chapters.length)return;
+ currentChapter=i;
+ setRoute(chapterPath(currentStory,i));
+ progress[currentStory.id]={chapter:i,scroll:0};save();
+ toggleToc(false);
+ // V21.17: chọn chương từ mục lục cũng phải tải paragraph từ Supabase trước.
+ await ensureChapterContent(currentStory,i);
+ renderChapter(0);
+}
 function toggleToc(force){toggleFontMenu(false);
  const t=document.getElementById('toc'),b=document.getElementById('drawerBackdrop');
  const open=typeof force==='boolean'?force:!t.classList.contains('open');

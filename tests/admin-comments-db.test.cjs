@@ -19,6 +19,10 @@ test('admin top-level notification, role-based deletion, cascade, role protectio
    const adminRoot=await add(A,scope);assert.equal((await db.query('select * from notifications where comment_id=$1',[adminRoot])).rows.length,0);
    const reply=await add(C,scope,root,B);
    await as(B);assert.equal((await db.query("select * from notifications where comment_id=$1 and type='reply'",[reply])).rows.length,1);
+   await db.query('insert into comment_mentions(comment_id,mentioned_user_id) values($1,$2)',[reply,B]);
+   assert.equal((await db.query('select * from notifications where comment_id=$1',[reply])).rows.length,1);
+   await as(A);await db.query('insert into comment_mentions(comment_id,mentioned_user_id) values($1,$2)',[adminRoot,C]);
+   await as(C);assert.equal((await db.query("select * from notifications where comment_id=$1 and type='mention'",[adminRoot])).rows.length,1);
    await db.query('insert into comment_likes(comment_id,user_id) values($1,$2)',[reply,B]);
    await as(C);assert.equal((await db.query("select * from notifications where comment_id=$1 and type='comment_like'",[reply])).rows.length,1);
    assert.equal((await db.query('delete from comments where id=$1 returning id',[root])).rows.length,0);

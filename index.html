@@ -3463,6 +3463,42 @@ initAuth().catch(()=>{updateAuthUI(); if(!location.pathname.startsWith('/quan-ly
 })();
 </script>
 
+
+<style id="alex-activity-overflow-only-20261009">
+/* Only show the per-card Xem thêm control when the activity body truly exceeds 3 text lines. */
+.activity-card .activity-more{display:none!important}
+.activity-card.activity-overflow .activity-more:not([hidden]){display:block!important}
+</style>
+<script id="alex-activity-overflow-only-20261009-js">
+(function(){
+ function naturalHeight(el){
+   const c=el.cloneNode(true);
+   const cs=getComputedStyle(el);
+   c.classList.add('expanded');
+   Object.assign(c.style,{position:'absolute',visibility:'hidden',pointerEvents:'none',left:'-99999px',top:'0',width:el.getBoundingClientRect().width+'px',height:'auto',maxHeight:'none',overflow:'visible',display:'block',webkitLineClamp:'unset',webkitBoxOrient:'initial'});
+   document.body.appendChild(c);
+   const h=c.scrollHeight;
+   c.remove();
+   return h;
+ }
+ function sync(card){
+   const body=card.querySelector('.activity-clamp'),btn=card.querySelector('.activity-more');
+   if(!body||!btn)return;
+   const lh=parseFloat(getComputedStyle(body).lineHeight)||20;
+   const h=naturalHeight(body);
+   const overflow=h>lh*3+3;
+   card.classList.toggle('activity-overflow',overflow);
+   if(!overflow){body.classList.remove('expanded');card.classList.remove('expanded');btn.hidden=true;}
+   else if(!body.classList.contains('expanded'))btn.hidden=false;
+ }
+ function syncAll(root){(root||document).querySelectorAll('.activity-card').forEach(sync)}
+ const obs=new MutationObserver(function(){requestAnimationFrame(function(){syncAll(document.getElementById('profileContent')||document)})});
+ obs.observe(document.body,{childList:true,subtree:true});
+ window.addEventListener('resize',function(){syncAll(document.getElementById('profileContent')||document)});
+ document.addEventListener('click',function(){requestAnimationFrame(function(){syncAll(document.getElementById('profileContent')||document)})},true);
+ requestAnimationFrame(function(){syncAll(document)});
+})();
+</script>
 </body></html>
 <style id="alex-cover-comment-position-20261009">
 /* Requested polish: slightly taller home covers without widening the cards. */

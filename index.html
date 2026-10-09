@@ -1312,6 +1312,16 @@ body.purplenight .account-menu,body.purplenight .notif-panel{
 #paragraphCommentPanel .reply-compose{display:block!important;}
 
 .comment-mention{color:var(--accent);font-weight:700;text-decoration:none}.comment-mention:hover{text-decoration:underline}
+
+/* Profile story shelves — compact cover-first layout inspired by reading libraries. */
+.profile-shelf-head{margin-bottom:18px}.profile-shelf-head h3{margin:0 0 5px}.profile-shelf-head p{margin:0;font-size:13px}
+.profile-story-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px 18px;align-items:start}
+.profile-story-tile{min-width:0;cursor:pointer}.profile-story-cover{aspect-ratio:3/4;border-radius:9px;overflow:hidden;background:var(--soft);border:1px solid var(--line);display:grid;place-items:center;text-align:center;font-size:12px;line-height:1.4;box-shadow:0 3px 10px rgba(40,30,30,.08)}
+.profile-story-cover img{width:100%;height:100%;display:block;object-fit:cover}.profile-story-tile:hover .profile-story-cover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(40,30,30,.12)}.profile-story-cover{transition:.16s ease}
+.reading-progress{height:5px;background:color-mix(in srgb,var(--line) 78%,transparent);overflow:hidden;margin-top:7px;border-radius:999px}.reading-progress span{height:100%;display:block;background:var(--accent);border-radius:inherit;transition:width .25s ease}
+.profile-story-body{padding-top:9px}.profile-story-body h4{font-size:15px;line-height:1.3;margin:0 0 5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.profile-story-author{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.profile-story-genre{font-size:12px;color:var(--accent);margin-top:3px}.profile-story-status{font-size:11px;margin-top:5px}.profile-story-status.done{color:#3d7a52}.profile-story-status.ongoing{color:#9a6b28}.profile-story-stats{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:11px;margin-top:7px;flex-wrap:wrap}.profile-story-stats span{display:inline-flex;align-items:center;gap:3px}.profile-story-stats .ico{width:13px;height:13px}.profile-continue{margin-top:9px;border:1px solid var(--line);background:var(--soft);border-radius:8px;padding:6px 8px;font:inherit;font-size:11px;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.profile-shelf-empty{border:1px dashed var(--line);border-radius:12px;padding:28px;text-align:center;color:var(--muted);font-size:13px}
+@media(max-width:720px){.profile-story-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:20px 12px}.profile-story-body h4{font-size:13px}.profile-story-stats{gap:7px}.profile-story-cover{border-radius:8px}}
+@media(max-width:430px){.profile-story-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 14px}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Nhà có Alex V21.21 -->
@@ -2986,6 +2996,39 @@ async function openUserProfile(username,updateRoute=true,section='profile'){
   content.innerHTML='<h3>Hồ sơ</h3><p class="muted">Chưa tải được hồ sơ. Vui lòng thử lại sau.</p>';
  }
 }
+function profileReadingPercent(story){
+ const pr=progress[story.id];if(!pr)return 0;
+ const total=Math.max(1,(story.chapters||[]).length),chapter=Math.max(0,Math.min(total-1,Number(pr.chapter)||0));
+ // reading_progress currently stores chapter + scroll position. A little scroll in the current chapter
+ // counts as half of that chapter, so the bar remains useful without changing the database schema.
+ const within=Number(pr.scroll)>80?.5:0;
+ return Math.max(2,Math.min(100,Math.round(((chapter+within)/total)*100)));
+}
+function profileShelfCard(story,withProgress=false){
+ const pct=withProgress?profileReadingPercent(story):0;
+ const pr=progress[story.id];
+ const chapterLabel=pr&&story.chapters?.length?story.chapters[Math.min(Number(pr.chapter)||0,story.chapters.length-1)]?.title:'';
+ return `<article class="profile-story-tile" onclick="openStory(${story.id})">
+  <div class="profile-story-cover">${story.cover?`<img src="${esc(story.cover)}" alt="Bìa ${esc(story.title)}">`:`<span>Nhà có Alex<br>${esc(story.title)}</span>`}</div>
+  ${withProgress?`<div class="reading-progress" title="Đã đọc khoảng ${pct}%"><span style="width:${pct}%"></span></div>`:''}
+  <div class="profile-story-body">
+   <h4 title="${esc(story.title)}">${esc(story.title)}</h4>
+   <div class="profile-story-author">${esc(story.author||'')}</div>
+   <div class="profile-story-genre ${primaryGenreClass(story.mainGenre||story.genre)}">${esc(story.mainGenre||story.genre||'')}</div>
+   <div class="profile-story-status ${story.status==='completed'?'done':'ongoing'}">${story.status==='completed'?'✓ Đã hoàn thành':'◷ Đang làm'}</div>
+   <div class="profile-story-stats"><span>${icon('eye')} ${story.views||0}</span><span>${icon('heart')} ${storyLikeTotal(story)}</span><span>${icon('comment')} ${storyCommentCount(story)}</span></div>
+   ${withProgress&&chapterLabel?`<button class="profile-continue" type="button" onclick="event.stopPropagation();read(${story.id})">Đọc tiếp · ${esc(chapterLabel.split(':')[0])}</button>`:''}
+  </div>
+ </article>`;
+}
+function renderProfileStoryShelf(kind){
+ const c=document.getElementById('profileContent');if(!c)return;
+ const isReading=kind==='reading';
+ const rows=isReading
+  ? stories.filter(story=>Object.prototype.hasOwnProperty.call(progress,String(story.id))||Object.prototype.hasOwnProperty.call(progress,story.id))
+  : stories.filter(story=>saved.map(Number).includes(Number(story.id)));
+ c.innerHTML=`<div class="profile-shelf-head"><h3>${isReading?'Đang đọc':'Truyện đã lưu'}</h3>${isReading?'<p class="muted">Tiến độ đọc được lưu theo tài khoản của bạn.</p>':'<p class="muted">Những truyện bạn đã lưu.</p>'}</div>${rows.length?`<div class="profile-story-grid">${rows.map(story=>profileShelfCard(story,isReading)).join('')}</div>`:`<div class="profile-shelf-empty">${isReading?'Chưa có truyện đang đọc.':'Chưa lưu truyện nào.'}</div>`}`;
+}
 function openProfile(section='profile',updateRoute=true){
  if(!authUser){show('login');return}
  ++profileRequestId;
@@ -2996,8 +3039,8 @@ function openProfile(section='profile',updateRoute=true){
  const c=document.getElementById('profileContent');
  if(section==='profile')c.innerHTML=`<h3>Hồ sơ</h3>${memberProfile?.bio?`<p>${esc(memberProfile.bio)}</p>`:'<p class="muted">Đây là góc riêng của bạn trong Nhà có Alex.</p>'}${profileMetaHTML(memberProfile||{},true)}`;
  if(section==='activity')renderProfileActivity('all');
- if(section==='saved')c.innerHTML='<h3>Truyện đã lưu</h3><p class="muted">Kệ truyện của bạn sẽ nằm ở đây. Kệ có thể đặt Công khai hoặc Riêng tư ngay tại trang này.</p>';
- if(section==='reading')c.innerHTML='<h3>Đang đọc</h3><p class="muted">Những truyện đang đọc dở sẽ xuất hiện ở đây.</p>';
+ if(section==='saved')renderProfileStoryShelf('saved');
+ if(section==='reading')renderProfileStoryShelf('reading');
  if(section==='edit'){pendingAvatarFile=null;c.innerHTML=profileEditMarkup()}
  window.scrollTo(0,0);
 }

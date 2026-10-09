@@ -3499,6 +3499,45 @@ initAuth().catch(()=>{updateAuthUI(); if(!location.pathname.startsWith('/quan-ly
  requestAnimationFrame(function(){syncAll(document)});
 })();
 </script>
+
+
+<style id="alex-home-comment-overflow-fix-20261009">
+/* Homepage comments: show Xem thêm only when the three-line clamp actually truncates text. */
+#commentsPanel .home-comment-card .activity-more{display:none!important}
+#commentsPanel .home-comment-card.home-comment-overflow .activity-more:not([hidden]){display:block!important}
+#commentsPanel .home-comment-card .activity-clamp.expanded{-webkit-line-clamp:unset!important;display:block!important;overflow:visible!important}
+</style>
+<script id="alex-home-comment-overflow-fix-20261009-js">
+(function(){
+ function naturalHeight(el){
+   if(!el || !el.getBoundingClientRect().width)return 0;
+   const c=el.cloneNode(true);
+   c.classList.add('expanded');
+   Object.assign(c.style,{position:'absolute',visibility:'hidden',pointerEvents:'none',left:'-99999px',top:'0',width:el.getBoundingClientRect().width+'px',height:'auto',maxHeight:'none',overflow:'visible',display:'block',webkitLineClamp:'unset',webkitBoxOrient:'initial'});
+   document.body.appendChild(c);
+   const h=c.scrollHeight;
+   c.remove();
+   return h;
+ }
+ function sync(card){
+   const body=card.querySelector('.activity-clamp'),btn=card.querySelector('.activity-more');
+   if(!body||!btn)return;
+   const lh=parseFloat(getComputedStyle(body).lineHeight)||20;
+   const overflow=naturalHeight(body)>lh*3+3;
+   card.classList.toggle('home-comment-overflow',overflow);
+   if(!overflow){body.classList.remove('expanded');card.classList.remove('expanded');btn.hidden=true;}
+   else if(!body.classList.contains('expanded'))btn.hidden=false;
+ }
+ function syncAll(){document.querySelectorAll('#commentsPanel .home-comment-card.activity-card').forEach(sync)}
+ const obs=new MutationObserver(()=>requestAnimationFrame(syncAll));
+ const start=()=>{const panel=document.getElementById('commentsPanel');if(panel)obs.observe(panel,{childList:true,subtree:true});requestAnimationFrame(syncAll)};
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+ window.addEventListener('resize',()=>requestAnimationFrame(syncAll));
+ document.addEventListener('click',e=>{
+   if(e.target.closest('[data-home-tab="commentsPanel"],.home-tab'))setTimeout(syncAll,0);
+ },true);
+})();
+</script>
 </body></html>
 <style id="alex-cover-comment-position-20261009">
 /* Requested polish: slightly taller home covers without widening the cards. */
@@ -3589,5 +3628,55 @@ initAuth().catch(()=>{updateAuthUI(); if(!location.pathname.startsWith('/quan-ly
   };
   const obs=new MutationObserver(()=>requestAnimationFrame(()=>syncStoryCommentMore(document)));obs.observe(document.body,{childList:true,subtree:true});
   window.addEventListener('resize',()=>syncStoryCommentMore(document));requestAnimationFrame(()=>syncStoryCommentMore(document));
+})();
+</script>
+
+<style id="alex-home-feed-pagination-20261009">
+.home-feed-list-more{display:block;margin:18px auto 4px;padding:8px 16px;border:1px solid var(--line);border-radius:12px;background:var(--soft);color:var(--text);font:inherit;font-size:13px;cursor:pointer}
+</style>
+<script id="alex-home-feed-pagination-20261009-js">
+(function(){
+ let homeCommentLimit=6, homeReviewLimit=6;
+ function addMoreButton(feed,kind,total,shown,render){
+   if(shown>=total)return;
+   const b=document.createElement('button');
+   b.type='button'; b.className='home-feed-list-more'; b.textContent='Xem thêm';
+   b.onclick=function(e){e.preventDefault();e.stopPropagation(); if(kind==='comments')homeCommentLimit+=6;else homeReviewLimit+=6; render();};
+   feed.appendChild(b);
+ }
+ window.renderHomeComments=function(){
+   const panel=document.getElementById('commentsPanel');if(!panel)return;
+   const keys=Object.keys(comments).filter(key=>!key.startsWith('demo_')&&comments[key].length),rows=[];
+   keys.forEach(key=>commentList(key).forEach(comment=>rows.push({key,comment})));
+   rows.sort((a,b)=>(Date.parse(b.comment.createdAt)||0)-(Date.parse(a.comment.createdAt)||0));
+   panel.querySelector('.demo-label')?.classList.add('hidden');
+   const feed=panel.querySelector('.community-feed');if(!feed)return;
+   const shown=rows.slice(0,homeCommentLimit);
+   feed.innerHTML=shown.length?shown.map(({key,comment})=>{
+     const avatar=comment.avatar?'<img class="community-avatar" src="'+esc(comment.avatar)+'" alt="">':'<div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">'+esc(Array.from(comment.name||'T')[0])+'</div>';
+     const location=commentLocationHTML(key).replace('data-comment-location=', 'data-comment-id="'+esc(comment.id)+'" data-comment-location=');
+     return '<article class="community-card home-comment-card activity-card" data-home-comment-key="'+esc(key)+'" data-home-comment-id="'+esc(comment.id)+'"><div class="community-head">'+avatar+'<div class="community-meta"><strong>'+esc(comment.name||'Thành viên')+(isAdminComment(comment)?'<span class="admin-badge admin-badge-home">ADMIN</span>':'')+'</strong><span class="community-sub">'+commentTime(comment)+' · '+location+'</span></div></div>'+clampCardHTML(commentTextHTML(comment.text),'')+'</article>';
+   }).join(''):'<p class="muted panel-empty">Chưa có bình luận nào.</p>';
+   if(typeof setupActivityClamps==='function')setupActivityClamps(feed);
+   addMoreButton(feed,'comments',rows.length,shown.length,window.renderHomeComments);
+ }
+ window.renderHomeReviews=function(){
+   const panel=document.getElementById('reviewsPanel');if(!panel)return;
+   const rows=[];
+   for(const [storyId,list] of Object.entries(reviews||{}))for(const review of (list||[]))if(!isAdminReview(review))rows.push({storyId:Number(storyId),review});
+   rows.sort((a,b)=>(Date.parse(b.review.createdAt)||0)-(Date.parse(a.review.createdAt)||0));
+   panel.querySelector('.demo-label')?.classList.add('hidden');
+   const feed=panel.querySelector('.community-feed');if(!feed)return;
+   const shown=rows.slice(0,homeReviewLimit);
+   feed.innerHTML=shown.length?shown.map(({storyId,review})=>{
+     const story=stories.find(s=>Number(s.id)===Number(storyId));
+     const avatar=review.avatar?'<img class="community-avatar" src="'+esc(review.avatar)+'" alt="">':'<div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">'+esc(Array.from(review.name||'T')[0])+'</div>';
+     const body=review.html?safeReviewHTML(review.html):esc(review.text||'').replace(/\n/g,'<br>');
+     const storyBox=story?'<div class="home-review-story" onclick="openStory('+Number(story.id)+')" role="link" tabindex="0"><div class="home-review-story-cover">'+(story.cover?'<img src="'+esc(story.cover)+'" alt="Bìa '+esc(story.title)+'">':'Nhà có Alex')+'</div><div class="home-review-story-text"><span class="home-review-story-title">'+esc(story.title)+'</span><span class="home-review-story-author">Tác giả: '+esc(story.author||'')+'</span></div></div>':'';
+     return '<article class="community-card home-review-card"><div class="home-review-head"><div class="home-review-reader">'+avatar+'<div class="community-meta"><strong>'+esc(review.name||'Thành viên')+'</strong><span class="community-sub">'+commentTime(review)+'</span></div></div>'+storyBox+'</div><div class="community-body home-review-clamp" onclick="if(event.target.classList.contains(\'review-spoiler\'))toggleReviewSpoiler(event.target)">'+body+'</div><button class="home-review-more" type="button" onclick="toggleHomeReview(this)">Xem thêm</button></article>';
+   }).join(''):'<p class="muted panel-empty">Chưa có review nào.</p>';
+   requestAnimationFrame(()=>{feed.querySelectorAll('.home-review-card').forEach(card=>{const body=card.querySelector('.home-review-clamp'),btn=card.querySelector('.home-review-more');if(body&&btn)btn.hidden=body.scrollHeight<=body.clientHeight+2})});
+   addMoreButton(feed,'reviews',rows.length,shown.length,window.renderHomeReviews);
+ }
 })();
 </script>

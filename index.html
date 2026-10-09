@@ -1339,6 +1339,13 @@ body.purplenight .account-menu,body.purplenight .notif-panel{
   transition:background-color .22s ease, border-color .22s ease!important;
 }
 
+
+.comment-mention-link{
+  color:var(--accent)!important;
+  font-weight:650;
+  text-decoration:none;
+}
+.comment-mention-link:hover{text-decoration:underline}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Nhà có Alex V21.21 -->
@@ -2193,6 +2200,51 @@ function commentOwnerMenu(comment){
  if(!isOwnComment(comment)&&!canDeleteComment(comment))return '';
  return `<span class="comment-owner-menu"><button type="button" class="comment-more" data-comment-action="menu" aria-label="Tùy chọn bình luận">⋯</button><span class="comment-menu-pop">${isOwnComment(comment)?`<button type="button" data-comment-action="edit" data-comment-id="${esc(comment.id)}">Sửa</button>`:''}${canDeleteComment(comment)?`<button type="button" class="danger" data-comment-action="delete" data-comment-id="${esc(comment.id)}">Xóa</button>`:''}</span></span>`;
 }
+
+function mentionTokens(text){
+ return [...new Set((String(text||'').match(/(^|[\s(])@([a-zA-Z0-9_-]+)/g)||[])
+   .map(x=>(x.match(/@([a-zA-Z0-9_-]+)/)||[])[1])
+   .filter(Boolean)
+   .map(x=>slugify(x)))];
+}
+async function resolveMentionProfiles(text){
+ const wanted=mentionTokens(text);if(!wanted.length)return [];
+ const found=[];
+ for(let offset=0;offset<10000&&found.length<wanted.length;offset+=100){
+  const {data,error}=await sb.from('profiles').select('id,display_name').order('id').range(offset,offset+99);
+  if(error){console.warn('mention profile lookup',error);break}
+  for(const p of (data||[])){
+   const username=slugify(p.display_name||'');
+   if(wanted.includes(username)&&!found.some(x=>x.id===p.id))found.push({id:p.id,username,display_name:p.display_name||username});
+  }
+  if((data||[]).length<100)break;
+ }
+ return found;
+}
+function mentionHTML(text){
+ const raw=String(text||''), re=/(^|[\s(])@([a-zA-Z0-9_-]+)/g;
+ let out='',last=0,m;
+ while((m=re.exec(raw))){
+  out+=esc(raw.slice(last,m.index))+esc(m[1]);
+  const username=slugify(m[2]);
+  out+=`<a class="comment-mention-link" href="/user/${encodeURIComponent(username)}" data-user-profile="${esc(username)}">${esc(m[2])}</a>`;
+  last=m.index+m[0].length;
+ }
+ return out+esc(raw.slice(last));
+}
+async function sendCommentMentionNotifications(commentRow,text,context){
+ const profiles=await resolveMentionProfiles(text);
+ const targets=profiles.filter(p=>p.id&&p.id!==authUser?.id);
+ if(!targets.length)return;
+ const chapterId=cloudChapterMap[`${Number(context.story_id)}_${Number(context.chapter_index)}`]||null;
+ for(const p of targets){
+  const payload={user_id:p.id,actor_id:authUser.id,type:'mention',story_id:context.story_id,comment_id:commentRow.id,is_read:false};
+  if(chapterId)payload.chapter_id=chapterId;
+  const {error}=await sb.from('notifications').insert(payload);
+  if(error)console.warn('mention notification',error);
+ }
+}
+
 function commentMarkup(comment,key,list,headerExtra=''){
  const username=slugify(comment.username||comment.name)||'thanh-vien';
  const profileLink='/user/'+username, liked=!!authUser&&(comment.likedBy||[]).includes(authUser.id);
@@ -2201,7 +2253,7 @@ function commentMarkup(comment,key,list,headerExtra=''){
  return `<article class="comment-item" data-comment-id="${esc(comment.id)}">
   <a class="comment-avatar" href="${profileLink}" data-user-profile="${username}" aria-label="Hồ sơ ${esc(comment.name||'Thành viên')}">${avatar}</a>
   <div class="comment-main"><div class="comment-author-line"><a class="comment-author" href="${profileLink}" data-user-profile="${username}">${esc(comment.name||'Thành viên')}</a>${isAdminComment(comment)?'<span class="admin-badge">ADMIN</span>':''}${headerExtra}${commentOwnerMenu(comment)}</div>
-   <div class="comment-bubble">${target?`<span class="comment-reply-to">Trả lời ${esc(target.name)}</span>`:''}<p class="comment-text">${esc(comment.text)}</p></div>
+   <div class="comment-bubble">${target?`<span class="comment-reply-to">Trả lời ${esc(target.name)}</span>`:''}<p class="comment-text">${mentionHTML(comment.text)}</p></div>
    <div class="comment-meta"><button type="button" data-comment-action="like" data-comment-id="${esc(comment.id)}" aria-pressed="${liked}" aria-label="Thả tim bình luận của ${esc(comment.name)}">${liked?'♥':'♡'} <span>${Math.max(0,Number(comment.likes)||0)}</span></button><button type="button" data-comment-action="reply" data-comment-id="${esc(comment.id)}">Trả lời</button>${commentTime(comment)}${comment.editedAt?'<span class="comment-edited">· Đã chỉnh sửa</span>':''}</div>
   </div></article>`;
 }
@@ -3169,6 +3221,7 @@ async function insertCloudComment(key,text,extra={}){
   const c=cloudCommentContext(key), payload={user_id:authUser.id,content:text,scope:c.scope,story_id:c.story_id,chapter_index:c.chapter_index,paragraph_index:c.paragraph_index,parent_id:extra.parentId||null,reply_to_user_id:extra.replyToUserId||null};
   const {data,error}=await sb.from('comments').insert(payload).select('*').single();
   if(error){console.error(error);alert('Chưa lưu được bình luận lên tài khoản. Thử lại nha.');return null}
+  await sendCommentMentionNotifications(data,text,c);
   await loadCloudComments(); return data;
 }
 async function loadCloudReviews(){

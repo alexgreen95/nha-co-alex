@@ -1901,22 +1901,105 @@ function refreshStoryHeartStats(story){
  if(introStory&&String(introStory.id)===String(story.id))stats.push(document.querySelector('#introStats .stat:nth-child(2)'));
  for(const stat of stats)if(stat)stat.innerHTML=`${icon('heart')} ${formatStoryStat(storyLikeTotal(story))}`;
 }
-function renderChapterHeart(){const box=document.getElementById('chapterHeartRow');if(!box||!currentStory)return;const key=chapterLikeKey(currentStory.id,currentChapter),count=Number(chapterLikes[key])||0,on=likedChapters.includes(key);box.innerHTML=`<button class="chapter-heart-btn ${on?'liked':''}" type="button" onclick="toggleChapterLike()" aria-label="${on?'Bỏ tim':'Thả tim'} chương này">${icon('heart')} <span>${count}</span></button>`}
-async function toggleChapterLike(){
+// Chapter hearts: bounded public counts, account-scoped membership and stale-read guards.
+const chapterLikeVersions=new Map(),chapterLikeReadStamps=new Map(),chapterLikeMemberStamps=new Map();
+const chapterLikeFlights=new Map(),chapterLikeWrites=new Map(),chapterLikePendingWrites=new Map();
+let chapterLikeAccountId=null,chapterLikeEpoch=0,chapterLikeReadSerial=0;
+const chapterLikeMembership=new Set();
+function loadedChapterLikeKeys(){
+ const keys=new Map();
+ for(const st of stories)(st.chapters||[]).forEach((ch,i)=>{const id=Number(ch.id);if(Number.isSafeInteger(id)&&id>0){if(!keys.has(id))keys.set(id,[]);keys.get(id).push(chapterLikeKey(st.id,i))}});
+ return keys;
+}
+function loadedChapterLikeIds(){return [...loadedChapterLikeKeys().keys()].sort((a,b)=>a-b)}
+function projectChapterLikeMembership(){
+ likedChapters=stories.flatMap(st=>(st.chapters||[]).flatMap((ch,i)=>chapterLikeMembership.has(Number(ch.id))?[chapterLikeKey(st.id,i)]:[]));
+}
+function activateChapterLikeAccount(){
+ const uid=authUser?.id||null;
+ if(uid!==chapterLikeAccountId){chapterLikeAccountId=uid;chapterLikeEpoch++;chapterLikeMembership.clear();likedChapters=[];chapterLikeMemberStamps.clear()}
+ return {uid,epoch:chapterLikeEpoch};
+}
+function setChapterLikeCount(id,count,keys=loadedChapterLikeKeys()){
+ for(const key of keys.get(id)||[])chapterLikes[key]=count;
+}
+function currentChapterLikeCount(id){
+ for(const st of stories){const i=(st.chapters||[]).findIndex(ch=>Number(ch.id)===id);if(i!==-1)return Number(chapterLikes[chapterLikeKey(st.id,i)])||0}
+ return 0;
+}
+function chapterLikeVersion(id){return chapterLikeVersions.get(id)||0}
+function invalidateChapterLikeReads(id){chapterLikeVersions.set(id,chapterLikeVersion(id)+1)}
+function chapterLikeRpcBatch(kind,ids,account){
+ const versions=ids.map(chapterLikeVersion),scope=kind==='membership'?`${account.uid}:${account.epoch}`:'public';
+ const flightKey=JSON.stringify([kind,scope,ids,versions]);
+ if(chapterLikeFlights.has(flightKey))return chapterLikeFlights.get(flightKey);
+ const serial=++chapterLikeReadSerial,stamps=kind==='membership'?chapterLikeMemberStamps:chapterLikeReadStamps;
+ ids.forEach(id=>stamps.set(id,serial));
+ const job=(async()=>{
+  const {data,error}=await sb.rpc(kind==='membership'?'nca_my_chapter_likes':'nca_chapter_like_counts',{p_chapter_ids:ids});
+  if(error)throw error;
+  if(!Array.isArray(data))throw new Error('Invalid chapter like RPC response');
+  const wanted=new Set(ids),keys=loadedChapterLikeKeys(),loaded=new Set(keys.keys());
+  let values;
+  if(kind==='counts'){
+   values=new Map();
+   for(const row of data){const id=Number(row.chapter_id),count=Number(row.like_count);if(!wanted.has(id)||!Number.isSafeInteger(count)||count<0||values.has(id))throw new Error('Invalid chapter like counts');values.set(id,count)}
+  }else{
+   values=new Set(data.map(Number));if([...values].some(id=>!wanted.has(id)))throw new Error('Invalid chapter like membership');
+   activateChapterLikeAccount();
+   if(account.uid!==chapterLikeAccountId||account.epoch!==chapterLikeEpoch)return;
+  }
+  ids.forEach((id,i)=>{
+   if(!loaded.has(id)||chapterLikeVersion(id)!==versions[i]||stamps.get(id)!==serial||chapterLikePendingWrites.get(id))return;
+   if(kind==='counts'){if(values.has(id))setChapterLikeCount(id,values.get(id),keys)}
+   else{if(values.has(id))chapterLikeMembership.add(id);else chapterLikeMembership.delete(id)}
+  });
+  if(kind==='membership')projectChapterLikeMembership();
+ })().catch(error=>{console.warn('chapter like '+kind+' read',error)}).finally(()=>{chapterLikeFlights.delete(flightKey)});
+ chapterLikeFlights.set(flightKey,job);return job;
+}
+async function refreshChapterLikeState(requestedIds=loadedChapterLikeIds()){
+ const account=activateChapterLikeAccount(),loaded=new Set(loadedChapterLikeIds());
+ const ids=[...new Set(requestedIds.map(Number))].filter(id=>loaded.has(id)).sort((a,b)=>a-b),jobs=[];
+ for(let start=0;start<ids.length;start+=1000){const batch=ids.slice(start,start+1000);jobs.push(chapterLikeRpcBatch('counts',batch,account));if(account.uid)jobs.push(chapterLikeRpcBatch('membership',batch,account))}
+ await Promise.all(jobs);
+ renderChapterHeart();for(const st of stories)refreshStoryHeartStats(st);
+}
+function renderChapterHeart(){activateChapterLikeAccount();const box=document.getElementById('chapterHeartRow');if(!box||!currentStory)return;const key=chapterLikeKey(currentStory.id,currentChapter),count=Number(chapterLikes[key])||0,on=!!authUser&&likedChapters.includes(key);box.innerHTML=`<button class="chapter-heart-btn ${on?'liked':''}" type="button" onclick="toggleChapterLike()" aria-label="${on?'Bỏ tim':'Thả tim'} chương này">${icon('heart')} <span>${count}</span></button>`}
+function toggleChapterLike(){
  if(!currentStory)return;
  if(!authUser){requestCommentLogin('thả tim chương');return}
- const ch=currentStory.chapters?.[currentChapter],chapterId=Number(ch?.id),key=chapterLikeKey(currentStory.id,currentChapter);
- if(!Number.isFinite(chapterId)){console.warn('chapter like: missing cloud chapter id');return}
+ const account=activateChapterLikeAccount(),ch=currentStory.chapters?.[currentChapter],chapterId=Number(ch?.id),key=chapterLikeKey(currentStory.id,currentChapter);
+ if(!Number.isSafeInteger(chapterId)||chapterId<=0){console.warn('chapter like: missing cloud chapter id');return}
+ const writeKey=`${account.uid}:${chapterId}`;
+ if(chapterLikeWrites.has(writeKey))return chapterLikeWrites.get(writeKey);
  const on=likedChapters.includes(key);
- let result;
- if(on) result=await sb.from('chapter_likes').delete().eq('chapter_id',chapterId).eq('user_id',authUser.id);
- else result=await sb.from('chapter_likes').insert({chapter_id:chapterId,user_id:authUser.id});
- if(result.error){console.warn('chapter like cloud',result.error);return}
- if(on){likedChapters=likedChapters.filter(x=>x!==key);chapterLikes[key]=Math.max(0,(Number(chapterLikes[key])||0)-1)}
- else{likedChapters.push(key);chapterLikes[key]=(Number(chapterLikes[key])||0)+1}
- renderChapterHeart();
- if(introStory&&String(introStory.id)===String(currentStory.id)){introStory.likes=storyLikeTotal(currentStory);}
- refreshStoryHeartStats(currentStory);
+ invalidateChapterLikeReads(chapterId);
+ chapterLikePendingWrites.set(chapterId,(chapterLikePendingWrites.get(chapterId)||0)+1);
+ const job=(async()=>{
+  try{
+   const result=on?await sb.from('chapter_likes').delete().eq('chapter_id',chapterId).eq('user_id',account.uid).select('chapter_id')
+    :await sb.from('chapter_likes').insert({chapter_id:chapterId,user_id:account.uid});
+   activateChapterLikeAccount();
+   if(result.error){console.warn('chapter like cloud',result.error)}
+   else if(account.uid===chapterLikeAccountId&&account.epoch===chapterLikeEpoch){
+    // DELETE may succeed with zero affected rows; never subtract twice.
+    const changed=!on||(Array.isArray(result.data)&&result.data.length>0);
+    if(changed)setChapterLikeCount(chapterId,Math.max(0,currentChapterLikeCount(chapterId)+(on?-1:1)));
+    if(on)chapterLikeMembership.delete(chapterId);else chapterLikeMembership.add(chapterId);
+    projectChapterLikeMembership();
+    renderChapterHeart();for(const st of stories)refreshStoryHeartStats(st);
+   }
+  }catch(error){console.warn('chapter like cloud',error)}
+  finally{
+   invalidateChapterLikeReads(chapterId);
+   const pending=(chapterLikePendingWrites.get(chapterId)||1)-1;
+   if(pending)chapterLikePendingWrites.set(chapterId,pending);else chapterLikePendingWrites.delete(chapterId);
+  }
+  // Reconcile only this chapter, including duplicate INSERT/zero-row DELETE.
+  await refreshChapterLikeState([chapterId]);
+ })().finally(()=>{chapterLikeWrites.delete(writeKey)});
+ chapterLikeWrites.set(writeKey,job);return job;
 }
 function primaryGenreClass(name){
  const g=String(name||'').trim().toLowerCase();
@@ -2743,6 +2826,8 @@ async function syncProfile(u){
 }
 function updateAuthUI(){
  activateMemberSync();
+ activateChapterLikeAccount();
+ renderChapterHeart();
  const logged=!!authUser;
  document.getElementById('loginBtn').style.display=logged?'none':'inline-block';
  document.getElementById('memberArea').style.display=logged?'flex':'none';
@@ -2761,16 +2846,11 @@ async function fetchAllRows(table,orderCol,columns='*'){const out=[];for(let fro
 // V21.9 — cloud-first cover + public stats so incognito/other devices see the same values.
 async function refreshPublicStoryCloudFields(){
  try{
-   const [storyRows,,likeRows]=await Promise.all([
+   const [storyRows]=await Promise.all([
      fetchAllRows('stories','id'),
      refreshStoryViewCounts(stories.map(story=>story.id)),
-     fetchAllRows('chapter_likes','chapter_id','chapter_id,user_id').catch(()=>[])
+     refreshChapterLikeState()
    ]);
-   const chapterIdToKey={};
-   for(const st of stories){(st.chapters||[]).forEach((ch,i)=>{if(ch?.id!=null)chapterIdToKey[String(ch.id)]=chapterLikeKey(st.id,i)})}
-   chapterLikes={};
-   for(const r of likeRows||[]){const key=chapterIdToKey[String(r.chapter_id)];if(key)chapterLikes[key]=(chapterLikes[key]||0)+1}
-   likedChapters=authUser?(likeRows||[]).filter(r=>String(r.user_id)===String(authUser.id)).map(r=>chapterIdToKey[String(r.chapter_id)]).filter(Boolean):[];
    for(const st of stories){
      const r=(storyRows||[]).find(x=>String(x.id)===String(st.id));
      if(r){

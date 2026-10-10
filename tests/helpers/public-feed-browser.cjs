@@ -37,11 +37,19 @@ async function feedPage(readerReviewCount, options = {}) {
   Object.assign(fixtures,options.fixtures||{});
   await page.route('https://cdn.jsdelivr.net/**', route => route.fulfill({ status: 200, contentType: 'application/javascript', body: sdk }));
   await page.route('https://fonts.googleapis.com/**', route => route.fulfill({ status: 200, contentType: 'text/css', body: '' }));
-  await page.route(/^https:\/\/[^/]+\.supabase\.co\//, route => {
+  page.mockFixtures=fixtures;
+  await page.route(/^https:\/\/[^/]+\.supabase\.co\//, async route => {
     const url = new URL(route.request().url());
-    options.onRequest?.(url);
+    options.onRequest?.(url,route.request());
     const table = url.pathname.split('/').pop();
-    return route.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' }, body: JSON.stringify(fixtures[table] || []) });
+    let response=fixtures[table] || [];
+    if(table==='chapter_likes'&&route.request().method()==='GET'){const offset=Number(url.searchParams.get('offset')||0),limit=Number(url.searchParams.get('limit')||response.length);response=response.slice(offset,offset+limit)}
+    if(['nca_chapter_like_counts','nca_my_chapter_likes'].includes(table)&&!Object.hasOwn(fixtures,table)){
+      const ids=[...new Set(route.request().postDataJSON().p_chapter_ids)],likes=fixtures.chapter_likes||[];
+      if(table==='nca_chapter_like_counts')response=ids.filter(id=>fixtures.chapters.some(c=>Number(c.id)===id)).map(id=>({chapter_id:id,like_count:likes.filter(l=>Number(l.chapter_id)===id).length}));
+      else{const uid=await page.evaluate(()=>authUser?.id);response=ids.filter(id=>likes.some(l=>Number(l.chapter_id)===id&&l.user_id===uid))}
+    }
+    return route.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' }, body: JSON.stringify(response) });
   });
   await page.route('**/api/gate-check', route => route.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' }));
   if(options.initScript)await page.addInitScript(options.initScript);

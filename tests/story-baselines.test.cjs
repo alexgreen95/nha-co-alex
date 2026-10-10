@@ -55,7 +55,7 @@ test('normal real view +1, RPC fallback and cached requests preserve Step 1 tota
 });
 test('signed-in chapter like/unlike changes only real count; every story stat updates, no story_likes',async()=>{
  const {page}=await setup();const calls=[];try{
-  await page.route('**/rest/v1/chapter_likes**',async route=>{const req=route.request();calls.push({method:req.method(),query:new URL(req.url()).search,body:req.postData()?req.postDataJSON():null});await route.fulfill({status:200,headers,contentType:'application/json',body:'[]'})});
+  await page.route('**/rest/v1/chapter_likes**',async route=>{const req=route.request();calls.push({method:req.method(),query:new URL(req.url()).search,body:req.postData()?req.postDataJSON():null});let affected=[];if(req.method()==='POST')page.mockFixtures.chapter_likes.push(req.postDataJSON());else if(req.method()==='DELETE'){affected=page.mockFixtures.chapter_likes.splice(0).map(r=>({chapter_id:r.chapter_id}))}await route.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify(affected)})});
   await page.evaluate(A=>{authUser={id:A};activateMemberSync();openStory(1);saved=[1];renderSaved();renderProfileStoryShelf('saved');currentStory=stories[0];currentChapter=0;renderChapterHeart()},A);
   await page.evaluate(()=>toggleChapterLike());assert.equal((await summary(page)).total,1051);assert.deepEqual((await summary(page)).liked,['1_0']);
   assert.equal((await page.locator('#chapterHeartRow button span').textContent()).trim(),'1');

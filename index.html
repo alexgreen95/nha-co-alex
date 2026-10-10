@@ -2144,7 +2144,7 @@ function renderChapter(restoreScroll=0){
  const ongoing=s.status!=='completed';
  tbc.classList.toggle('hidden',!(isLast&&ongoing));
  renderToc();
- progress[s.id]={chapter:currentChapter,scroll:restoreScroll||0};save();
+ setReadingProgress(s.id,currentChapter,restoreScroll||0);
  requestAnimationFrame(()=>window.scrollTo(0,restoreScroll||0));
 }
 async function moveChapter(n){
@@ -2153,7 +2153,7 @@ async function moveChapter(n){
  if(next<0||next>=currentStory.chapters.length)return;
  currentChapter=next;
  setRoute(chapterPath(currentStory,currentChapter));
- progress[currentStory.id]={chapter:currentChapter,scroll:0};save();
+ setReadingProgress(currentStory.id,currentChapter,0);
  // V21.17: chương được tải lazy từ Supabase, nên phải đợi nội dung cloud trước khi render.
  await ensureChapterContent(currentStory,currentChapter);
  await recordStoryView(currentStory.id);
@@ -2167,7 +2167,7 @@ async function goChapter(i){
  if(!currentStory||i<0||i>=currentStory.chapters.length)return;
  currentChapter=i;
  setRoute(chapterPath(currentStory,i));
- progress[currentStory.id]={chapter:i,scroll:0};save();
+ setReadingProgress(currentStory.id,i,0);
  toggleToc(false);
  // V21.17: chọn chương từ mục lục cũng phải tải paragraph từ Supabase trước.
  await ensureChapterContent(currentStory,i);
@@ -2723,6 +2723,7 @@ async function syncProfile(u){
  memberProfile=data||row; return memberProfile;
 }
 function updateAuthUI(){
+ activateMemberSync();
  const logged=!!authUser;
  document.getElementById('loginBtn').style.display=logged?'none':'inline-block';
  document.getElementById('memberArea').style.display=logged?'flex':'none';
@@ -3379,7 +3380,11 @@ window.addEventListener('scroll',()=>{
  document.getElementById('topBtn').style.display=window.scrollY>350?'grid':'none';
  if(currentStory){
   clearTimeout(saveScrollTimer);
-  saveScrollTimer=setTimeout(()=>{progress[currentStory.id]={chapter:currentChapter,scroll:window.scrollY};save()},120);
+  const story=currentStory,chapter=currentChapter,scroll=window.scrollY,owner=authUser?.id||null;
+  saveScrollTimer=setTimeout(()=>{
+   if(currentStory!==story||currentChapter!==chapter||(authUser?.id||null)!==owner)return;
+   setReadingProgress(story.id,chapter,scroll);
+  },120);
  }
 });
 document.addEventListener('contextmenu',e=>{if(e.target.closest('.chapter'))e.preventDefault()});
@@ -3504,24 +3509,75 @@ async function loadCloudReviews(){
   reviews=next;renderHomeReviews();if(introStory)renderStoryReviews();
 }
 let cloudChapterMap={};
-async function loadCloudChapterMap(){
-  const {data,error}=await sb.from('chapters').select('id,story_id,chapter_number');
-  if(error){console.warn('chapter map sync',error);return}
-  cloudChapterMap={};
-  for(const c of (data||[])){
-    const idx=Math.max(0,Number(c.chapter_number||1)-1);
-    cloudChapterMap[`${Number(c.story_id)}_${idx}`]=Number(c.id);
+// Account-scoped, memory-only queues. No cross-device newest-wins claim.
+const memberSyncAccounts=new Map();
+let memberSyncOwner=null;
+function activateMemberSync(){
+ const owner=authUser?.id||null;
+ if(owner!==memberSyncOwner){
+  const old=memberSyncAccounts.get(memberSyncOwner);
+  if(old){old.epoch++;clearTimeout(old.progressTimer);clearTimeout(old.savedTimer);old.controller.abort();old.dirty.clear();old.savedDirty.clear();}
+  if(memberSyncOwner||owner){progress={};saved=[];}
+  memberSyncOwner=owner;cloudSyncReady=false;clearTimeout(saveScrollTimer);
+  if(owner){
+   let state=memberSyncAccounts.get(owner);
+   if(!state){state={owner,epoch:0,generation:0,dirty:new Map(),base:new Map(),savedDirty:new Map(),savedBase:new Set(),savedAck:new Map(),progressFlight:null,savedFlight:null,sending:new Set()};memberSyncAccounts.set(owner,state);}
+   state.controller=new AbortController();state.progressReady=false;state.savedReady=false;state.loadGeneration=0;state.firstDirty=0;
   }
+ }
+ return owner?memberSyncAccounts.get(owner):null;
+}
+function memberSyncCurrent(state,epoch){return !!state&&authUser?.id===state.owner&&memberSyncOwner===state.owner&&state.epoch===epoch}
+function sameReadingPosition(a,b){return !!a&&!!b&&a.chapter===b.chapter&&Math.round(a.scroll)===Math.round(b.scroll)}
+function setReadingProgress(storyId,chapter,scroll){
+ const state=activateMemberSync(),sid=Number(storyId),value={chapter:Math.max(0,Number(chapter)||0),scroll:Math.max(0,Number(scroll)||0)};
+ progress[sid]=value;
+ if(!state)return;
+ const previous=state.dirty.get(sid)||state.base.get(sid);
+ if(sameReadingPosition(previous,value))return;
+ if(!state.sending.has(sid)&&sameReadingPosition(state.base.get(sid),value))state.dirty.delete(sid);
+ else state.dirty.set(sid,{...value,generation:++state.generation});
+ queueCloudMemberState();
+}
+function queueCloudMemberState(){
+ const state=activateMemberSync();if(!state||!state.progressReady||!state.dirty.size)return;
+ if(!state.firstDirty)state.firstDirty=Date.now();
+ clearTimeout(state.progressTimer);const epoch=state.epoch;
+ state.progressTimer=setTimeout(()=>{if(memberSyncCurrent(state,epoch))saveCloudMemberState(state)},Math.max(0,Math.min(450,3000-(Date.now()-state.firstDirty))));
+}
+function queueSavedStoryState(state=activateMemberSync()){
+ if(!state||!state.savedReady||!state.savedDirty.size)return;
+ clearTimeout(state.savedTimer);const epoch=state.epoch;
+ state.savedTimer=setTimeout(()=>{if(memberSyncCurrent(state,epoch))saveCloudSavedStories(state)},450);
+}
+async function loadCloudChapterMap(){
+  let data;try{data=await fetchAllRows('chapters','id','id,story_id,chapter_number')}catch(error){console.warn('chapter map sync',error);return}
+  const next={};
+  for(const c of data||[]){
+    const idx=Math.max(0,Number(c.chapter_number||1)-1);
+    next[`${Number(c.story_id)}_${idx}`]=Number(c.id);
+  }
+  cloudChapterMap=next;
 }
 async function loadCloudMemberState(){
-  if(!authUser)return;
+  const state=activateMemberSync();if(!state)return;
+  const epoch=state.epoch,load=++state.loadGeneration,signal=state.controller.signal,startGeneration=state.generation;
+  const protectProgress=new Set(state.dirty.keys()),protectSaved=new Set(state.savedDirty.keys());
   await loadCloudChapterMap();
+  if(!memberSyncCurrent(state,epoch)||load!==state.loadGeneration)return;
   const [savedRes,progressRes]=await Promise.all([
-    sb.from('saved_stories').select('story_id').eq('user_id',authUser.id),
-    sb.from('reading_progress').select('story_id,chapter_id,scroll_position,updated_at').eq('user_id',authUser.id)
+    sb.from('saved_stories').select('story_id').eq('user_id',state.owner).abortSignal(signal),
+    sb.from('reading_progress').select('story_id,chapter_id,scroll_position,updated_at').eq('user_id',state.owner).abortSignal(signal)
   ]);
+  if(!memberSyncCurrent(state,epoch)||load!==state.loadGeneration)return;
   if(savedRes.error)console.warn('saved stories sync',savedRes.error);
-  else saved=(savedRes.data||[]).map(r=>Number(r.story_id)).filter(Number.isFinite);
+  else{
+    state.savedBase=new Set((savedRes.data||[]).map(r=>Number(r.story_id)).filter(Number.isFinite));
+    for(const [id,value] of state.savedAck)if(value.generation>startGeneration||protectSaved.has(id))value.wanted?state.savedBase.add(id):state.savedBase.delete(id);
+    const next=new Set(state.savedBase);
+    for(const [id,change] of state.savedDirty)change.wanted?next.add(id):next.delete(id);
+    saved=[...next];state.savedReady=true;
+  }
   if(progressRes.error)console.warn('reading progress sync',progressRes.error);
   else{
     const reverse=Object.fromEntries(Object.entries(cloudChapterMap).map(([k,v])=>[String(v),k]));
@@ -3529,41 +3585,77 @@ async function loadCloudMemberState(){
     for(const r of (progressRes.data||[])){
       const sid=Number(r.story_id);
       const key=reverse[String(r.chapter_id)]||'';
-      const ci=key?Number(key.split('_').pop()):0;
+      const actual=stories.find(s=>s.id===sid)?.chapters.findIndex(c=>String(c.id)===String(r.chapter_id));
+      const ci=actual>=0?actual:(key?Number(key.split('_').pop()):0);
       next[sid]={chapter:Number.isFinite(ci)?ci:0,scroll:Number(r.scroll_position)||0};
     }
+    // A load started before a write must not replace a newer local position.
+    for(const [id,value] of state.base)if(value.generation>startGeneration||protectProgress.has(id))next[id]=value;
+    state.base=new Map(Object.entries(next).map(([id,value])=>[Number(id),value]));
+    for(const [id,value] of state.dirty)next[id]={chapter:value.chapter,scroll:value.scroll};
     progress=next;
+    state.progressReady=true;
   }
-  
-  
   render();
+  queueCloudMemberState();queueSavedStoryState(state);
 }
-async function saveCloudMemberState(){
-  if(!authUser)return;
-  if(!Object.keys(cloudChapterMap).length)await loadCloudChapterMap();
-  const wanted=[...new Set(saved.map(Number).filter(Number.isFinite))];
-  const currentRes=await sb.from('saved_stories').select('story_id').eq('user_id',authUser.id);
-  if(!currentRes.error){
-    const current=(currentRes.data||[]).map(r=>Number(r.story_id));
-    const add=wanted.filter(id=>!current.includes(id));
-    const remove=current.filter(id=>!wanted.includes(id));
-    if(add.length){const r=await sb.from('saved_stories').insert(add.map(story_id=>({story_id,user_id:authUser.id})));if(r.error)console.warn('save story insert',r.error)}
-    if(remove.length){const r=await sb.from('saved_stories').delete().eq('user_id',authUser.id).in('story_id',remove);if(r.error)console.warn('save story delete',r.error)}
-  }else console.warn('saved stories read',currentRes.error);
-  for(const [sidRaw,pr] of Object.entries(progress||{})){
-    const story_id=Number(sidRaw),chapterIndex=Math.max(0,Number(pr?.chapter)||0),chapter_id=cloudChapterMap[`${story_id}_${chapterIndex}`];
-    if(!Number.isFinite(story_id)||!chapter_id)continue;
-    const row={story_id,user_id:authUser.id,chapter_id,scroll_position:Math.max(0,Math.round(Number(pr?.scroll)||0)),updated_at:new Date().toISOString()};
-    const existing=await sb.from('reading_progress').select('story_id').eq('user_id',authUser.id).eq('story_id',story_id).maybeSingle();
-    let r;
-    if(existing.data)r=await sb.from('reading_progress').update(row).eq('user_id',authUser.id).eq('story_id',story_id);
-    else r=await sb.from('reading_progress').insert(row);
-    if(r.error)console.warn('reading progress save',r.error);
+function saveCloudMemberState(state=activateMemberSync()){
+ if(!state||!memberSyncCurrent(state,state.epoch)||!state.progressReady)return Promise.resolve();
+ if(state.progressFlight)return state.progressFlight;
+ clearTimeout(state.progressTimer);state.firstDirty=0;
+ const epoch=state.epoch,signal=state.controller.signal;
+ state.progressFlight=(async()=>{
+  while(memberSyncCurrent(state,epoch)&&state.dirty.size){
+   const batch=[...state.dirty.entries()].slice(0,100),rows=[];
+   for(const [id,value] of batch){
+    const chapter_id=stories.find(s=>s.id===id)?.chapters[value.chapter]?.id||cloudChapterMap[`${id}_${value.chapter}`];
+    if(chapter_id)rows.push({story_id:id,user_id:state.owner,chapter_id:Number(chapter_id),scroll_position:Math.round(value.scroll),updated_at:new Date().toISOString()});
+   }
+   if(!rows.length)break; // Retain unknown chapter IDs; a later load/change retries.
+   state.sending=new Set(rows.map(r=>r.story_id));
+   const {error}=await sb.from('reading_progress').upsert(rows,{onConflict:'story_id,user_id'}).abortSignal(signal);
+   if(!memberSyncCurrent(state,epoch))return;
+   if(error){console.warn('reading progress save',error);break;}
+   for(const row of rows){
+    const value=batch.find(([id])=>id===row.story_id)[1];state.base.set(row.story_id,{chapter:value.chapter,scroll:value.scroll,generation:value.generation});
+    if(state.dirty.get(row.story_id)?.generation===value.generation)state.dirty.delete(row.story_id);
+   }
+   state.sending.clear();
+   if(rows.length<batch.length)break;
   }
+ })().catch(error=>{if(memberSyncCurrent(state,epoch))console.warn('reading progress save',error)}).finally(()=>{state.progressFlight=null;state.sending.clear();if(memberSyncCurrent(state,state.epoch)&&state.progressReady&&state.dirty.size){const retryEpoch=state.epoch;state.firstDirty=Date.now();clearTimeout(state.progressTimer);state.progressTimer=setTimeout(()=>{if(memberSyncCurrent(state,retryEpoch))saveCloudMemberState(state)},3000)}});
+ return state.progressFlight;
 }
-function queueCloudMemberState(){if(!authUser||!cloudSyncReady)return;clearTimeout(cloudStateTimer);cloudStateTimer=setTimeout(saveCloudMemberState,450)}
+function saveCloudSavedStories(state=activateMemberSync()){
+ if(!state||!memberSyncCurrent(state,state.epoch)||!state.savedReady)return Promise.resolve();
+ if(state.savedFlight)return state.savedFlight;
+ clearTimeout(state.savedTimer);const epoch=state.epoch,signal=state.controller.signal;
+ state.savedFlight=(async()=>{
+  while(memberSyncCurrent(state,epoch)&&state.savedDirty.size){
+   const batch=[...state.savedDirty.entries()].slice(0,100);
+   for(const wanted of [true,false]){
+    const items=batch.filter(([,value])=>value.wanted===wanted);if(!items.length)continue;
+    if(!memberSyncCurrent(state,epoch))return;
+    const payload=items.map(([story_id])=>({story_id,user_id:state.owner}));
+    const query=wanted?sb.from('saved_stories').insert(payload):sb.from('saved_stories').delete().eq('user_id',state.owner).in('story_id',items.map(([id])=>id));
+    let {error}=await query.abortSignal(signal);
+    if(!memberSyncCurrent(state,epoch))return;
+    if(wanted&&error?.code==='23505'){
+     // Confirm only touched IDs after a concurrent insert/response-loss retry.
+     const existing=await sb.from('saved_stories').select('story_id').eq('user_id',state.owner).in('story_id',items.map(([id])=>id)).abortSignal(signal);
+     if(!memberSyncCurrent(state,epoch))return;
+     error=existing.error;
+     if(!error){const have=new Set((existing.data||[]).map(r=>Number(r.story_id))),missing=payload.filter(r=>!have.has(r.story_id));if(missing.length){({error}=await sb.from('saved_stories').insert(missing).abortSignal(signal));if(!memberSyncCurrent(state,epoch))return;}}
+    }
+    if(error){console.warn('saved story save',error);return;}
+    for(const [id,value] of items){wanted?state.savedBase.add(id):state.savedBase.delete(id);state.savedAck.set(id,value);if(state.savedDirty.get(id)?.generation===value.generation)state.savedDirty.delete(id);}
+   }
+  }
+ })().catch(error=>{if(memberSyncCurrent(state,epoch))console.warn('saved story save',error)}).finally(()=>{state.savedFlight=null;if(memberSyncCurrent(state,state.epoch)&&state.savedReady&&state.savedDirty.size){const retryEpoch=state.epoch;clearTimeout(state.savedTimer);state.savedTimer=setTimeout(()=>{if(memberSyncCurrent(state,retryEpoch))saveCloudSavedStories(state)},3000)}});
+ return state.savedFlight;
+}
 const localSaveV179=save;
-save=function(){localSaveV179();queueCloudMemberState()};
+save=function(){localSaveV179()}; // Admin/legacy saves do not dirty reading history.
 const syncProfileV179=syncProfile;
 syncProfile=async function(u){
  await syncProfileV179(u);
@@ -3588,7 +3680,11 @@ toggleCommentLike=async function(key,id){if(!authUser){requestCommentLogin('th�
 submitStoryReview=async function(event){event.preventDefault();if(!introStory||!authUser)return;const ed=document.getElementById('storyReviewEditor'),html=safeReviewHTML(ed?.innerHTML||''),text=(ed?.innerText||'').trim();if(!text)return;const mine=myStoryReview();let q;if(mine)q=sb.from('reviews').update({content:text,content_html:html,edited_at:new Date().toISOString()}).eq('id',mine.id).eq('user_id',authUser.id);else q=sb.from('reviews').insert({story_id:introStory.id,user_id:authUser.id,content:text,content_html:html});const {error}=await q;if(error){console.error(error);alert('Chưa lưu được review lên tài khoản. Thử lại nha.');return}reviewComposerOpen=false;await loadCloudReviews();};
 deleteStoryReview=async function(id){if(!introStory||!authUser||!confirm('Xóa review này nha?'))return;const {error}=await sb.from('reviews').delete().eq('id',id).eq('user_id',authUser.id);if(error){alert('Chưa xóa được review.');return}await loadCloudReviews();};
 const toggleSaveV179=toggleSave;
-toggleSave=function(id){toggleSaveV179(id);queueCloudMemberState()};
+toggleSave=function(id){
+ const state=activateMemberSync();toggleSaveV179(id);if(!state)return;
+ const sid=Number(id),wanted=saved.includes(id);
+ state.savedDirty.set(sid,{wanted,generation:++state.generation});queueSavedStoryState(state);
+};
 
 console.info('Nhà có Alex V21.16 · Robust lazy chapter loading from Supabase');
 render();

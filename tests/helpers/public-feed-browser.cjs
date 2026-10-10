@@ -43,6 +43,17 @@ async function feedPage(readerReviewCount, options = {}) {
     options.onRequest?.(url,route.request());
     const table = url.pathname.split('/').pop();
     let response=fixtures[table] || [];
+    if(table.startsWith('nca_')&&!Object.hasOwn(fixtures,table)){
+      const body=route.request().postDataJSON()||{},rows=fixtures.comments||[],likes=fixtures.comment_likes||[];
+      if(table==='nca_story_comment_counts')response=[...new Set(body.p_story_ids)].filter(id=>fixtures.stories.some(s=>String(s.id)===String(id))).map(id=>({story_id:Number(id),comment_count:rows.filter(c=>String(c.story_id)===String(id)).length}));
+      if(table==='nca_profile_comment_count')response=rows.filter(c=>c.user_id===body.p_user_id).length;
+      if(table==='nca_chapter_comment_counts'){
+        const context=rows.filter(c=>String(c.story_id)===String(body.p_story_id)&&c.chapter_index===body.p_chapter_index);
+        response={story_id:Number(body.p_story_id),chapter_index:body.p_chapter_index,chapter_comment_count:context.filter(c=>c.scope==='chapter').length,paragraph_counts:[...new Set(body.p_paragraph_indices)].map(pi=>({paragraph_index:pi,comment_count:context.filter(c=>(c.scope==='paragraph'||c.scope==null)&&c.paragraph_index===pi).length}))};
+      }
+      if(table==='nca_comment_like_counts')response=[...new Set(body.p_comment_ids)].filter(id=>rows.some(c=>String(c.id)===String(id))).map(id=>({comment_id:Number(id),like_count:likes.filter(l=>String(l.comment_id)===String(id)).length}));
+      if(table==='nca_my_comment_likes'){const uid=await page.evaluate(()=>authUser?.id);response=[...new Set(body.p_comment_ids)].filter(id=>likes.some(l=>String(l.comment_id)===String(id)&&l.user_id===uid)).map(Number)}
+    }
     if(table==='chapter_likes'&&route.request().method()==='GET'){const offset=Number(url.searchParams.get('offset')||0),limit=Number(url.searchParams.get('limit')||response.length);response=response.slice(offset,offset+limit)}
     if(['nca_chapter_like_counts','nca_my_chapter_likes'].includes(table)&&!Object.hasOwn(fixtures,table)){
       const ids=[...new Set(route.request().postDataJSON().p_chapter_ids)],likes=fixtures.chapter_likes||[];
@@ -58,4 +69,6 @@ async function feedPage(readerReviewCount, options = {}) {
   return page;
 }
 
-module.exports={startBrowser,stopBrowser,feedPage};
+// Core optimization regressions account for Step 5B reads separately.
+function isCommentEnrichmentRpc(url){return ['nca_story_comment_counts','nca_chapter_comment_counts','nca_profile_comment_count','nca_comment_like_counts','nca_my_comment_likes'].includes(url.pathname.split('/').pop())}
+module.exports={startBrowser,stopBrowser,feedPage,isCommentEnrichmentRpc};

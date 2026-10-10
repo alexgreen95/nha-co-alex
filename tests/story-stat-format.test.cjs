@@ -7,7 +7,7 @@ test('all requested examples use K/M with at most two decimals and no trailing z
  }finally{await page.close()}
 });
 test('all story displays and DOM refresh format only presentation; chapter/comment count stays integer; numeric sort unchanged',async()=>{
- const traffic=[];const page=await feedPage(0,{onRequest:u=>traffic.push(u)});try{
+ const traffic=[],countBodies=[];const page=await feedPage(0,{onRequest:(u,r)=>{traffic.push(u);if(u.pathname.endsWith('/nca_story_comment_counts'))countBodies.push(r.postDataJSON())}});try{
   const initialRequests=traffic.length;
   await page.evaluate(()=>{const s=stories[0];s.views=1270000;s.baselineViews=1270000;s.baselineLikes=5290;chapterLikes['1_0']=1001;openStory(1);saved=[1];render();renderSaved();renderProfileStoryShelf('saved');currentStory=s;currentChapter=0;renderChapterHeart()});
   const viewSelectors=['#stories .stat:first-child','#introStats .stat:first-child','#saved .stat:first-child','.profile-story-stats span:first-child'];
@@ -20,8 +20,17 @@ test('all story displays and DOM refresh format only presentation; chapter/comme
   for(const sel of viewSelectors)assert.equal((await page.locator(sel).textContent()).trim(),'4.55M');
   for(const sel of heartSelectors)assert.equal((await page.locator(sel).textContent()).trim(),'5.29K');
   assert.deepEqual(await page.evaluate(()=>({views:stories[0].views,baseline:stories[0].baselineLikes,likes:storyLikeTotal(stories[0])})),{views:4550021,baseline:5290,likes:5290});
+  assert.equal(traffic.length,initialRequests,'Formatting and cached-story DOM refresh must add no request');
+  const beforeNewStory=traffic.length,beforeCountBodies=countBodies.length;
+  const countResponse=page.waitForResponse(r=>r.url().includes('/nca_story_comment_counts')&&r.request().method()==='POST');
   const ordered=await page.evaluate(()=>{stories[0].views=10001;stories.push({...stories[0],id:2,title:'Other',views:10004});storyFilter.views='views_desc';render();return [...document.querySelectorAll('#stories .story-card')].map(el=>({id:el.getAttribute('onclick'),display:el.querySelector('.stat').textContent.trim()}))});
   assert.deepEqual(ordered,[{id:'openStory(2)',display:'10K'},{id:'openStory(1)',display:'10K'}]);
-  assert.equal(traffic.length,initialRequests,'Formatting/rendering must add no request');assert.deepEqual(page.errors,[]);
+  await countResponse;await page.waitForLoadState('networkidle');
+  assert.equal(traffic.length-beforeNewStory,1,'Uncached story render requests only its authoritative comment count');
+  assert.equal(traffic.at(-1).pathname.split('/').pop(),'nca_story_comment_counts');
+  assert.deepEqual(countBodies.slice(beforeCountBodies).map(b=>b.p_story_ids),[['2']]);
+  const beforePureFormat=traffic.length;
+  assert.deepEqual(await page.evaluate(()=>[formatStoryStat(10001),formatStoryStat(1270000)]),['10K','1.27M']);
+  assert.equal(traffic.length,beforePureFormat,'Compact formatter itself is pure');assert.deepEqual(page.errors,[]);
  }finally{await page.close()}
 });

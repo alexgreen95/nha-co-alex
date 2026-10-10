@@ -1801,7 +1801,8 @@ function icon(type){
  return `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${p[type]}</svg>`;
 }
 function storyCommentCount(s){
- return storyCommentKeys(s).reduce((n,key)=>n+(comments[key]||[]).length,0);
+ queueCommentCounts('story',s.id);
+ return commentStats.stories.get(String(s.id))??'…';
 }
 function slugify(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/đ/g,'d').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
 function storyPath(story){return '/truyen/'+slugify(story.title)}
@@ -2059,7 +2060,7 @@ function primaryGenreClass(name){
 function card(s){
  const hasProgress=progress[s.id] && (progress[s.id].chapter>0 || progress[s.id].scroll>80);
  return `<div class="card story-card clickable-story" onclick="openStory(${s.id})"><div class="story-cover">${s.cover?`<img src="${esc(s.cover)}" alt="Bìa ${esc(s.title)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`:`Nhà có Alex<br>${esc(s.title)}`}</div><div class="story-info"><h3 class="story-title-link" title="${esc(s.title)}"><span>${esc(s.title)}</span></h3><div class="muted">${esc(s.author)}</div><div class="genre ${primaryGenreClass(s.mainGenre||s.genre)}">${esc(s.mainGenre||s.genre)}</div><div class="meta-row"><span class="meta-pill ${s.status==='completed'?'status-done':'status-ongoing'}">${s.status==='completed'?'✓ Đã hoàn thành':'◷ Đang làm'}</span></div>
- <div class="stats"><span class="stat">${icon('eye')} ${formatStoryStat(s.views)}</span><span class="stat">${icon('heart')} ${formatStoryStat(storyLikeTotal(s))}</span><span class="stat">${icon('comment')} ${storyCommentCount(s)}</span></div>
+ <div class="stats"><span class="stat">${icon('eye')} ${formatStoryStat(s.views)}</span><span class="stat">${icon('heart')} ${formatStoryStat(storyLikeTotal(s))}</span><span class="stat">${icon('comment')} <bdi data-story-comment-count="${s.id}">${storyCommentCount(s)}</bdi></span></div>
  <div class="story-actions"><button class="btn" onclick="event.stopPropagation();${hasProgress?`read(${s.id})`:`openStory(${s.id})`}">${hasProgress?'Đọc tiếp':'Đọc'}</button> <button class="btn" onclick="event.stopPropagation();toggleSave(${s.id})">${saved.includes(s.id)?'★ Đã lưu':'☆ Lưu'}</button></div></div></div>`;
 }
 function render(){
@@ -2083,7 +2084,7 @@ document.addEventListener('click',e=>{if(!e.target.closest('.sort-wrap'))documen
 let introStory=null;
 function renderStoryIntroMetadata(s){
  const id=s.id;
- document.getElementById('introTitle').textContent=s.title;document.getElementById('introAuthor').textContent='Tác giả: '+s.author;document.getElementById('introGenre').textContent=s.mainGenre||s.genre;document.getElementById('introStatus').textContent=s.status==='completed'?'Đã hoàn thành':'Đang làm';document.getElementById('introSubtags').innerHTML=(s.subtags||[]).map(t=>`<span class="intro-subtag">${esc(t)}</span>`).join('');const introSummaryEl=document.getElementById('introSummary');introSummaryEl.textContent=s.summary||'';introSummaryEl.style.whiteSpace='pre-line';introSummaryEl.style.display=s.summary?'':'none';document.getElementById('introStats').innerHTML=`<span class="stat">${icon('eye')} ${formatStoryStat(s.views)}</span><span class="stat">${icon('heart')} ${formatStoryStat(storyLikeTotal(s))}</span><span class="stat">${icon('comment')} ${storyCommentCount(s)}</span>`;document.getElementById('introCover').innerHTML=s.cover?`<img src="${esc(s.cover)}" alt="Bìa ${esc(s.title)}">`:`Nhà có Alex<br>${esc(s.title)}`;let pr=progress[id];document.getElementById('introReadBtn').textContent=pr?'Đọc tiếp · '+s.chapters[Math.min(pr.chapter||0,s.chapters.length-1)].title.split(':')[0]:'Bắt đầu đọc';document.getElementById('introSaveBtn').textContent=saved.includes(id)?'★ Đã lưu':'☆ Lưu truyện';document.getElementById('introChapters').innerHTML=s.chapters.map((c,i)=>`<button onclick="read(${s.id},${i})">${esc(c.title)}</button>`).join('');
+ document.getElementById('introTitle').textContent=s.title;document.getElementById('introAuthor').textContent='Tác giả: '+s.author;document.getElementById('introGenre').textContent=s.mainGenre||s.genre;document.getElementById('introStatus').textContent=s.status==='completed'?'Đã hoàn thành':'Đang làm';document.getElementById('introSubtags').innerHTML=(s.subtags||[]).map(t=>`<span class="intro-subtag">${esc(t)}</span>`).join('');const introSummaryEl=document.getElementById('introSummary');introSummaryEl.textContent=s.summary||'';introSummaryEl.style.whiteSpace='pre-line';introSummaryEl.style.display=s.summary?'':'none';document.getElementById('introStats').innerHTML=`<span class="stat">${icon('eye')} ${formatStoryStat(s.views)}</span><span class="stat">${icon('heart')} ${formatStoryStat(storyLikeTotal(s))}</span><span class="stat">${icon('comment')} <bdi data-story-comment-count="${s.id}">${storyCommentCount(s)}</bdi></span>`;document.getElementById('introCover').innerHTML=s.cover?`<img src="${esc(s.cover)}" alt="Bìa ${esc(s.title)}">`:`Nhà có Alex<br>${esc(s.title)}`;let pr=progress[id];document.getElementById('introReadBtn').textContent=pr?'Đọc tiếp · '+s.chapters[Math.min(pr.chapter||0,s.chapters.length-1)].title.split(':')[0]:'Bắt đầu đọc';document.getElementById('introSaveBtn').textContent=saved.includes(id)?'★ Đã lưu':'☆ Lưu truyện';document.getElementById('introChapters').innerHTML=s.chapters.map((c,i)=>`<button onclick="read(${s.id},${i})">${esc(c.title)}</button>`).join('');
 }
 function refreshHydratedVisibleView(){
  // read() claims currentStory before awaiting content, even while intro is visible.
@@ -2299,7 +2300,7 @@ function renderChapter(restoreScroll=0){
  document.getElementById('rstatus').textContent=s.status==='completed'?'✓ Đã hoàn thành':'◷ Đang làm';
  document.getElementById('chapterTitle').textContent=ch.title;
  document.getElementById('chapter').innerHTML=ch.paras.map((p,i)=>{
-  let key=`${s.id}_${currentChapter}_${i}`,c=comments[key]||[];
+  let key=`${s.id}_${currentChapter}_${i}`,c={length:paragraphCommentTotal(s,currentChapter,i)};
   if(isImportedChapterMetadata(p,i) && !cleanImportedOpeningParagraph(p,i))return imagesAfter(i);
   return `<div class="para-wrap" id="para_${key}" data-comment-key="${key}"><p class="para" ondblclick="openParagraphComposer('${key}')" onpointerdown="startLongPress(event,'${key}')" onpointerup="cancelLongPress()" onpointercancel="cancelLongPress()" onpointermove="cancelLongPress()">${formatImportedOpeningParagraph(p,i)}</p>${c.length?`<button class="comment-btn" onclick="event.stopPropagation();toggleComments('${key}',true)" aria-label="Xem ${c.length} bình luận">${icon('comment')}<span>${c.length}</span></button>`:''}</div>`+imagesAfter(i);
  }).join('');
@@ -2562,14 +2563,15 @@ async function saveCommentMentions(commentId,text,ctx,selected=[]){
 }
 function commentMarkup(comment,key,list,headerExtra=''){
  const username=slugify(comment.username||comment.name)||'thanh-vien';
- const profileLink='/user/'+username, liked=!!authUser&&(comment.likedBy||[]).includes(authUser.id);
+ const heart=commentHeartState(comment.id);
+ const profileLink='/user/'+username, liked=heart.liked;
  const target=list.find(row=>row.id===comment.replyTo);
  const avatar=comment.avatar?`<img src="${esc(comment.avatar)}" alt="" loading="lazy">`:`<span aria-hidden="true">${esc(Array.from(comment.name||'T')[0])}</span>`;
  return `<article class="comment-item" data-comment-id="${esc(comment.id)}">
   <a class="comment-avatar" href="${profileLink}" data-user-profile="${username}" aria-label="Hồ sơ ${esc(comment.name||'Thành viên')}">${avatar}</a>
   <div class="comment-main"><div class="comment-author-line"><a class="comment-author" href="${profileLink}" data-user-profile="${username}">${esc(comment.name||'Thành viên')}</a>${isAdminComment(comment)?'<span class="admin-badge">ADMIN</span>':''}${headerExtra}${commentOwnerMenu(comment)}</div>
    <div class="comment-bubble">${target?`<span class="comment-reply-to">Trả lời ${esc(target.name)}</span>`:''}<p class="comment-text">${commentTextHTML(comment.text,comment.mentions)}</p></div>
-   <div class="comment-meta"><button type="button" data-comment-action="like" data-comment-id="${esc(comment.id)}" aria-pressed="${liked}" aria-label="Thả tim bình luận của ${esc(comment.name)}"><i class="comment-heart-icon" aria-hidden="true">${liked?'♥':'♡'}</i> <span>${Math.max(0,Number(comment.likes)||0)}</span></button><button type="button" data-comment-action="reply" data-comment-id="${esc(comment.id)}">Trả lời</button>${commentTime(comment)}${comment.editedAt?'<span class="comment-edited">· Đã chỉnh sửa</span>':''}</div>
+   <div class="comment-meta"><button type="button" data-comment-action="like" data-comment-id="${esc(comment.id)}" aria-pressed="${liked}" ${heart.disabled?'disabled':''} aria-label="Thả tim bình luận của ${esc(comment.name)}"><i class="comment-heart-icon" aria-hidden="true">${liked?'♥':'♡'}</i> <span>${heart.count}</span></button><button type="button" data-comment-action="reply" data-comment-id="${esc(comment.id)}">Trả lời</button>${commentTime(comment)}${comment.editedAt?'<span class="comment-edited">· Đã chỉnh sửa</span>':''}</div>
   </div></article>`;
 }
 function beginEditComment(key,id){
@@ -2653,7 +2655,7 @@ function refreshCommentViews(){
   currentStory.chapters[currentChapter].paras.forEach((para,index)=>{
    const key=`${currentStory.id}_${currentChapter}_${index}`,wrap=document.getElementById('para_'+key);
    if(!wrap)return;
-   let button=wrap.querySelector('.comment-btn');const count=commentList(key).length;
+   let button=wrap.querySelector('.comment-btn');const count=paragraphCommentTotal(currentStory,currentChapter,index);
    if(!count){button?.remove();return}
    if(!button){button=document.createElement('button');button.className='comment-btn';button.onclick=event=>{event.stopPropagation();toggleComments(key,true)};wrap.appendChild(button)}
    button.innerHTML=icon('comment')+`<span>${count}</span>`;button.setAttribute('aria-label',`Xem ${count} bình luận`);
@@ -2757,7 +2759,7 @@ function addParaComment(key){
 }
 
 let chapterCommentSort='newest';
-function chapterGeneralKey(){return currentStory?`chapter_${currentStory.id}_${currentChapter}`:''}
+function chapterGeneralKey(){if(currentStory)chapterGeneralCommentTotal(currentStory,currentChapter);return currentStory?`chapter_${currentStory.id}_${currentChapter}`:''}
 function setChapterCommentSort(value){chapterCommentSort=value;renderChapterComments()}
 function chapterCommentEntries(){
  if(!currentStory)return [];
@@ -2996,6 +2998,7 @@ function updateAuthUI(){
  activateMemberSync();
  activateChapterLikeAccount();
  renderChapterHeart();
+ syncCommentHeartAccount();
  const logged=!!authUser;
  document.getElementById('loginBtn').style.display=logged?'none':'inline-block';
  document.getElementById('memberArea').style.display=logged?'flex':'none';
@@ -3572,8 +3575,8 @@ async function saveProfileChanges(){
 }
 let profileRequestId=0;
 function profileLocalCounts(userId){
- let commentCount=0,reviewCount=0;
- for(const list of Object.values(comments||{}))for(const row of (list||[]))if(row?.userId===userId)commentCount++;
+ queueCommentCounts('profile',userId);
+ const commentCount=commentStats.profiles.get(String(userId))??'…';let reviewCount=0;
  for(const list of Object.values(reviews||{}))for(const row of (list||[]))if(row?.userId===userId)reviewCount++;
  const readingCount=ownReadingStoryCount(userId);
  return {commentCount,reviewCount,readingCount};
@@ -3591,7 +3594,7 @@ function profileMetaHTML(profile,own){
  const id=profile?.id||(own?authUser?.id:null),counts=profileLocalCounts(id),joined=profileJoinDate(profile,own),parts=[];
  if(joined)parts.push(`<span>📅 Tham gia từ ${esc(joined)}</span>`);
  if(own)parts.push(`<button class="profile-meta-link" type="button" onclick="openProfile('reading')">📚 Đã đọc ${counts.readingCount||0} truyện</button>`);
- parts.push(`<button class="profile-meta-link" type="button" onclick="openProfileActivity('comments')">💬 ${counts.commentCount} bình luận</button>`);
+ parts.push(`<button class="profile-meta-link" type="button" onclick="openProfileActivity('comments')">💬 <span data-profile-comment-count="${esc(id||'')}">${counts.commentCount}</span> bình luận</button>`);
  parts.push(`<button class="profile-meta-link" type="button" onclick="openProfileActivity('reviews')">📝 ${counts.reviewCount} review</button>`);
  return `<div class="profile-meta-row profile-meta-in-card">${parts.join('<span>·</span>')}</div>`;
 }
@@ -3681,7 +3684,7 @@ function profileShelfCard(story,withProgress=false){
    <div class="profile-story-author">${esc(story.author||'')}</div>
    <div class="profile-story-genre ${primaryGenreClass(story.mainGenre||story.genre)}">${esc(story.mainGenre||story.genre||'')}</div>
    <div class="profile-story-status ${story.status==='completed'?'done':'ongoing'}">${story.status==='completed'?'✓ Đã hoàn thành':'◷ Đang làm'}</div>
-   <div class="profile-story-stats"><span>${icon('eye')} ${formatStoryStat(story.views)}</span><span>${icon('heart')} ${formatStoryStat(storyLikeTotal(story))}</span><span>${icon('comment')} ${storyCommentCount(story)}</span></div>
+   <div class="profile-story-stats"><span>${icon('eye')} ${formatStoryStat(story.views)}</span><span>${icon('heart')} ${formatStoryStat(storyLikeTotal(story))}</span><span>${icon('comment')} <bdi data-story-comment-count="${story.id}">${storyCommentCount(story)}</bdi></span></div>
    ${withProgress&&chapterLabel?`<button class="profile-continue" type="button" onclick="event.stopPropagation();read(${story.id})">Đọc tiếp · ${esc(chapterLabel.split(':')[0])}</button>`:''}
   </div>
  </article>`;
@@ -3817,7 +3820,180 @@ async function cloudProfiles(ids){
   const {data}=await sb.from('profiles').select('id,display_name,avatar_url,role').in('id',uniq);
   return Object.fromEntries((data||[]).map(p=>[p.id,p]));
 }
+let commentContentRevision=0;
+// Step 5B: read-only authoritative counts; content loader remains legacy/global.
+const commentStats={stories:new Map(),chapters:new Map(),profiles:new Map(),likes:new Map(),membership:new Map(),account:null,
+ flights:new Map(),stamps:new Map(),sequence:0,mutation:0,contentReady:false,writes:new Map(),queued:{story:new Set(),like:new Set(),profile:new Set(),chapter:new Map()},scheduled:false};
+function commentCloudIds(ids){return [...new Set((ids||[]).map(String).filter(id=>/^[1-9]\d*$/.test(id)))].sort((a,b)=>Number(a)-Number(b))}
+function commentAccountSnapshot(){return {owner:authUser?.id||null,account:authAccount,epoch:authAccount?.epoch}}
+function commentAccountMatches(s){return s.owner===(authUser?.id||null)&&s.account===authAccount&&s.epoch===authAccount?.epoch}
+function commentWritePending(id){return commentStats.writes.get(String(id))?.account===authAccount}
+function commentCountValue(n){if(!Number.isSafeInteger(n)||n<0)throw new Error('Invalid comment count response');return n}
+async function commentRead(kind,ids,request,apply,{force=false}={}){
+ const account=commentAccountSnapshot(),revision=commentStats.mutation;
+ const key=kind+':'+ids.join(',')+':'+(account.owner||'anon')+':'+account.epoch+':'+revision;
+ const previous=commentStats.flights.get(key);
+ if(!force&&previous&&previous.covered())return previous.promise;
+ const stamp=++commentStats.sequence;
+ ids.forEach(id=>commentStats.stamps.set(kind+':'+id,stamp));
+ const valid=()=>commentAccountMatches(account)&&commentStats.mutation===revision;
+ const matches=id=>commentStats.stamps.get(kind+':'+id)===stamp;
+ const job={kind,ids,current:()=>valid()&&ids.some(matches),covered:()=>valid()&&ids.every(matches)};
+ job.promise=(async()=>{
+  try{
+   const {data,error}=await request();if(error)throw error;
+   if(!job.current())return false;
+   const current=id=>commentStats.stamps.get(kind+':'+String(id))===stamp;
+   const applied=apply(data,current,account);patchCommentCountUI();return applied!==false&&job.covered();
+  }catch(error){if(job.current())console.warn('comment '+kind+' hydration',error);return false}
+  finally{if(commentStats.flights.get(key)===job)commentStats.flights.delete(key)}
+ })();commentStats.flights.set(key,job);return job.promise;
+}
+async function refreshStoryCommentCounts(ids=stories.map(s=>s.id),options={}){
+ const input=commentCloudIds(ids),results=[];
+ for(let i=0;i<input.length;i+=100){const batch=input.slice(i,i+100);results.push(commentRead('story',batch,
+  ()=>sb.rpc('nca_story_comment_counts',{p_story_ids:batch}), (data,current)=>{
+   if(!Array.isArray(data))throw new Error('Invalid story count response');
+   const values=new Map(data.map(r=>[String(r.story_id),commentCountValue(r.comment_count)]));
+   batch.forEach(id=>{if(current(id)){if(values.has(id))commentStats.stories.set(id,values.get(id));else commentStats.stories.delete(id)}});
+  },options));}
+ return (await Promise.all(results)).every(Boolean);
+}
+async function refreshChapterCommentCounts(storyId,chapterIndex,indices,options={}){
+ const input=[...new Set(indices)].filter(i=>Number.isInteger(i)&&i>=0).sort((a,b)=>a-b),results=[],ctx=storyId+'_'+chapterIndex;
+ if(!commentCloudIds([storyId]).length||!Number.isInteger(chapterIndex)||chapterIndex<0)return false;
+ // Empty marker requests still hydrate the chapter-general scalar.
+ for(let i=0;i<Math.max(1,input.length);i+=1000){const batch=input.slice(i,i+1000),resources=[...(i===0?['general']:[]),...batch.map(String)];
+  results.push(commentRead('chapter:'+ctx,resources,()=>sb.rpc('nca_chapter_comment_counts',{p_story_id:storyId,p_chapter_index:chapterIndex,p_paragraph_indices:batch}),
+   (data,current)=>{
+    if(data===null){if(current('general'))commentStats.chapters.delete(ctx);return}
+    if(String(data?.story_id)!==String(storyId)||data.chapter_index!==chapterIndex||!Array.isArray(data.paragraph_counts))throw new Error('Invalid chapter count response');
+    const general=commentCountValue(data.chapter_comment_count),values=new Map(data.paragraph_counts.map(r=>[r.paragraph_index,commentCountValue(r.comment_count)]));
+    const old=commentStats.chapters.get(ctx)||{general:null,paragraphs:new Map()};
+    if(current('general'))old.general=general;
+    batch.forEach(pi=>{if(current(String(pi))){if(values.has(pi))old.paragraphs.set(pi,values.get(pi));else old.paragraphs.delete(pi)}});
+    commentStats.chapters.set(ctx,old);
+   },options));}
+ return (await Promise.all(results)).every(Boolean);
+}
+async function refreshProfileCommentCount(owner,options={}){
+ if(!owner)return false;
+ return commentRead('profile',[String(owner)],()=>sb.rpc('nca_profile_comment_count',{p_user_id:owner}),
+  (data,current)=>{const n=commentCountValue(data);if(current(owner))commentStats.profiles.set(String(owner),n)},options);
+}
+async function refreshCommentLikeEnrichment(ids,options={}){
+ const input=commentCloudIds(ids),account=commentAccountSnapshot(),results=[];
+ for(let i=0;i<input.length;i+=1000){
+  if(!commentAccountMatches(account))return false;
+  const batch=input.slice(i,i+1000),work=[commentRead('like',batch,()=>sb.rpc('nca_comment_like_counts',{p_comment_ids:batch}),
+   (data,current)=>{
+    if(!Array.isArray(data))throw new Error('Invalid comment-like count response');
+    const values=new Map(data.map(r=>[String(r.comment_id),commentCountValue(r.like_count)]));
+    batch.forEach(id=>{if(current(id)&&!commentWritePending(id)){if(values.has(id))commentStats.likes.set(id,values.get(id));else commentStats.likes.delete(id)}});
+    return batch.every(id=>!commentWritePending(id));
+   },options)];
+  if(account.owner)work.push(commentRead('membership',batch,()=>sb.rpc('nca_my_comment_likes',{p_comment_ids:batch}),
+   (data,current,captured)=>{
+    if(!Array.isArray(data)||data.some(id=>!batch.includes(String(id))))throw new Error('Invalid comment membership response');
+    if(commentStats.account!==captured.account)return false;
+    const mine=new Set(data.map(String));batch.forEach(id=>{if(current(id)&&!commentWritePending(id))commentStats.membership.set(id,mine.has(id))});
+    return batch.every(id=>!commentWritePending(id));
+   },options));
+  results.push(...work);
+ }
+ const complete=await Promise.all(results);patchCommentHeartUI();return complete.every(Boolean);
+}
+function queueCommentCounts(kind,value){
+ if(value==null)return;
+ if(kind==='story'&&!commentStats.stories.has(String(value)))commentStats.queued.story.add(String(value));
+ if(kind==='profile'&&!commentStats.profiles.has(String(value)))commentStats.queued.profile.add(String(value));
+ if(kind==='like'){
+  const id=String(value),pending=k=>[...commentStats.flights.values()].some(job=>job.kind===k&&job.ids.includes(id)&&job.covered());
+  if(!commentStats.likes.has(id)&&!pending('like')||authUser&&!commentStats.membership.has(id)&&!pending('membership'))commentStats.queued.like.add(id);
+ }
+ if(commentStats.scheduled)return;
+ commentStats.scheduled=true;queueMicrotask(()=>{
+  commentStats.scheduled=false;const q=commentStats.queued;
+  const story=[...q.story],like=[...q.like],profile=[...q.profile],chapters=[...q.chapter.values()];
+  q.story.clear();q.like.clear();q.profile.clear();q.chapter.clear();
+  if(story.length)refreshStoryCommentCounts(story);
+  if(like.length)refreshCommentLikeEnrichment(like);
+  profile.forEach(id=>refreshProfileCommentCount(id));
+  chapters.forEach(c=>refreshChapterCommentCounts(c.storyId,c.ci,[...c.indices]));
+ });
+}
+function chapterGeneralCommentTotal(story,ci){
+ const key=story.id+'_'+ci,known=commentStats.chapters.get(key)?.general;
+ if(known!=null)return known;
+ if(!commentStats.queued.chapter.has(key))commentStats.queued.chapter.set(key,{storyId:story.id,ci,indices:new Set()});
+ queueCommentCounts('chapter',key);return '…';
+}
+function paragraphCommentTotal(story,ci,pi){
+ const key=story.id+'_'+ci,known=commentStats.chapters.get(key)?.paragraphs.get(pi);
+ if(known!==undefined)return known;
+ let pending=commentStats.queued.chapter.get(key);if(!pending){pending={storyId:story.id,ci,indices:new Set()};commentStats.queued.chapter.set(key,pending)}
+ pending.indices.add(pi);queueCommentCounts('chapter',key);return 0;
+}
+function commentHeartState(id){
+ const key=String(id);
+ // Non-database legacy/local IDs cannot be passed to bigint RPCs.
+ if(!commentCloudIds([id]).length){const c=Object.values(comments).flat().find(c=>String(c.id)===key);return {count:c?.likes||0,liked:!!authUser&&(c?.likedBy||[]).includes(authUser.id),disabled:false}}
+ queueCommentCounts('like',id);
+ return {count:commentStats.likes.get(key)??'…',liked:!!authUser&&commentStats.account===authAccount&&commentStats.membership.get(key)===true,
+ disabled:commentWritePending(key)||!!authUser&&(!commentStats.likes.has(key)||!commentStats.membership.has(key)||commentStats.account!==authAccount)};
+}
+function syncCommentHeartAccount(){
+ if(commentStats.account!==authAccount){
+  commentStats.account=authAccount;commentStats.membership.clear();commentStats.queued.like.clear();
+  for(const list of Object.values(comments))for(const c of list)c.likedBy=[];
+  patchCommentHeartUI();
+  const ids=[...document.querySelectorAll('[data-comment-action="like"]')].map(el=>el.dataset.commentId);
+  if(ids.length)refreshCommentLikeEnrichment(ids);
+ }
+}
+function patchCommentHeartUI(){
+ for(const el of document.querySelectorAll('[data-comment-action="like"]')){
+  const id=String(el.dataset.commentId);if(!commentCloudIds([id]).length)continue;
+  const liked=!!authUser&&commentStats.account===authAccount&&commentStats.membership.get(id)===true;
+  const count=commentStats.likes.get(id)??'…';el.setAttribute('aria-pressed',String(liked));
+  el.disabled=commentWritePending(id)||!!authUser&&(!commentStats.likes.has(id)||!commentStats.membership.has(id)||commentStats.account!==authAccount);
+  const icon=el.querySelector('.comment-heart-icon'),number=el.querySelector('span');if(icon)icon.textContent=liked?'♥':'♡';if(number)number.textContent=count;
+ }
+ for(const list of Object.values(comments))for(const c of list){const id=String(c.id);if(commentStats.likes.has(id))c.likes=commentStats.likes.get(id);c.likedBy=authUser&&commentStats.account===authAccount&&commentStats.membership.get(id)===true?[authUser.id]:[]}
+ if(currentStory&&chapterCommentSort==='interaction'){
+  const box=document.getElementById('chapterCommentsList'),focused=document.activeElement,groups=new Map([...box.children].map(el=>[el.querySelector('.comment-item')?.dataset.commentId,el]));
+  const ordered=chapterCommentEntries().map(e=>groups.get(String(e.root.id))).filter(Boolean);
+  if(ordered.some((el,i)=>box.children[i]!==el)){ordered.forEach(el=>box.appendChild(el));if(focused&&box.contains(focused))focused.focus({preventScroll:true})}
+ }
+}
+function patchCommentCountUI(){
+ for(const el of document.querySelectorAll('[data-story-comment-count]'))el.textContent=commentStats.stories.get(el.dataset.storyCommentCount)??'…';
+ for(const el of document.querySelectorAll('[data-profile-comment-count]'))el.textContent=commentStats.profiles.get(el.dataset.profileCommentCount)??'…';
+ if(currentStory){const ctx=commentStats.chapters.get(currentStory.id+'_'+currentChapter);
+  if(ctx)document.querySelectorAll('#chapter .para-wrap[data-comment-key]').forEach(wrap=>{
+   if(!wrap.dataset.commentKey.startsWith(currentStory.id+'_'+currentChapter+'_'))return;
+   const pi=Number(wrap.dataset.commentKey.split('_')[2]),n=ctx.paragraphs.get(pi);if(n===undefined)return;
+   let button=wrap.querySelector('.comment-btn');if(!n){button?.remove();return}
+   if(!button){button=document.createElement('button');button.className='comment-btn';button.onclick=e=>{e.stopPropagation();toggleComments(wrap.dataset.commentKey,true)};wrap.appendChild(button)}
+   button.innerHTML=icon('comment')+'<span>'+n+'</span>';button.setAttribute('aria-label','Xem '+n+' bình luận');
+  });
+ }
+ patchCommentHeartUI();
+}
+async function refreshAffectedCommentCounts(key,owners=[]){
+ const ctx=cloudCommentContext(key),tasks=[refreshStoryCommentCounts([ctx.story_id],{force:true})];
+ if(ctx.scope!=='story'){
+  const indices=new Set(ctx.paragraph_index==null?[]:[ctx.paragraph_index]);
+  if(currentStory?.id===ctx.story_id&&currentChapter===ctx.chapter_index)currentStory.chapters[currentChapter].paras.forEach((_,i)=>indices.add(i));
+  tasks.push(refreshChapterCommentCounts(ctx.story_id,ctx.chapter_index,[...indices],{force:true}));
+ }
+ const visibleOwners=[...document.querySelectorAll('[data-profile-comment-count]')].map(el=>el.dataset.profileCommentCount);
+ [...new Set([...owners,...visibleOwners].filter(Boolean))].forEach(id=>tasks.push(refreshProfileCommentCount(id,{force:true})));
+ await Promise.all(tasks);
+}
+
 async function loadCloudComments(){
+  const load=++commentContentRevision;
   const {data,error}=await sb.from('comments').select('*').order('created_at',{ascending:true});
   if(error){console.warn('comments sync',error.message||error,error);return}
   const rows=data||[], mentionMap={};
@@ -3827,18 +4003,21 @@ async function loadCloudComments(){
    for(const m of result.data||[])(mentionMap[m.comment_id]||(mentionMap[m.comment_id]=[])).push(m.mentioned_user_id);
   }
   const prof=await cloudProfiles([...rows.map(r=>r.user_id),...Object.values(mentionMap).flat()]);rememberMentionProfiles(Object.values(prof));
-  let likes=[]; const lr=await sb.from('comment_likes').select('comment_id,user_id'); if(!lr.error)likes=lr.data||[];
-  const likeMap={}; for(const x of likes)(likeMap[x.comment_id]||(likeMap[x.comment_id]=[])).push(x.user_id);
   const next={};
-  for(const r of rows){const p=prof[r.user_id]||{},key=cloudCommentKey(r);(next[key]||(next[key]=[])).push({id:r.id,userId:r.user_id,username:slugify(p.display_name||'thanh-vien'),name:p.display_name||'Thành viên',avatar:p.avatar_url||'',text:r.content||'',mentions:mentionMap[r.id]||[],createdAt:r.created_at,editedAt:r.edited_at,parentId:r.parent_id,replyTo:r.reply_to_user_id,likes:(likeMap[r.id]||[]).length,likedBy:likeMap[r.id]||[]});}
-  comments=next;  refreshCommentViews();
+  for(const r of rows){const p=prof[r.user_id]||{},key=cloudCommentKey(r);(next[key]||(next[key]=[])).push({id:r.id,userId:r.user_id,username:slugify(p.display_name||'thanh-vien'),name:p.display_name||'Thành viên',avatar:p.avatar_url||'',text:r.content||'',mentions:mentionMap[r.id]||[],createdAt:r.created_at,editedAt:r.edited_at,parentId:r.parent_id,replyTo:r.reply_to_user_id,likes:commentStats.likes.get(String(r.id))??0,likedBy:[]});}
+  if(load!==commentContentRevision)return;
+  const initial=!commentStats.contentReady;commentStats.contentReady=true;
+  comments=next;refreshCommentViews();
+  const visibleIds=[...document.querySelectorAll('[data-comment-action="like"]')].map(el=>el.dataset.commentId);
+  await Promise.all([refreshStoryCommentCounts(initial&&!commentStats.mutation?stories.filter(s=>!commentStats.stories.has(String(s.id))).map(s=>s.id):undefined),refreshCommentLikeEnrichment(visibleIds)]);
 }
 async function insertCloudComment(key,text,extra={}){
   const c=cloudCommentContext(key), payload={user_id:authUser.id,content:text,scope:c.scope,story_id:c.story_id,chapter_index:c.chapter_index,paragraph_index:c.paragraph_index,parent_id:extra.parentId||null,reply_to_user_id:extra.replyToUserId||null};
   const {data,error}=await sb.from('comments').insert(payload).select('*').single();
   if(error){console.error(error);alert('Chưa lưu được bình luận lên tài khoản. Thử lại nha.');return null}
+  ++commentStats.mutation;
   await saveCommentMentions(data?.id,text,c,extra.mentions||[]);
-   await loadCloudComments(); return data;
+   await Promise.all([loadCloudComments(),refreshAffectedCommentCounts(key,[payload.user_id])]); return data;
 }
 async function loadCloudReviews(){
   const {data,error}=await sb.from('reviews').select('*').order('created_at',{ascending:true});
@@ -4033,8 +4212,23 @@ addParaComment=async function(key){if(!authUser){requestCommentLogin('bình lu�
 addChapterComment=async function(){if(!authUser){requestCommentLogin('bình luận');return}const input=document.getElementById('chapterCommentInput'),text=input?.value.trim();if(!text)return;input.disabled=true;const ok=await insertCloudComment(chapterGeneralKey(),text,{mentions:selectedCommentMentions(input)});finishCommentMentionDraft(input,ok);};
 submitCommentReply=async function(){if(!authUser||!activeReply)return;const input=document.getElementById('replyCommentInput'),text=input?.value.trim();if(!text)return;const {key,targetId,rootId}=activeReply,list=normalizedComments(key),target=list.find(r=>String(r.id)===String(targetId));if(!target)return;input.disabled=true;const ok=await insertCloudComment(key,text,{parentId:rootId,replyToUserId:target.userId,mentions:selectedCommentMentions(input)});finishCommentMentionDraft(input,ok);if(ok){activeReply=null;refreshCommentViews();}};
 saveEditComment=async function(key,id,item){const list=comments[key]||[],comment=list.find(r=>String(r.id)===String(id));if(!comment||!isOwnComment(comment))return;const text=item?.querySelector('.comment-edit-box textarea')?.value.trim();if(!text)return;const {error}=await sb.from('comments').update({content:text,edited_at:new Date().toISOString()}).eq('id',id).eq('user_id',authUser.id);if(error){alert('Chưa sửa được bình luận.');return}await loadCloudComments();};
-deleteCommentById=async function(key,id){const list=comments[key]||[],comment=list.find(r=>String(r.id)===String(id));if(!comment||!canDeleteComment(comment)||!confirm('Xóa bình luận này nha?'))return;const {data,error}=await sb.from('comments').delete().eq('id',id).select('id');if(error||!data?.length){alert('Chưa xóa được bình luận.');return}const removed=new Set([String(id)]);let changed=true;while(changed){changed=false;for(const row of list){if(row.parentId&&removed.has(String(row.parentId))&&!removed.has(String(row.id))){removed.add(String(row.id));changed=true}}}if(activeReply?.key===key&&(removed.has(String(activeReply.targetId))||removed.has(String(activeReply.rootId))))activeReply=null;comments[key]=list.filter(row=>!removed.has(String(row.id)));refreshCommentViews();await loadCloudComments();await loadNotifications();};
-toggleCommentLike=async function(key,id){if(!authUser){requestCommentLogin('thả tim bình luận');return}const comment=(comments[key]||[]).find(r=>String(r.id)===String(id));if(!comment)return;const liked=(comment.likedBy||[]).includes(authUser.id);let res;if(liked)res=await sb.from('comment_likes').delete().eq('comment_id',id).eq('user_id',authUser.id);else res=await sb.from('comment_likes').insert({comment_id:id,user_id:authUser.id});if(res.error){console.warn(res.error);return}await loadCloudComments();};
+deleteCommentById=async function(key,id){const list=comments[key]||[],comment=list.find(r=>String(r.id)===String(id));if(!comment||!canDeleteComment(comment)||!confirm('Xóa bình luận này nha?'))return;const {data,error}=await sb.from('comments').delete().eq('id',id).select('id');if(error||!data?.length){alert('Chưa xóa được bình luận.');return}const removed=new Set([String(id)]);let changed=true;while(changed){changed=false;for(const row of list){if(row.parentId&&removed.has(String(row.parentId))&&!removed.has(String(row.id))){removed.add(String(row.id));changed=true}}}if(activeReply?.key===key&&(removed.has(String(activeReply.targetId))||removed.has(String(activeReply.rootId))))activeReply=null;++commentStats.mutation;comments[key]=list.filter(row=>!removed.has(String(row.id)));refreshCommentViews();await Promise.all([loadCloudComments(),refreshAffectedCommentCounts(key,list.filter(row=>removed.has(String(row.id))).map(row=>row.userId))]);await loadNotifications();};
+toggleCommentLike=async function(key,id){
+ if(!authUser){requestCommentLogin('thả tim bình luận');return}
+ const account=commentAccountSnapshot(),owner=account.owner,k=String(id);
+ const comment=(comments[key]||[]).find(r=>String(r.id)===k);if(!comment||commentWritePending(k))return;
+ if(!commentStats.likes.has(k)||!commentStats.membership.has(k)||commentStats.account!==account.account){if(!await refreshCommentLikeEnrichment([id]))return}
+ if(!commentAccountMatches(account)||!commentStats.likes.has(k)||!commentStats.membership.has(k)||commentStats.account!==account.account||commentWritePending(k))return;
+ const liked=commentStats.membership.get(k)===true;
+ const write={account:account.account};commentStats.writes.set(k,write);patchCommentHeartUI();
+ try{
+  const result=liked?await sb.from('comment_likes').delete().eq('comment_id',id).eq('user_id',owner):await sb.from('comment_likes').insert({comment_id:id,user_id:owner});
+  if(!commentAccountMatches(account))return;
+  if(result.error){console.warn('comment like',result.error);return}
+  commentStats.likes.set(k,Math.max(0,(commentStats.likes.get(k)||0)+(liked?-1:1)));
+  commentStats.membership.set(k,!liked);patchCommentHeartUI();
+ }finally{if(commentStats.writes.get(k)===write)commentStats.writes.delete(k);patchCommentHeartUI();if(commentAccountMatches(account))await refreshCommentLikeEnrichment([id],{force:true})}
+};
 submitStoryReview=async function(event){event.preventDefault();if(!introStory||!authUser)return;const ed=document.getElementById('storyReviewEditor'),html=safeReviewHTML(ed?.innerHTML||''),text=(ed?.innerText||'').trim();if(!text)return;const mine=myStoryReview();let q;if(mine)q=sb.from('reviews').update({content:text,content_html:html,edited_at:new Date().toISOString()}).eq('id',mine.id).eq('user_id',authUser.id);else q=sb.from('reviews').insert({story_id:introStory.id,user_id:authUser.id,content:text,content_html:html});const {error}=await q;if(error){console.error(error);alert('Chưa lưu được review lên tài khoản. Thử lại nha.');return}reviewComposerOpen=false;await loadCloudReviews();};
 deleteStoryReview=async function(id){if(!introStory||!authUser||!confirm('Xóa review này nha?'))return;const {error}=await sb.from('reviews').delete().eq('id',id).eq('user_id',authUser.id);if(error){alert('Chưa xóa được review.');return}await loadCloudReviews();};
 const toggleSaveV179=toggleSave;

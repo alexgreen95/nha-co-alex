@@ -1,6 +1,7 @@
+// Step 5B comment RPC traffic is measured separately; core/event assertions stay unchanged.
 const {test,before,after}=require('node:test');
 const assert=require('node:assert/strict');
-const {startBrowser,stopBrowser,feedPage}=require('./helpers/public-feed-browser.cjs');
+const {startBrowser,stopBrowser,feedPage,isCommentEnrichmentRpc}=require('./helpers/public-feed-browser.cjs');
 before(startBrowser);after(stopBrowser);
 const fixtures={chapters:[{id:11,story_id:1,title:'Một',chapter_number:1,published:true},{id:12,story_id:1,title:'Hai',chapter_number:2,published:true}],paragraphs:[{paragraph_number:1,content:'Nội dung'}],nca_story_view_counts:[{story_id:1,view_count:100000}]};
 async function mockCounts(page,start=100000){
@@ -18,10 +19,10 @@ async function mockCounts(page,start=100000){
  return {requests,get count(){return count},set failInsert(v){failInsert=v},set failCount(v){failCount=v}};
 }
 test('anonymous: uncached/cached opens, navigation, refresh and bounded requests',async()=>{
- const traffic=[];const page=await feedPage(0,{fixtures,onRequest:url=>traffic.push(url)});
+ const traffic=[];const page=await feedPage(0,{fixtures,onRequest:url=>{if(!isCommentEnrichmentRpc(url))traffic.push(url)}});
  try{
   assert(!traffic.some(u=>u.pathname.endsWith('/story_views')));
-  assert.equal(traffic.filter(u=>u.pathname.startsWith('/rest/v1/')).length,10);
+  assert.equal(traffic.filter(u=>u.pathname.startsWith('/rest/v1/')).length,9);
   assert.equal(await page.evaluate(()=>stories[0].views),100000);
   const mock=await mockCounts(page);
   traffic.length=0;
@@ -48,7 +49,7 @@ test('anonymous: uncached/cached opens, navigation, refresh and bounded requests
   await page.reload({waitUntil:'networkidle'});
   await page.waitForFunction(()=>currentStory&&stories[0].views===100005);
   assert.equal(mock.count,100005,'refresh reader records exactly one event');
-  assert.equal(traffic.filter(u=>u.pathname.startsWith('/rest/v1/')).length+mock.requests.length,14);
+  assert.equal(traffic.filter(u=>u.pathname.startsWith('/rest/v1/')).length+mock.requests.length,13);
   assert.deepEqual(page.errors,[]);
  }finally{await page.close()}
 });

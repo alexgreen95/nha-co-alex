@@ -1,11 +1,12 @@
+// Step 5B comment RPC traffic is measured separately; core/event assertions stay unchanged.
 const {test,before,after}=require('node:test');const assert=require('node:assert/strict');
-const {startBrowser,stopBrowser,feedPage}=require('./helpers/public-feed-browser.cjs');before(startBrowser);after(stopBrowser);
+const {startBrowser,stopBrowser,feedPage,isCommentEnrichmentRpc}=require('./helpers/public-feed-browser.cjs');before(startBrowser);after(stopBrowser);
 const A='00000000-0000-0000-0000-000000000001';
 const row={id:1,title:'Baseline story',author:'Writer',published:true,status:'writing',baseline_views:10000,baseline_likes:1050};
 const chapters=[{id:11,story_id:1,chapter_number:1,title:'First',published:true},{id:12,story_id:1,chapter_number:2,title:'Second',published:true},{id:13,story_id:1,chapter_number:3,title:'Hidden',published:false}];
 const headers={'access-control-allow-origin':'*','access-control-allow-headers':'*','access-control-allow-methods':'*'};
 function fixtures(realViews=0,likes=[]){return{stories:[row],chapters,paragraphs:[{paragraph_number:1,content:'Reader text'}],chapter_likes:likes,nca_story_view_counts:[{story_id:1,view_count:10000+realViews}]}}
-async function setup(realViews=0,likes=[]){const traffic=[];const page=await feedPage(0,{fixtures:fixtures(realViews,likes),onRequest:u=>traffic.push(u)});return{page,traffic}}
+async function setup(realViews=0,likes=[]){const traffic=[];const page=await feedPage(0,{fixtures:fixtures(realViews,likes),onRequest:u=>{if(!isCommentEnrichmentRpc(u))traffic.push(u)}});return{page,traffic}}
 async function summary(page){return page.evaluate(()=>({views:stories[0].views,baselineViews:stories[0].baselineViews,baselineLikes:stories[0].baselineLikes,total:storyLikeTotal(stories[0]),liked:likedChapters}))}
 test('zero real events: same totals on home/detail/saved/profile; chapter is real-only; request budget unchanged',async()=>{
  const {page,traffic}=await setup();try{
@@ -17,7 +18,7 @@ test('zero real events: same totals on home/detail/saved/profile; chapter is rea
   assert.deepEqual((await get('#saved .stats .stat')).map(x=>x.trim()),['10K','1.05K','7']);
   assert.deepEqual((await get('.profile-story-stats span')).map(x=>x.trim()),['10K','1.05K','7']);
   assert.equal(await page.locator('#chapterHeartRow button span').count(),0);assert.equal(await page.locator('#chapterHeartRow button').getAttribute('aria-pressed'),'false');
-  assert.equal(traffic.filter(u=>u.pathname.startsWith('/rest/v1/')).length,10);
+  assert.equal(traffic.filter(u=>u.pathname.startsWith('/rest/v1/')).length,9);
   assert(!traffic.some(u=>u.pathname.endsWith('/story_likes')||u.pathname.endsWith('/story_views')));assert.deepEqual(page.errors,[]);
  }finally{await page.close()}
 });
@@ -49,7 +50,7 @@ test('normal real view +1, RPC fallback and cached requests preserve Step 1 tota
   traffic.length=0;await page.evaluate(()=>read(1,0));assert.equal((await summary(page)).views,10010);assert.equal(traffic.filter(u=>u.pathname.startsWith('/rest/v1/')).length+2,2);
   fail=true;await page.evaluate(()=>recordStoryView(1));assert.equal((await summary(page)).views,10011);
   fail=false;await page.evaluate(()=>refreshStoryViewCounts([1]));assert.equal((await summary(page)).views,10011);
-  const priorWrites=writes.length,priorRpc=rpcCalls;traffic.length=0;await page.reload({waitUntil:'networkidle'});assert.equal((await summary(page)).views,10012);assert.equal(writes.length-priorWrites,1);assert.equal(traffic.filter(u=>u.pathname.startsWith('/rest/v1/')).length+writes.length-priorWrites+rpcCalls-priorRpc,14);
+  const priorWrites=writes.length,priorRpc=rpcCalls;traffic.length=0;await page.reload({waitUntil:'networkidle'});assert.equal((await summary(page)).views,10012);assert.equal(writes.length-priorWrites,1);assert.equal(traffic.filter(u=>u.pathname.startsWith('/rest/v1/')).length+writes.length-priorWrites+rpcCalls-priorRpc,13);
   assert.equal((await summary(page)).baselineViews,10000);assert.deepEqual(page.errors,[]);
  }finally{await page.close()}
 });

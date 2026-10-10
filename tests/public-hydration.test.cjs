@@ -1,5 +1,6 @@
+// Step 5B comment RPC traffic is measured separately; core/event assertions stay unchanged.
 const {test,before,after}=require('node:test'),assert=require('node:assert/strict');
-const {startBrowser,stopBrowser,feedPage}=require('./helpers/public-feed-browser.cjs');
+const {startBrowser,stopBrowser,feedPage,isCommentEnrichmentRpc}=require('./helpers/public-feed-browser.cjs');
 before(startBrowser);after(stopBrowser);
 const H={'access-control-allow-origin':'*','access-control-allow-headers':'*'},A='reader-user';
 const row={id:1,title:'Public story',author:'Writer',published:true,baseline_views:10000,baseline_likes:1050};
@@ -8,7 +9,7 @@ const hold=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {prom
 const wait=async f=>{for(let i=0;i<1000;i++){if(f())return;await new Promise(r=>setTimeout(r,5))}throw Error('Held request did not start')};
 function signedSDK(){return new Function(`let sdk;Object.defineProperty(window,'supabase',{configurable:true,get:()=>sdk,set:v=>{sdk=v;const create=v.createClient;v.createClient=(...args)=>{const c=create(...args),session={user:{id:'reader-user'}};c.auth.getSession=async()=>({data:{session}});c.auth.onAuthStateChange=cb=>{queueMicrotask(()=>cb('INITIAL_SESSION',session));return {data:{subscription:{unsubscribe(){}}}}};return c}}});`)}
 async function setup(signed=false){
- const traffic=[],page=await feedPage(0,{fixtures:{stories:[row],chapters,profiles:[{id:A,display_name:'Reader',role:'reader'}],chapter_likes:[{chapter_id:11,user_id:A}],nca_story_view_counts:[{story_id:1,view_count:10008}]},onRequest:(u,r)=>{if(u.pathname.startsWith('/rest/v1/')&&r.method()!=='OPTIONS')traffic.push({table:u.pathname.split('/').pop(),method:r.method(),body:r.postData()?r.postDataJSON():null})}});
+ const traffic=[],page=await feedPage(0,{fixtures:{stories:[row],chapters,profiles:[{id:A,display_name:'Reader',role:'reader'}],chapter_likes:[{chapter_id:11,user_id:A}],nca_story_view_counts:[{story_id:1,view_count:10008}]},onRequest:(u,r)=>{if(u.pathname.startsWith('/rest/v1/')&&r.method()!=='OPTIONS'&&!isCommentEnrichmentRpc(u))traffic.push({table:u.pathname.split('/').pop(),method:r.method(),body:r.postData()?r.postDataJSON():null})}});
  if(signed)await page.evaluate(async A=>{await handleAuthState('SIGNED_IN',{user:{id:A}})},A);
  traffic.length=0;return {page,traffic};
 }
@@ -25,7 +26,7 @@ for(const signed of [false,true])test(`equivalent concurrent public refresh join
  }finally{gate.resolve();await page.close()}
 });
 for(const signed of [false,true])test(`bootstrap reuses fresh story metadata without reusing member chapter-map (${signed?'signed':'anon'})`,async()=>{
- const traffic=[],page=await feedPage(0,{initScript:signed?signedSDK():undefined,fixtures:{stories:[row],chapters,profiles:[{id:A,display_name:'Reader',role:'reader'}]},onRequest:(u,r)=>{if(u.pathname.startsWith('/rest/v1/')&&r.method()!=='OPTIONS')traffic.push({table:u.pathname.split('/').pop(),query:u.search})}});
+ const traffic=[],page=await feedPage(0,{initScript:signed?signedSDK():undefined,fixtures:{stories:[row],chapters,profiles:[{id:A,display_name:'Reader',role:'reader'}]},onRequest:(u,r)=>{if(u.pathname.startsWith('/rest/v1/')&&r.method()!=='OPTIONS'&&!isCommentEnrichmentRpc(u))traffic.push({table:u.pathname.split('/').pop(),query:u.search})}});
  try{if(signed)await page.waitForFunction(()=>authAccount.memberReady&&authAccount.likesCovered);
  assert.equal(traffic.filter(c=>c.table==='stories').length,1);assert.equal(traffic.filter(c=>c.table==='chapters').length,signed?2:1);assert.equal(traffic.filter(c=>c.table==='nca_chapter_like_counts').length,1);assert.equal(traffic.filter(c=>c.table==='nca_my_chapter_likes').length,signed?1:0);assert.equal(await page.evaluate(()=>stories[0].baselineLikes),1050);assert.deepEqual(page.errors,[]);
  }finally{await page.close()}
@@ -34,7 +35,7 @@ test('forced post-mutation refresh bypasses pre-mutation metadata/count/member f
  const {page}=await setup(true),gate=hold(),calls=[];let old=true;
  try{
  await page.route('**/rest/v1/**',async r=>{
- const req=r.request(),table=new URL(req.url()).pathname.split('/').pop();if(req.method()==='OPTIONS')return r.fulfill({status:200,headers:H});
+ const req=r.request(),table=new URL(req.url()).pathname.split('/').pop();if(req.method()==='OPTIONS')return r.fulfill({status:200,headers:H});if(isCommentEnrichmentRpc(new URL(req.url())))return r.fallback();
  const capturedOld=old,body=req.postData()?req.postDataJSON():null;calls.push({table,old:capturedOld,body});let data=[];
  if(table==='stories')data=[{...row,author:capturedOld?'Old author':'New author',cover_url:capturedOld?'old.jpg':'new.jpg'}];
  else if(table==='nca_story_view_counts')data=body.p_story_ids.map(story_id=>({story_id,view_count:capturedOld?10008:10009}));
@@ -52,7 +53,7 @@ test('superseded 101-story public view read cannot issue late second batch or ov
  const {page}=await setup(),gate=hold(),calls=[];let old=true;
  try{
  await page.evaluate(()=>{stories=Array.from({length:101},(_,i)=>({id:i+1,title:'Story '+i,author:'Writer',chapters:[],views:0}));render()});
- await page.route('**/rest/v1/**',async r=>{const req=r.request(),table=new URL(req.url()).pathname.split('/').pop();if(req.method()==='OPTIONS')return r.fulfill({status:200,headers:H});const capturedOld=old,b=req.postData()?req.postDataJSON():null;calls.push({table,old:capturedOld,b});const data=table==='stories'?Array.from({length:101},(_,i)=>({id:i+1,author:capturedOld?'Old':'New'})):b.p_story_ids.map(story_id=>({story_id,view_count:capturedOld?1:9}));if(capturedOld)await gate.promise;return r.fulfill({status:200,headers:H,json:data})});
+ await page.route('**/rest/v1/**',async r=>{const req=r.request(),table=new URL(req.url()).pathname.split('/').pop();if(req.method()==='OPTIONS')return r.fulfill({status:200,headers:H});if(isCommentEnrichmentRpc(new URL(req.url())))return r.fallback();const capturedOld=old,b=req.postData()?req.postDataJSON():null;calls.push({table,old:capturedOld,b});const data=table==='stories'?Array.from({length:101},(_,i)=>({id:i+1,author:capturedOld?'Old':'New'})):b.p_story_ids.map(story_id=>({story_id,view_count:capturedOld?1:9}));if(capturedOld)await gate.promise;return r.fulfill({status:200,headers:H,json:data})});
  await page.evaluate(()=>{window.oldBatched=refreshPublicStoryCloudFields()});await wait(()=>calls.length===2);old=false;await page.evaluate(()=>refreshPublicStoryCloudFields({forceFresh:true}));gate.resolve();await page.evaluate(()=>oldBatched);
  assert.equal(calls.filter(c=>c.table==='nca_story_view_counts'&&c.old).length,1);assert.equal(calls.filter(c=>c.table==='nca_story_view_counts'&&!c.old).length,2);assert(await page.evaluate(()=>stories.every(s=>s.views===9&&s.author==='New')));assert.deepEqual(page.errors,[]);
  }finally{gate.resolve();await page.close()}
@@ -60,7 +61,7 @@ test('superseded 101-story public view read cannot issue late second batch or ov
 test('101 stories/1001 loaded chapters retain bounded RPC batches and no history reads',async()=>{
  const {page}=await setup(true),calls=[];try{
  await page.evaluate(()=>{stories=Array.from({length:101},(_,i)=>({id:i+1,title:'Story '+i,author:'Writer',baselineViews:10000,baselineLikes:1050,views:10000,chapters:i===0?Array.from({length:1001},(_,j)=>({id:j+1,title:'Chapter '+j,paras:[]})):[]}));render()});
- await page.route('**/rest/v1/**',r=>{const req=r.request(),table=new URL(req.url()).pathname.split('/').pop();if(req.method()==='OPTIONS')return r.fulfill({status:200,headers:H});const b=req.postData()?req.postDataJSON():null;calls.push({table,b});let data=[];
+ await page.route('**/rest/v1/**',r=>{const req=r.request(),table=new URL(req.url()).pathname.split('/').pop();if(req.method()==='OPTIONS')return r.fulfill({status:200,headers:H});if(isCommentEnrichmentRpc(new URL(req.url())))return r.fallback();const b=req.postData()?req.postDataJSON():null;calls.push({table,b});let data=[];
  if(table==='stories')data=Array.from({length:101},(_,i)=>({...row,id:i+1}));else if(table==='nca_story_view_counts')data=b.p_story_ids.map(story_id=>({story_id,view_count:10008}));else if(table==='nca_chapter_like_counts')data=b.p_chapter_ids.map(chapter_id=>({chapter_id,like_count:1}));else if(table==='nca_my_chapter_likes')data=b.p_chapter_ids;
  return r.fulfill({status:200,headers:H,json:data})});
  await page.evaluate(()=>Promise.all([refreshPublicStoryCloudFields(),refreshPublicStoryCloudFields()]));
@@ -83,7 +84,7 @@ for(const [signed,failedKind] of [[false,'counts'],[true,'counts'],[true,'member
  const {page}=await setup(signed),oldGate=hold(),calls=[];let phase='old';
  try{
  await page.route('**/rest/v1/**',async r=>{
-  const req=r.request(),table=new URL(req.url()).pathname.split('/').pop();if(req.method()==='OPTIONS')return r.fulfill({status:200,headers:H});
+  const req=r.request(),table=new URL(req.url()).pathname.split('/').pop();if(req.method()==='OPTIONS')return r.fulfill({status:200,headers:H});if(isCommentEnrichmentRpc(new URL(req.url())))return r.fallback();
   const captured=phase,b=req.postData()?req.postDataJSON():null;calls.push({phase:captured,table});
   const kind=table==='nca_chapter_like_counts'?'counts':table==='nca_my_chapter_likes'?'membership':null;
   const data=table==='stories'?[{...row,author:captured}]:table==='nca_story_view_counts'?b.p_story_ids.map(story_id=>({story_id,view_count:10009})):kind==='counts'?b.p_chapter_ids.map(chapter_id=>({chapter_id,like_count:captured==='old'?1:captured==='forced'?2:3})):kind==='membership'?(captured==='old'?[]:b.p_chapter_ids):[];
@@ -131,7 +132,7 @@ test('account switch during held old/forced hydration rejects A completion and p
  try{
  page.mockFixtures.profiles.push({id:'second-user',display_name:'Second',role:'reader'});
  await page.route('**/rest/v1/**',async r=>{
-  const req=r.request(),table=new URL(req.url()).pathname.split('/').pop();if(req.method()==='OPTIONS')return r.fulfill({status:200,headers:H});
+  const req=r.request(),table=new URL(req.url()).pathname.split('/').pop();if(req.method()==='OPTIONS')return r.fulfill({status:200,headers:H});if(isCommentEnrichmentRpc(new URL(req.url())))return r.fallback();
   if(!['stories','nca_story_view_counts','nca_chapter_like_counts','nca_my_chapter_likes'].includes(table))return r.fallback();
   const p=phase,b=req.postData()?req.postDataJSON():null;if(p==='old')oldCalls++;if(p==='forced')forcedCalls++;
   const data=table==='stories'?[row]:table==='nca_story_view_counts'?b.p_story_ids.map(story_id=>({story_id,view_count:10009})):table==='nca_chapter_like_counts'?b.p_chapter_ids.map(chapter_id=>({chapter_id,like_count:p==='B'?4:1})):p==='B'?b.p_chapter_ids:[];

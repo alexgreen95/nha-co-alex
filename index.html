@@ -969,22 +969,26 @@ body.pastel .chapter-end-nav #nextChapter{background:#dcebf4;border-color:#c6dfe
 .chapter-center-actions{display:flex;align-items:center;gap:7px;grid-column:2}
 .chapter-center-actions .chapter-home-btn svg,.chapter-center-actions .chapter-heart-btn .ico,.chapter-center-actions .chapter-heart-btn span{opacity:.82}
 .chapter-home-btn{display:inline-grid;place-items:center;width:42px;height:42px;min-width:42px;padding:0!important}.chapter-home-btn svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-/* Icon-only chapter heart; semantic colors follow light/dark reader themes. */
+/* Filled chapter heart; frame follows Home, with a 44px pointer hit area. */
 :root{--chapter-heart-unliked:#737373}
-body{--chapter-heart-liked:color-mix(in srgb,var(--accent) 80%,var(--fg))}
+body{--chapter-heart-liked:color-mix(in srgb,var(--accent) 75%,var(--fg))}
 body.night,body.purplenight{--chapter-heart-unliked:#b9b9b9;--chapter-heart-liked:var(--accent)}
 .chapter-end-nav .chapter-heart-btn{
- width:44px;height:44px;min-width:44px;min-height:44px;padding:0;border:0;
- outline:0;background:transparent;box-shadow:none!important;border-radius:0;
- display:inline-grid;place-items:center;color:var(--chapter-heart-unliked);transform:none;
+ position:relative;width:42px;height:42px;min-width:42px;min-height:42px;padding:0;
+ border:1px solid var(--line);border-radius:9px;background:var(--soft);outline:0;
+ display:inline-grid;place-items:center;color:var(--chapter-heart-unliked);transform:none;transition:box-shadow .15s ease;
 }
-.chapter-end-nav .chapter-heart-btn.liked{color:var(--chapter-heart-liked);background:transparent;border:0}
-.chapter-end-nav .chapter-heart-btn .ico{width:20px;height:20px;opacity:1;fill:none;stroke-width:1.7;transition:filter .15s ease}
-.chapter-end-nav .chapter-heart-btn.liked .ico{fill:currentColor}
+.chapter-end-nav .chapter-heart-btn::before{content:"";position:absolute;left:50%;top:50%;width:44px;height:44px;transform:translate(-50%,-50%)}
+.chapter-end-nav .chapter-heart-btn.liked{color:var(--chapter-heart-liked);border-color:var(--line);background:var(--soft)}
+.chapter-end-nav .chapter-heart-btn .ico{width:20px;height:20px;opacity:1;fill:currentColor;stroke:none;filter:none;transition:filter .15s ease}
+.chapter-end-nav .chapter-heart-btn.liked .ico{filter:drop-shadow(0 0 2px color-mix(in srgb,currentColor 35%,transparent))}
 .chapter-end-nav .chapter-heart-btn:not(:disabled):hover,
-.chapter-end-nav .chapter-heart-btn:focus-visible{background:transparent;box-shadow:none!important;transform:none;outline:0}
-.chapter-end-nav .chapter-heart-btn:hover .ico{filter:drop-shadow(0 0 1px currentColor)}
-.chapter-end-nav .chapter-heart-btn:focus-visible .ico{filter:drop-shadow(0 0 2px currentColor)}
+.chapter-end-nav .chapter-heart-btn:focus-visible{transform:none}
+.chapter-end-nav .chapter-heart-btn:focus-visible{outline:2px solid var(--chapter-heart-liked);outline-offset:2px}
+.chapter-end-nav .chapter-heart-btn.liked:hover .ico,
+.chapter-end-nav .chapter-heart-btn.liked:focus-visible .ico{filter:drop-shadow(0 0 3px color-mix(in srgb,currentColor 45%,transparent))}
+@media(max-width:600px){.chapter-end-nav .chapter-heart-btn{width:40px;height:40px;min-width:40px;min-height:40px}}
+@media(prefers-reduced-motion:reduce){.chapter-end-nav .chapter-heart-btn,.chapter-end-nav .chapter-heart-btn .ico{transition:none}}
 .comment-meta .comment-heart-icon{font-style:normal;display:inline-block;transform:scale(1.25);transform-origin:center;pointer-events:none}
 
 

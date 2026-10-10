@@ -3402,11 +3402,17 @@ function notifText(n){
  };
  return labels[n.type]||'có một hoạt động mới.';
 }
-let notificationRows=new Map(),notificationLoad=0,notificationOwner=null;
+let notificationRows=new Map(),notificationLoad=0,notificationBadgeLoad=0,notificationMutation=0,notificationOwner=null,notificationAccount=null;
+function captureNotificationAccount(){return {owner:authUser?.id||null,account:authAccount,epoch:authAccount?.epoch}}
+function notificationAccountCurrent(state){return authUser?.id===state.owner&&authAccount===state.account&&authAccount?.epoch===state.epoch}
 async function loadNotifications(badgeOnly=false){
- const load=++notificationLoad,userId=authUser?.id,filter=notifFilter;
+ const state=captureNotificationAccount(),userId=state.owner,filter=notifFilter;
+ const load=badgeOnly?notificationLoad:++notificationLoad,badgeLoad=++notificationBadgeLoad;
  const list=document.getElementById('notifList'),badge=document.getElementById('notifBadge');
- if(!userId||notificationOwner!==userId){notificationOwner=userId||null;notificationRows.clear();list.innerHTML='<div class="notif-empty">Chưa có thông báo.</div>';badge.textContent='0';badge.classList.remove('show');if(!userId)return;}
+ if(!userId||notificationOwner!==userId||notificationAccount!==state.account){notificationAccount=state.account;++notificationMutation;notificationOwner=userId||null;notificationRows.clear();list.innerHTML='<div class="notif-empty">Chưa có thông báo.</div>';badge.textContent='0';badge.classList.remove('show');if(!userId)return;}
+ const mutation=notificationMutation;
+ const current=()=>notificationAccountCurrent(state)&&mutation===notificationMutation;
+ const listCurrent=()=>current()&&load===notificationLoad&&filter===notifFilter;
  let q=sb.from('notifications').select('id,type,is_read,created_at,story_id,chapter_id,comment_id,actor_id').eq('user_id',userId).order('created_at',{ascending:false}).limit(50);
  if(filter==='like')q=q.in('type',['story_like','comment_like','review_like','chapter_like']);
  else if(filter!=='all')q=q.eq('type',filter);
@@ -3414,37 +3420,40 @@ async function loadNotifications(badgeOnly=false){
   badgeOnly?Promise.resolve(null):q,
   sb.from('notifications').select('id',{count:'exact',head:true}).eq('user_id',userId).eq('is_read',false)
  ]);
- if(load!==notificationLoad||authUser?.id!==userId)return;
- if(rows){
+ if(!current())return;
+ if(rows&&listCurrent()){
   if(rows.error)console.warn('notification read',rows.error);
   else{
    const actors=await cloudProfiles((rows.data||[]).map(n=>n.actor_id));
-   if(load!==notificationLoad||authUser?.id!==userId)return;
+   if(listCurrent()){
    notificationRows=new Map((rows.data||[]).map(n=>[String(n.id),n]));
    list.innerHTML=(rows.data||[]).length?rows.data.map(n=>`<div class="notif-item ${n.is_read?'':'unread'}" data-notification-id="${esc(n.id)}" role="link" tabindex="0">${esc((actors[n.actor_id]?.display_name||'').trim()||(n.actor_id?'Thành viên':'Hệ thống'))} ${esc(notifText(n))}</div>`).join(''):'<div class="notif-empty">Chưa có thông báo ở mục này.</div>';
+   }
   }
  }
+ if(!current()||badgeLoad!==notificationBadgeLoad)return;
  if(countResult.error){console.warn('notification unread count',countResult.error);return;}
  const count=countResult.count||0;badge.textContent=count>99?'99+':String(count);badge.classList.toggle('show',!!count);
 }
 async function markNotificationsRead(){
- const userId=authUser?.id;if(!userId)return;
+ const state=captureNotificationAccount(),userId=state.owner;if(!userId)return;
  let q=sb.from('notifications').update({is_read:true}).eq('user_id',userId).eq('is_read',false);
  if(notifFilter==='like')q=q.in('type',['story_like','comment_like','review_like','chapter_like']);
  else if(notifFilter!=='all')q=q.eq('type',notifFilter);
- const {error}=await q;if(error){console.warn('notification mark read',error);return;}
- if(authUser?.id===userId)await loadNotifications();
+ const {error}=await q;if(!notificationAccountCurrent(state))return;if(error){console.warn('notification mark read',error);return;}
+ ++notificationMutation;await loadNotifications();
+ if(!notificationAccountCurrent(state))return;
 }
 async function openNotification(id){
- const userId=authUser?.id,n=notificationRows.get(String(id));if(!userId||notificationOwner!==userId||!n)return;
+ const state=captureNotificationAccount(),userId=state.owner,n=notificationRows.get(String(id));if(!userId||notificationOwner!==userId||!n)return;
  const {error}=await sb.from('notifications').update({is_read:true}).eq('id',n.id).eq('user_id',userId);
- if(error)console.warn('notification mark read',error);
- if(authUser?.id!==userId)return;
- await loadNotifications();if(authUser?.id!==userId||notificationOwner!==userId)return;document.getElementById('notifPanel').classList.remove('open');
+ if(!notificationAccountCurrent(state))return;
+ if(error)console.warn('notification mark read',error);else ++notificationMutation;
+ await loadNotifications();if(!notificationAccountCurrent(state)||notificationOwner!==userId)return;document.getElementById('notifPanel').classList.remove('open');
  if(n.comment_id){
   const {data:comment,error}=await sb.from('comments').select('*').eq('id',n.comment_id).maybeSingle();
-  if(error||!comment||authUser?.id!==userId)return;
-  await loadCloudComments();if(authUser?.id!==userId)return;
+  if(error||!comment||!notificationAccountCurrent(state))return;
+  await loadCloudComments();if(!notificationAccountCurrent(state))return;
   const key=cloudCommentKey(comment),list=normalizedComments(key),target=list.find(c=>String(c.id)===String(comment.id));
   if(!target)return;
   const root=rootComment(list,target);
@@ -3456,9 +3465,10 @@ async function openNotification(id){
    showIntroTab('comments',document.querySelectorAll('.intro-tabs button')[3]);
   }else{
    await read(Number(comment.story_id),Number(comment.chapter_index));
+   if(!notificationAccountCurrent(state))return;
    if(comment.scope==='paragraph'){jumpToParagraphOnly(key);toggleComments(key,true);}
   }
-  requestAnimationFrame(()=>focusExactComment(comment.id));
+  requestAnimationFrame(()=>{if(notificationAccountCurrent(state))focusExactComment(comment.id)});
  }else if(n.chapter_id!=null&&['story_like','chapter_like'].includes(n.type)){
   const story=stories.find(s=>String(s.id)===String(n.story_id));
   const chapterIndex=story?.chapters.findIndex(c=>String(c.id)===String(n.chapter_id))??-1;

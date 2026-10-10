@@ -2034,12 +2034,40 @@ function focusExactComment(commentId){
  setTimeout(()=>el.classList.remove('jump-flash'),1800);
 }
 
+// Aggregate counts only; view events never leave the database for counting.
+const storyViewCountRequests=new Map(),storyViewWriteRevisions=new Map();
+let storyViewCountRequest=0;
+function applyStoryViewCount(story,count){
+ story.views=count;
+ const stats=[...document.querySelectorAll(`.story-card[onclick="openStory(${story.id})"] .stats .stat:first-child`)];
+ if(introStory&&String(introStory.id)===String(story.id))stats.push(document.querySelector('#introStats .stat:first-child'));
+ for(const stat of stats)if(stat)stat.innerHTML=`${icon('eye')} ${count}`;
+}
+async function refreshStoryViewCounts(storyIds){
+ const ids=[...new Set((storyIds||[]).map(String).filter(id=>/^\d+$/.test(id)))];
+ for(let offset=0;offset<ids.length;offset+=100){
+  const batch=ids.slice(offset,offset+100),request=++storyViewCountRequest;
+  const revisions=new Map(batch.map(id=>[id,storyViewWriteRevisions.get(id)||0]));
+  for(const id of batch)storyViewCountRequests.set(id,request);
+  const {data,error}=await sb.rpc('nca_story_view_counts',{p_story_ids:batch});
+  if(error){console.warn('story view count RPC',error);continue}
+  for(const row of data||[]){
+   const id=String(row.story_id),count=Number(row.view_count);
+   if(!revisions.has(id)||!Number.isFinite(count)||count<0||storyViewCountRequests.get(id)!==request||(storyViewWriteRevisions.get(id)||0)!==revisions.get(id))continue;
+   const story=stories.find(s=>String(s.id)===id);if(story)applyStoryViewCount(story,count);
+  }
+ }
+}
 async function recordStoryView(storyId){
  try{
    if(!/^\d+$/.test(String(storyId)))return false;
    const payload={story_id:Number(storyId),user_id:authUser?.id||null};
    const {error}=await sb.from('story_views').insert(payload);
    if(error){console.warn('story view cloud insert',error);return false}
+   const id=String(storyId),story=stories.find(s=>String(s.id)===id);
+   storyViewWriteRevisions.set(id,(storyViewWriteRevisions.get(id)||0)+1);
+   if(story)applyStoryViewCount(story,(Number(story.views)||0)+1);
+   await refreshStoryViewCounts([id]);
    return true;
  }catch(e){console.warn('story view cloud insert',e);return false}
 }
@@ -2050,7 +2078,7 @@ async function read(id,chapterOverride=null,updateRoute=true){
  currentChapter=chapterOverride===null?Math.min(pr.chapter||0,s.chapters.length-1):chapterOverride;
  if(updateRoute)setRoute(chapterPath(s,currentChapter));
  await ensureChapterContent(s,currentChapter);
- if(await recordStoryView(s.id))s.views=(s.views||0)+1;
+ await recordStoryView(s.id);
  renderChapter(chapterOverride===null ? (pr.scroll||0) : 0);
 }
 function isImportedChapterMetadata(text,index=0){
@@ -2128,7 +2156,7 @@ async function moveChapter(n){
  progress[currentStory.id]={chapter:currentChapter,scroll:0};save();
  // V21.17: chương được tải lazy từ Supabase, nên phải đợi nội dung cloud trước khi render.
  await ensureChapterContent(currentStory,currentChapter);
- if(await recordStoryView(currentStory.id))currentStory.views=(currentStory.views||0)+1;
+ await recordStoryView(currentStory.id);
  renderChapter(0);
 }
 function renderToc(){
@@ -2143,7 +2171,7 @@ async function goChapter(i){
  toggleToc(false);
  // V21.17: chọn chương từ mục lục cũng phải tải paragraph từ Supabase trước.
  await ensureChapterContent(currentStory,i);
- if(await recordStoryView(currentStory.id))currentStory.views=(currentStory.views||0)+1;
+ await recordStoryView(currentStory.id);
  renderChapter(0);
 }
 function toggleToc(force){toggleFontMenu(false);
@@ -2713,12 +2741,11 @@ async function fetchAllRows(table,orderCol,columns='*'){const out=[];for(let fro
 // V21.9 — cloud-first cover + public stats so incognito/other devices see the same values.
 async function refreshPublicStoryCloudFields(){
  try{
-   const [storyRows,viewRows,likeRows]=await Promise.all([
+   const [storyRows,,likeRows]=await Promise.all([
      fetchAllRows('stories','id'),
-     fetchAllRows('story_views','id','story_id').catch(()=>[]),
+     refreshStoryViewCounts(stories.map(story=>story.id)),
      fetchAllRows('chapter_likes','chapter_id','chapter_id,user_id').catch(()=>[])
    ]);
-   const views={}; for(const r of viewRows||[]) views[r.story_id]=(views[r.story_id]||0)+1;
    const chapterIdToKey={};
    for(const st of stories){(st.chapters||[]).forEach((ch,i)=>{if(ch?.id!=null)chapterIdToKey[String(ch.id)]=chapterLikeKey(st.id,i)})}
    chapterLikes={};
@@ -2740,7 +2767,6 @@ async function refreshPublicStoryCloudFields(){
        else if(r.long_intro!==undefined && r.long_intro!==null) st.longIntro=r.long_intro;
        if(r.status) st.status=['completed','complete','done','Đã hoàn thành'].includes(r.status)?'completed':'ongoing';
      }
-     st.views=Number(views[st.id]||0);
      st.cloudLikes=0;
    }
  }catch(e){console.warn('public story cloud fields',e)}

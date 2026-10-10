@@ -21,7 +21,7 @@ test('anonymous: uncached/cached opens, navigation, refresh and bounded requests
  const traffic=[];const page=await feedPage(0,{fixtures,onRequest:url=>traffic.push(url)});
  try{
   assert(!traffic.some(u=>u.pathname.endsWith('/story_views')));
-  assert.equal(traffic.filter(u=>u.pathname.startsWith('/rest/v1/')).length,11);
+  assert.equal(traffic.filter(u=>u.pathname.startsWith('/rest/v1/')).length,10);
   assert.equal(await page.evaluate(()=>stories[0].views),100000);
   const mock=await mockCounts(page);
   traffic.length=0;
@@ -48,7 +48,7 @@ test('anonymous: uncached/cached opens, navigation, refresh and bounded requests
   await page.reload({waitUntil:'networkidle'});
   await page.waitForFunction(()=>currentStory&&stories[0].views===100005);
   assert.equal(mock.count,100005,'refresh reader records exactly one event');
-  assert.equal(traffic.filter(u=>u.pathname.startsWith('/rest/v1/')).length+mock.requests.length,15);
+  assert.equal(traffic.filter(u=>u.pathname.startsWith('/rest/v1/')).length+mock.requests.length,14);
   assert.deepEqual(page.errors,[]);
  }finally{await page.close()}
 });

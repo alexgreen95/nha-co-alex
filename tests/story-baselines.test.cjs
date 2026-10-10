@@ -17,7 +17,7 @@ test('zero real events: same totals on home/detail/saved/profile; chapter is rea
   assert.deepEqual((await get('#saved .stats .stat')).map(x=>x.trim()),['10K','1.05K','7']);
   assert.deepEqual((await get('.profile-story-stats span')).map(x=>x.trim()),['10K','1.05K','7']);
   assert.equal(await page.locator('#chapterHeartRow button span').count(),0);assert.equal(await page.locator('#chapterHeartRow button').getAttribute('aria-pressed'),'false');
-  assert.equal(traffic.filter(u=>u.pathname.startsWith('/rest/v1/')).length,11);
+  assert.equal(traffic.filter(u=>u.pathname.startsWith('/rest/v1/')).length,10);
   assert(!traffic.some(u=>u.pathname.endsWith('/story_likes')||u.pathname.endsWith('/story_views')));assert.deepEqual(page.errors,[]);
  }finally{await page.close()}
 });
@@ -49,7 +49,7 @@ test('normal real view +1, RPC fallback and cached requests preserve Step 1 tota
   traffic.length=0;await page.evaluate(()=>read(1,0));assert.equal((await summary(page)).views,10010);assert.equal(traffic.filter(u=>u.pathname.startsWith('/rest/v1/')).length+2,2);
   fail=true;await page.evaluate(()=>recordStoryView(1));assert.equal((await summary(page)).views,10011);
   fail=false;await page.evaluate(()=>refreshStoryViewCounts([1]));assert.equal((await summary(page)).views,10011);
-  const priorWrites=writes.length,priorRpc=rpcCalls;traffic.length=0;await page.reload({waitUntil:'networkidle'});assert.equal((await summary(page)).views,10012);assert.equal(writes.length-priorWrites,1);assert.equal(traffic.filter(u=>u.pathname.startsWith('/rest/v1/')).length+writes.length-priorWrites+rpcCalls-priorRpc,15);
+  const priorWrites=writes.length,priorRpc=rpcCalls;traffic.length=0;await page.reload({waitUntil:'networkidle'});assert.equal((await summary(page)).views,10012);assert.equal(writes.length-priorWrites,1);assert.equal(traffic.filter(u=>u.pathname.startsWith('/rest/v1/')).length+writes.length-priorWrites+rpcCalls-priorRpc,14);
   assert.equal((await summary(page)).baselineViews,10000);assert.deepEqual(page.errors,[]);
  }finally{await page.close()}
 });

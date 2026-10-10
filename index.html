@@ -1971,11 +1971,12 @@ function currentChapterLikeCount(id){
 }
 function chapterLikeVersion(id){return chapterLikeVersions.get(id)||0}
 function invalidateChapterLikeReads(id){chapterLikeVersions.set(id,chapterLikeVersion(id)+1)}
-function chapterLikeRpcBatch(kind,ids,account){
+function chapterLikeRpcBatch(kind,ids,account,forceKey=null){
  const versions=ids.map(chapterLikeVersion),scope=kind==='membership'?`${account.uid}:${account.epoch}`:'public';
- const flightKey=JSON.stringify([kind,scope,ids,versions]);
- if(chapterLikeFlights.has(flightKey))return chapterLikeFlights.get(flightKey);
- const serial=++chapterLikeReadSerial,stamps=kind==='membership'?chapterLikeMemberStamps:chapterLikeReadStamps;
+ const flightKey=JSON.stringify([kind,scope,ids,versions,forceKey]);
+ const stamps=kind==='membership'?chapterLikeMemberStamps:chapterLikeReadStamps,flight=chapterLikeFlights.get(flightKey);
+ if(flight&&ids.every(id=>stamps.get(id)===flight.serial))return flight.job;
+ const serial=++chapterLikeReadSerial;
  ids.forEach(id=>stamps.set(id,serial));
  const job=(async()=>{
   const {data,error}=await sb.rpc(kind==='membership'?'nca_my_chapter_likes':'nca_chapter_like_counts',{p_chapter_ids:ids});
@@ -1999,16 +2000,17 @@ function chapterLikeRpcBatch(kind,ids,account){
   });
   if(kind==='membership')projectChapterLikeMembership();
   return applied;
- })().catch(error=>{console.warn('chapter like '+kind+' read',error);return false}).finally(()=>{chapterLikeFlights.delete(flightKey)});
- chapterLikeFlights.set(flightKey,job);return job;
+ })().catch(error=>{console.warn('chapter like '+kind+' read',error);return false}).finally(()=>{if(chapterLikeFlights.get(flightKey)?.job===job)chapterLikeFlights.delete(flightKey)});
+ chapterLikeFlights.set(flightKey,{job,serial});return job;
 }
-async function refreshChapterLikeState(requestedIds=loadedChapterLikeIds(),membershipOnly=false){
+async function refreshChapterLikeState(requestedIds=loadedChapterLikeIds(),membershipOnly=false,forceKey=null,reportHydration=false){
  const account=activateChapterLikeAccount(),loaded=new Set(loadedChapterLikeIds());
- const ids=[...new Set(requestedIds.map(Number))].filter(id=>loaded.has(id)).sort((a,b)=>a-b),jobs=[],membershipJobs=[];
- for(let start=0;start<ids.length;start+=1000){const batch=ids.slice(start,start+1000);if(!membershipOnly)jobs.push(chapterLikeRpcBatch('counts',batch,account));if(account.uid){const job=chapterLikeRpcBatch('membership',batch,account);jobs.push(job);membershipJobs.push(job)}}
+ const ids=[...new Set(requestedIds.map(Number))].filter(id=>loaded.has(id)).sort((a,b)=>a-b),jobs=[],countJobs=[],membershipJobs=[];
+ for(let start=0;start<ids.length;start+=1000){const batch=ids.slice(start,start+1000);if(!membershipOnly){const job=chapterLikeRpcBatch('counts',batch,account,forceKey);jobs.push(job);countJobs.push(job)}if(account.uid){const job=chapterLikeRpcBatch('membership',batch,account,forceKey);jobs.push(job);membershipJobs.push(job)}}
  await Promise.all(jobs);
  renderChapterHeart();for(const st of stories)refreshStoryHeartStats(st);
- return !!account.uid&&account.uid===chapterLikeAccountId&&account.epoch===chapterLikeEpoch&&(await Promise.all(membershipJobs)).every(ok=>ok===true);
+ const membershipReady=!!account.uid&&account.uid===chapterLikeAccountId&&account.epoch===chapterLikeEpoch&&(await Promise.all(membershipJobs)).every(ok=>ok===true);
+ return reportHydration?{countsReady:(await Promise.all(countJobs)).every(ok=>ok===true),membershipReady:!account.uid||membershipReady}:membershipReady;
 }
 function renderChapterHeart(){activateChapterLikeAccount();const box=document.getElementById('chapterHeartRow');if(!box||!currentStory)return;const key=chapterLikeKey(currentStory.id,currentChapter),on=!!authUser&&likedChapters.includes(key);box.innerHTML=`<button class="chapter-heart-btn ${on?'liked':''}" type="button" onclick="toggleChapterLike()" aria-pressed="${on}" aria-label="${on?'Bỏ tim':'Thả tim'} chương này">${icon('heart')}</button>`}
 function toggleChapterLike(){
@@ -2211,13 +2213,15 @@ function applyStoryViewCount(story,count){
  if(introStory&&String(introStory.id)===String(story.id))stats.push(document.querySelector('#introStats .stat:first-child'));
  for(const stat of stats)if(stat)stat.innerHTML=`${icon('eye')} ${formatStoryStat(count)}`;
 }
-async function refreshStoryViewCounts(storyIds){
+async function refreshStoryViewCounts(storyIds,isCurrent=null){
  const ids=[...new Set((storyIds||[]).map(String).filter(id=>/^\d+$/.test(id)))];
  for(let offset=0;offset<ids.length;offset+=100){
+  if(isCurrent&&!isCurrent())return;
   const batch=ids.slice(offset,offset+100),request=++storyViewCountRequest;
   const revisions=new Map(batch.map(id=>[id,storyViewWriteRevisions.get(id)||0]));
   for(const id of batch)storyViewCountRequests.set(id,request);
   const {data,error}=await sb.rpc('nca_story_view_counts',{p_story_ids:batch});
+  if(isCurrent&&!isCurrent())return;
   if(error){console.warn('story view count RPC',error);continue}
   for(const row of data||[]){
    const id=String(row.story_id),count=Number(row.view_count);
@@ -3010,13 +3014,24 @@ function updateAuthUI(){
 async function fetchAllRows(table,orderCol,columns='*'){const out=[];for(let from=0;;from+=1000){let q=sb.from(table).select(columns).range(from,from+999);if(orderCol)q=q.order(orderCol,{ascending:true});const {data,error}=await q;if(error)throw error;out.push(...(data||[]));if(!data||data.length<1000)break;}return out}
 
 // V21.9 — cloud-first cover + public stats so incognito/other devices see the same values.
-async function refreshPublicStoryCloudFields(){
- try{
-   const [storyRows]=await Promise.all([
-     fetchAllRows('stories','id'),
-     refreshStoryViewCounts(stories.map(story=>story.id)),
-     refreshChapterLikeState()
+let publicMetadataRevision=0,publicMetadataSnapshot=null,publicRefreshGeneration=0,publicRefreshFlight=null;
+function refreshPublicStoryCloudFields({forceFresh=false,metadataSnapshot=null}={}){
+ const target=stories,account=activateChapterLikeAccount();
+ const storyIds=target.map(story=>String(story.id)).sort(),chapterIds=loadedChapterLikeIds();
+ const key=JSON.stringify([storyIds,chapterIds,account.uid,account.epoch]);
+ if(!forceFresh&&publicRefreshFlight?.target===target&&publicRefreshFlight.key===key)return publicRefreshFlight.job;
+ const generation=++publicRefreshGeneration;
+ const snapshot=!forceFresh&&metadataSnapshot?.revision===publicMetadataRevision&&metadataSnapshot.target===target?metadataSnapshot:null;
+ const revision=snapshot?publicMetadataRevision:++publicMetadataRevision;
+ const current=()=>generation===publicRefreshGeneration&&revision===publicMetadataRevision&&stories===target;
+ const job=(async()=>{
+  try{
+   const [storyRows,,likes]=await Promise.all([
+     snapshot?Promise.resolve(snapshot.rows):fetchAllRows('stories','id'),
+     refreshStoryViewCounts(storyIds,current),
+     refreshChapterLikeState(chapterIds,false,forceFresh?'public:'+generation:null,true)
    ]);
+   if(!current())return false;
    for(const st of stories){
      const r=(storyRows||[]).find(x=>String(x.id)===String(st.id));
      if(r){
@@ -3036,15 +3051,21 @@ async function refreshPublicStoryCloudFields(){
      }
      st.cloudLikes=0;
    }
- }catch(e){console.warn('public story cloud fields',e)}
+   return likes.countsReady&&likes.membershipReady;
+  }catch(e){console.warn('public story cloud fields',e);return false}
+ })().finally(()=>{if(publicRefreshFlight?.generation===generation)publicRefreshFlight=null});
+ publicRefreshFlight={generation,target,key,job};return job;
 }
 const _storyLikeTotalV219=storyLikeTotal;
 storyLikeTotal=function(story){ return _storyLikeTotalV219(story); };
 async function loadCloudStories(){
+ const revision=++publicMetadataRevision;
+ ++publicRefreshGeneration;publicRefreshFlight=null;publicMetadataSnapshot=null;
  try{
   // V21.15: tải metadata + danh sách chương trước để Trang chủ hiện nhanh.
   // Nội dung paragraph chỉ tải khi người đọc thật sự mở chương đó.
   const results=await Promise.allSettled([fetchAllRows('stories','id'),fetchAllRows('chapters','id')]);
+  if(revision!==publicMetadataRevision)return false;
   const storyRows=results[0].status==='fulfilled'?results[0].value:[];
   const chapterRows=results[1].status==='fulfilled'?results[1].value:[];
   if(results[1].status==='rejected')console.warn('chapter cloud read',results[1].reason);
@@ -3063,6 +3084,7 @@ async function loadCloudStories(){
   },r));
   if(mapped.length){
    stories=mapped.sort((a,b)=>(Date.parse(b.updatedAt)||0)-(Date.parse(a.updatedAt)||0));
+   publicMetadataSnapshot={revision,rows:storyRows,target:stories};
    render();
    if(introStory){
       const fresh=stories.find(x=>Number(x.id)===Number(introStory.id));
@@ -3138,14 +3160,16 @@ async function initAuth(){
      if(authAccountCurrent(state))break;
    }
    // Public data is still loaded exactly through the existing bootstrap path.
-   await loadCloudStories();
+   const metadataBefore=publicMetadataRevision;
+   const loaded=await loadCloudStories();
+   const metadataSnapshot=loaded&&publicMetadataSnapshot?.revision>metadataBefore?publicMetadataSnapshot:null;
    const returnPath=sessionStorage.getItem('nha_return_path');
    if(authUser&&returnPath)sessionStorage.removeItem('nha_return_path');
    if(navigationEpoch===bootstrapNavigationEpoch){
      if(authUser&&returnPath&&/^\/(truyen|user)\//.test(returnPath))setRoute(returnPath,true);
      routeFromLocation();
    }
-   Promise.allSettled([refreshPublicStoryCloudFields(),loadCloudComments(),loadCloudReviews()]).then(()=>refreshHydratedVisibleView());
+   Promise.allSettled([refreshPublicStoryCloudFields({metadataSnapshot}),loadCloudComments(),loadCloudReviews()]).then(()=>refreshHydratedVisibleView());
    // Join bootstrap's existing membership batch; retain its actual outcome.
    if(authAccount?.owner)authAccount.likesInitial=refreshChapterLikeState(loadedChapterLikeIds(),true);
  }finally{resolveMetadata();}

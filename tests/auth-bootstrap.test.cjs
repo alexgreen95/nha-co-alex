@@ -47,7 +47,7 @@ for(const timing of ['before','after'])test(`signed bootstrap INITIAL_SESSION ${
  assert.equal(requests.filter(r=>r.table==='profiles'&&r.query.includes('id=eq.reader-user')).length,1);
  assert.equal(requests.filter(r=>r.table==='reading_progress').length,1);assert.equal(requests.filter(r=>r.table==='saved_stories').length,1);
  assert.equal(requests.filter(r=>r.table==='notifications').length,2);
- assert.equal(requests.filter(r=>r.table==='stories').length,2);assert.equal(requests.filter(r=>r.table==='comments').length,1);assert.equal(requests.filter(r=>r.table==='reviews').length,1);
+ assert.equal(requests.filter(r=>r.table==='stories').length,1);assert.equal(requests.filter(r=>r.table==='comments').length,1);assert.equal(requests.filter(r=>r.table==='reviews').length,1);
  assert.deepEqual(page.errors,[]);
  }finally{await page.close()}
 });

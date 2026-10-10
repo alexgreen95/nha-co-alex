@@ -3387,7 +3387,7 @@ function toggleNotifications(){
  p.classList.toggle('open');
  document.getElementById('accountMenu').classList.remove('open');
  toggleThemeMenu(false);
- if(p.classList.contains('open')){document.querySelectorAll('.notif-filters button').forEach(b=>b.classList.toggle('active',(b.getAttribute('onclick')||'').includes(`'${notifFilter}'`)));loadNotifications();}
+ if(p.classList.contains('open')){document.querySelectorAll('.notif-filters button').forEach(b=>b.classList.toggle('active',(b.getAttribute('onclick')||'').includes(`'${notifFilter}'`)));loadNotifications(false,{forceRefresh:true});}
 }
 function setNotifFilter(type){notifFilter=type;document.querySelectorAll('.notif-filters button').forEach(b=>b.classList.toggle('active',(b.getAttribute('onclick')||'').includes(`'${type}'`)));loadNotifications()}
 function notifText(n){
@@ -3405,35 +3405,53 @@ function notifText(n){
 let notificationRows=new Map(),notificationLoad=0,notificationBadgeLoad=0,notificationMutation=0,notificationOwner=null,notificationAccount=null;
 function captureNotificationAccount(){return {owner:authUser?.id||null,account:authAccount,epoch:authAccount?.epoch}}
 function notificationAccountCurrent(state){return authUser?.id===state.owner&&authAccount===state.account&&authAccount?.epoch===state.epoch}
-async function loadNotifications(badgeOnly=false){
+let notificationFullFlight=null,notificationHeadFlight=null;
+function notificationFlightCurrent(job){return job&&notificationAccountCurrent(job.state)&&job.mutation===notificationMutation}
+function notificationHead(state,mutation,forceRefresh=false){
+ const old=notificationHeadFlight;
+ if(!forceRefresh&&notificationFlightCurrent(old)&&old.revision===notificationBadgeLoad)return old.promise;
+ const job={state,mutation,revision:++notificationBadgeLoad};
+ notificationHeadFlight=job;
+ job.promise=(async()=>{
+  try{
+   const result=await sb.from('notifications').select('id',{count:'exact',head:true}).eq('user_id',state.owner).eq('is_read',false);
+   if(result.error){console.warn('notification unread count',result.error);return false;}
+   if(!notificationFlightCurrent(job)||job.revision!==notificationBadgeLoad)return false;
+   const badge=document.getElementById('notifBadge'),count=result.count||0;
+   badge.textContent=count>99?'99+':String(count);badge.classList.toggle('show',!!count);return true;
+  }finally{if(notificationHeadFlight===job)notificationHeadFlight=null;}
+ })();return job.promise;
+}
+async function loadNotifications(badgeOnly=false,{forceRefresh=false}={}){
  const state=captureNotificationAccount(),userId=state.owner,filter=notifFilter;
- const load=badgeOnly?notificationLoad:++notificationLoad,badgeLoad=++notificationBadgeLoad;
  const list=document.getElementById('notifList'),badge=document.getElementById('notifBadge');
  if(!userId||notificationOwner!==userId||notificationAccount!==state.account){notificationAccount=state.account;++notificationMutation;notificationOwner=userId||null;notificationRows.clear();list.innerHTML='<div class="notif-empty">Chưa có thông báo.</div>';badge.textContent='0';badge.classList.remove('show');if(!userId)return;}
  const mutation=notificationMutation;
- const current=()=>notificationAccountCurrent(state)&&mutation===notificationMutation;
- const listCurrent=()=>current()&&load===notificationLoad&&filter===notifFilter;
- let q=sb.from('notifications').select('id,type,is_read,created_at,story_id,chapter_id,comment_id,actor_id').eq('user_id',userId).order('created_at',{ascending:false}).limit(50);
- if(filter==='like')q=q.in('type',['story_like','comment_like','review_like','chapter_like']);
- else if(filter!=='all')q=q.eq('type',filter);
- const [rows,countResult]=await Promise.all([
-  badgeOnly?Promise.resolve(null):q,
-  sb.from('notifications').select('id',{count:'exact',head:true}).eq('user_id',userId).eq('is_read',false)
- ]);
- if(!current())return;
- if(rows&&listCurrent()){
-  if(rows.error)console.warn('notification read',rows.error);
-  else{
-   const actors=await cloudProfiles((rows.data||[]).map(n=>n.actor_id));
-   if(listCurrent()){
+ if(badgeOnly)return notificationHead(state,mutation,forceRefresh);
+ const old=notificationFullFlight;
+ if(!forceRefresh&&notificationFlightCurrent(old)&&old.filter===filter&&old.revision===notificationLoad)return old.promise;
+ const job={state,mutation,filter,revision:++notificationLoad};
+ notificationFullFlight=job;
+ const current=()=>notificationFlightCurrent(job)&&job.revision===notificationLoad&&filter===notifFilter;
+ job.promise=(async()=>{
+  try{
+   let q=sb.from('notifications').select('id,type,is_read,created_at,story_id,chapter_id,comment_id,actor_id').eq('user_id',userId).order('created_at',{ascending:false}).limit(50);
+   if(filter==='like')q=q.in('type',['story_like','comment_like','review_like','chapter_like']);
+   else if(filter!=='all')q=q.eq('type',filter);
+   // A new full refresh gets a fresh count; equivalent full callers join above.
+   const [rows,headOK]=await Promise.all([q,notificationHead(state,mutation,true)]);
+   if(!current())return false;
+   if(rows.error){console.warn('notification read',rows.error);return false;}
+   const ids=[...new Set((rows.data||[]).map(n=>n.actor_id).filter(Boolean))];
+   const actorResult=ids.length?await sb.from('profiles').select('id,display_name,avatar_url,role').in('id',ids):{data:[]};
+   if(!current())return false;
+   const actors=Object.fromEntries((actorResult.data||[]).map(p=>[p.id,p]));
+   if(actorResult.error)console.warn('notification actors',actorResult.error);
    notificationRows=new Map((rows.data||[]).map(n=>[String(n.id),n]));
    list.innerHTML=(rows.data||[]).length?rows.data.map(n=>`<div class="notif-item ${n.is_read?'':'unread'}" data-notification-id="${esc(n.id)}" role="link" tabindex="0">${esc((actors[n.actor_id]?.display_name||'').trim()||(n.actor_id?'Thành viên':'Hệ thống'))} ${esc(notifText(n))}</div>`).join(''):'<div class="notif-empty">Chưa có thông báo ở mục này.</div>';
-   }
-  }
- }
- if(!current()||badgeLoad!==notificationBadgeLoad)return;
- if(countResult.error){console.warn('notification unread count',countResult.error);return;}
- const count=countResult.count||0;badge.textContent=count>99?'99+':String(count);badge.classList.toggle('show',!!count);
+   return headOK&&!actorResult.error;
+  }finally{if(notificationFullFlight===job)notificationFullFlight=null;}
+ })();return job.promise;
 }
 async function markNotificationsRead(){
  const state=captureNotificationAccount(),userId=state.owner;if(!userId)return;
@@ -3441,7 +3459,7 @@ async function markNotificationsRead(){
  if(notifFilter==='like')q=q.in('type',['story_like','comment_like','review_like','chapter_like']);
  else if(notifFilter!=='all')q=q.eq('type',notifFilter);
  const {error}=await q;if(!notificationAccountCurrent(state))return;if(error){console.warn('notification mark read',error);return;}
- ++notificationMutation;await loadNotifications();
+ ++notificationMutation;await loadNotifications(false,{forceRefresh:true});
  if(!notificationAccountCurrent(state))return;
 }
 async function openNotification(id){
@@ -3449,7 +3467,7 @@ async function openNotification(id){
  const {error}=await sb.from('notifications').update({is_read:true}).eq('id',n.id).eq('user_id',userId);
  if(!notificationAccountCurrent(state))return;
  if(error)console.warn('notification mark read',error);else ++notificationMutation;
- await loadNotifications();if(!notificationAccountCurrent(state)||notificationOwner!==userId)return;document.getElementById('notifPanel').classList.remove('open');
+ await loadNotifications(false,{forceRefresh:true});if(!notificationAccountCurrent(state)||notificationOwner!==userId)return;document.getElementById('notifPanel').classList.remove('open');
  if(n.comment_id){
   const {data:comment,error}=await sb.from('comments').select('*').eq('id',n.comment_id).maybeSingle();
   if(error||!comment||!notificationAccountCurrent(state))return;
@@ -3478,8 +3496,8 @@ async function openNotification(id){
 }
 document.addEventListener('click',event=>{const item=event.target.closest('[data-notification-id]');if(item)openNotification(item.dataset.notificationId).catch(error=>console.warn('notification navigation',error));});
 document.addEventListener('keydown',event=>{const item=event.target.closest('[data-notification-id]');if(item&&(event.key==='Enter'||event.key===' ')){event.preventDefault();item.click();}});
-setInterval(()=>{if(authUser&&!document.hidden)loadNotifications(!document.getElementById('notifPanel').classList.contains('open')).catch(error=>console.warn('notification refresh',error));},30000);
-document.addEventListener('visibilitychange',()=>{if(authUser&&!document.hidden)loadNotifications().catch(error=>console.warn('notification refresh',error));});
+setInterval(()=>{if(authUser&&!document.hidden)loadNotifications(!document.getElementById('notifPanel').classList.contains('open'),{forceRefresh:true}).catch(error=>console.warn('notification refresh',error));},30000);
+document.addEventListener('visibilitychange',()=>{if(authUser&&!document.hidden)loadNotifications(false,{forceRefresh:true}).catch(error=>console.warn('notification refresh',error));});
 let pendingAvatarFile=null;
 function profileEditMarkup(){
  const name=esc(userDisplayName(authUser));

@@ -1976,23 +1976,26 @@ function chapterLikeRpcBatch(kind,ids,account){
   }else{
    values=new Set(data.map(Number));if([...values].some(id=>!wanted.has(id)))throw new Error('Invalid chapter like membership');
    activateChapterLikeAccount();
-   if(account.uid!==chapterLikeAccountId||account.epoch!==chapterLikeEpoch)return;
+   if(account.uid!==chapterLikeAccountId||account.epoch!==chapterLikeEpoch)return false;
   }
+  let applied=true;
   ids.forEach((id,i)=>{
-   if(!loaded.has(id)||chapterLikeVersion(id)!==versions[i]||stamps.get(id)!==serial||chapterLikePendingWrites.get(id))return;
+   if(!loaded.has(id)||chapterLikeVersion(id)!==versions[i]||stamps.get(id)!==serial||chapterLikePendingWrites.get(id)){applied=false;return;}
    if(kind==='counts'){if(values.has(id))setChapterLikeCount(id,values.get(id),keys)}
    else{if(values.has(id))chapterLikeMembership.add(id);else chapterLikeMembership.delete(id)}
   });
   if(kind==='membership')projectChapterLikeMembership();
- })().catch(error=>{console.warn('chapter like '+kind+' read',error)}).finally(()=>{chapterLikeFlights.delete(flightKey)});
+  return applied;
+ })().catch(error=>{console.warn('chapter like '+kind+' read',error);return false}).finally(()=>{chapterLikeFlights.delete(flightKey)});
  chapterLikeFlights.set(flightKey,job);return job;
 }
-async function refreshChapterLikeState(requestedIds=loadedChapterLikeIds()){
+async function refreshChapterLikeState(requestedIds=loadedChapterLikeIds(),membershipOnly=false){
  const account=activateChapterLikeAccount(),loaded=new Set(loadedChapterLikeIds());
- const ids=[...new Set(requestedIds.map(Number))].filter(id=>loaded.has(id)).sort((a,b)=>a-b),jobs=[];
- for(let start=0;start<ids.length;start+=1000){const batch=ids.slice(start,start+1000);jobs.push(chapterLikeRpcBatch('counts',batch,account));if(account.uid)jobs.push(chapterLikeRpcBatch('membership',batch,account))}
+ const ids=[...new Set(requestedIds.map(Number))].filter(id=>loaded.has(id)).sort((a,b)=>a-b),jobs=[],membershipJobs=[];
+ for(let start=0;start<ids.length;start+=1000){const batch=ids.slice(start,start+1000);if(!membershipOnly)jobs.push(chapterLikeRpcBatch('counts',batch,account));if(account.uid){const job=chapterLikeRpcBatch('membership',batch,account);jobs.push(job);membershipJobs.push(job)}}
  await Promise.all(jobs);
  renderChapterHeart();for(const st of stories)refreshStoryHeartStats(st);
+ return !!account.uid&&account.uid===chapterLikeAccountId&&account.epoch===chapterLikeEpoch&&(await Promise.all(membershipJobs)).every(ok=>ok===true);
 }
 function renderChapterHeart(){activateChapterLikeAccount();const box=document.getElementById('chapterHeartRow');if(!box||!currentStory)return;const key=chapterLikeKey(currentStory.id,currentChapter),on=!!authUser&&likedChapters.includes(key);box.innerHTML=`<button class="chapter-heart-btn ${on?'liked':''}" type="button" onclick="toggleChapterLike()" aria-pressed="${on}" aria-label="${on?'Bỏ tim':'Thả tim'} chương này">${icon('heart')}</button>`}
 function toggleChapterLike(){
@@ -2856,24 +2859,122 @@ async function signInGoogle(){
  if(error && m)m.textContent='Hình như đăng nhập bị lỗi. Thử lại coi sao.';
 }
 async function signOut(){
- await sb.auth.signOut();
- authUser=null;
- updateAuthUI();
+ const state=authAccount;
+ const {error}=await sb.auth.signOut();
+ if(error){console.warn('sign out',error);return;}
+ if(authAccount!==state&&authAccount?.owner)return;
+ applyAuthUser(null);
  show('home');
 }
 let memberProfile=null;
 function googleDisplayName(u){ return u?.user_metadata?.full_name || u?.user_metadata?.name || u?.email?.split('@')[0] || 'Thành viên'; }
 function googleAvatar(u){ return u?.user_metadata?.avatar_url || u?.user_metadata?.picture || ''; }
-function userDisplayName(u){ return (u?.id===authUser?.id?memberProfile?.display_name:'') || googleDisplayName(u); }
-function userAvatar(u){ return (u?.id===authUser?.id?memberProfile?.avatar_url:'') || googleAvatar(u); }
-async function syncProfile(u){
- if(!u)return;
- const {data:existing}=await sb.from('profiles').select('id,display_name,avatar_url,bio,saved_stories_public,role').eq('id',u.id).maybeSingle();
- if(existing){ memberProfile=existing; return existing; }
- const row={id:u.id,display_name:googleDisplayName(u),avatar_url:googleAvatar(u),bio:''};
- const {data}=await sb.from('profiles').upsert(row,{onConflict:'id'}).select().maybeSingle();
- memberProfile=data||row; return memberProfile;
+function userDisplayName(u){ return (u?.id===authUser?.id&&memberProfile?.id===u?.id?memberProfile?.display_name:'') || googleDisplayName(u); }
+function userAvatar(u){ return (u?.id===authUser?.id&&memberProfile?.id===u?.id?memberProfile?.avatar_url:'') || googleAvatar(u); }
+// Auth coordination wraps, rather than replaces, the Step 2/3 account guards.
+let authAccount=null,authAccountEpoch=0,authEventRevision=0,authLastWork=Promise.resolve();
+let authMetadataReady=Promise.resolve(),authSubscription=null;
+function authAccountCurrent(state){return !!state&&authAccount===state&&(authUser?.id||null)===state.owner}
+function resetAuthAccount(owner){
+ authAccount?.invalidate();
+ let invalidate;const invalidated=new Promise(resolve=>invalidate=resolve);
+ authAccount={invalidated,invalidate,owner,epoch:++authAccountEpoch,profileReady:false,profileFlight:null,profileGeneration:0,memberReady:false,memberFlight:null,likesCovered:false,likesAttempted:false,likesInitial:null};
+ memberProfile=null;cloudSyncReady=false;
+ const page=document.getElementById('profilePage');
+ if(page.dataset.profileOwner){
+   ++profileRequestId;setProfileHeader({display_name:'Thành viên'},false);
+   document.getElementById('profileContent').innerHTML='<h3>Hồ sơ</h3><p class="muted">Vui lòng mở lại hồ sơ của tài khoản hiện tại.</p>';
+ }
+ pendingAvatarFile=null;
+ return authAccount;
 }
+function captureAuthAccount(u){
+ if(!u||authUser?.id!==u.id)return null;
+ return authAccount?.owner===u.id?authAccount:resetAuthAccount(u.id);
+}
+function applyAuthUser(user){
+ const owner=user?.id||null,changed=!authAccount||authAccount.owner!==owner;
+ authUser=user||null;
+ const state=changed?resetAuthAccount(owner):authAccount;
+ updateAuthUI();
+ if(changed){
+   loadNotifications().catch(error=>console.warn('auth notifications',error));
+   if(!document.getElementById('library').classList.contains('hidden'))renderSaved();
+   refreshHydratedVisibleView();
+ }
+ return state;
+}
+function refreshAuthOwnedView(state){
+ if(!authAccountCurrent(state))return;
+ const page=document.getElementById('profilePage');
+ if(page.classList.contains('hidden')||page.dataset.profileOwner!==state.owner)return;
+ const section=document.querySelector('[data-profile-tab].active')?.dataset.profileTab||'profile';
+ if(section==='edit')return; // Do not overwrite an in-progress profile draft.
+ setProfileHeader({...memberProfile,id:state.owner,display_name:userDisplayName(authUser),avatar_url:userAvatar(authUser),created_at:authUser.created_at},true);
+ if(section==='saved'||section==='reading')renderProfileStoryShelf(section);
+ else if(section==='activity')renderProfileActivity('all');
+ else document.getElementById('profileContent').innerHTML=`<h3>Hồ sơ</h3>${memberProfile?.bio?`<p>${esc(memberProfile.bio)}</p>`:'<p class="muted">Đây là góc riêng của bạn trong Nhà có Alex.</p>'}${profileMetaHTML(memberProfile||{},true)}`;
+}
+async function syncProfile(u){
+ const state=captureAuthAccount(u);if(!state)return null;
+ const generation=++state.profileGeneration;
+ const current=()=>authAccountCurrent(state)&&state.profileGeneration===generation;
+ const {data:existing,error}=await sb.from('profiles').select('id,display_name,avatar_url,bio,saved_stories_public,role').eq('id',u.id).maybeSingle();
+ if(!current())return null;
+ if(error)throw error; // A failed SELECT is not evidence that a profile is missing.
+ let profile=existing;
+ if(!profile){
+   const row={id:u.id,display_name:googleDisplayName(u),avatar_url:googleAvatar(u),bio:''};
+   const result=await sb.from('profiles').upsert(row,{onConflict:'id'}).select().maybeSingle();
+   if(!current())return null;
+   if(result.error)throw result.error;
+   profile=result.data||row;
+ }
+ if(profile.id!==u.id)throw new Error('Profile owner mismatch');
+ memberProfile=profile;return profile;
+}
+function hydrateAuthAccount(state){
+ if(!state?.owner||!authAccountCurrent(state))return Promise.resolve();
+ if(state.memberFlight)return state.memberFlight;
+ if(state.memberReady&&state.profileReady&&state.likesCovered)return Promise.resolve();
+ const metadata=authMetadataReady;
+ const job=(async()=>{
+   await syncProfile(authUser).catch(error=>{if(authAccountCurrent(state))console.warn('auth profile hydration',error)});
+   if(!authAccountCurrent(state))return;
+   await metadata;
+   if(!authAccountCurrent(state))return;
+   if(!state.memberReady){
+     await loadCloudMemberState();
+     if(!authAccountCurrent(state))return;
+     const member=activateMemberSync();
+     state.memberReady=!!member?.progressReady&&!!member?.savedReady;
+     if(!state.memberReady)throw new Error('Member hydration incomplete');
+   }
+   if(!state.likesCovered){
+     const initial=state.likesInitial;
+     const result=await (initial||refreshChapterLikeState(loadedChapterLikeIds(),state.likesAttempted));
+     if(!authAccountCurrent(state))return;
+     state.likesInitial=null;state.likesAttempted=true;state.likesCovered=result===true;
+   }
+   cloudSyncReady=true;
+   if(!document.getElementById('library').classList.contains('hidden'))renderSaved();
+   refreshHydratedVisibleView();refreshAuthOwnedView(state);
+ })().catch(error=>{if(authAccountCurrent(state))console.warn('auth member hydration',error)}).finally(()=>{if(state.memberFlight===job)state.memberFlight=null});
+ state.memberFlight=job;return job;
+}
+function handleAuthState(event,session){
+ ++authEventRevision;
+ const previousOwner=authAccount?.owner;
+ const state=applyAuthUser(session?.user||null);
+ // SDK subscribers return immediately; Supabase reads start outside its auth lock.
+ return new Promise(resolve=>setTimeout(resolve,0)).then(()=>{
+   if(!authAccountCurrent(state)||!state.owner)return;
+   if(event==='TOKEN_REFRESHED'&&previousOwner===state.owner)return;
+   if(event==='USER_UPDATED'&&previousOwner===state.owner)return syncProfile(authUser,true).catch(error=>{if(authAccountCurrent(state))console.warn('auth profile refresh',error)});
+   return hydrateAuthAccount(state);
+ });
+}
+
 function updateAuthUI(){
  activateMemberSync();
  activateChapterLikeAccount();
@@ -2881,13 +2982,15 @@ function updateAuthUI(){
  const logged=!!authUser;
  document.getElementById('loginBtn').style.display=logged?'none':'inline-block';
  document.getElementById('memberArea').style.display=logged?'flex':'none';
- if(!logged){loadNotifications();return;}
+ if(!logged){
+   document.getElementById('accountName').textContent='';document.getElementById('accountAvatar').removeAttribute('src');
+   document.getElementById('adminLibraryMenuBtn').style.display='none';return;
+ }
  const name=userDisplayName(authUser), avatar=userAvatar(authUser);
  document.getElementById('accountName').textContent=name;
  document.getElementById('accountAvatar').src=avatar;
  document.getElementById('accountAvatar').style.visibility=avatar?'visible':'hidden';
  const adminLibraryBtn=document.getElementById('adminLibraryMenuBtn');if(adminLibraryBtn)adminLibraryBtn.style.display=isSiteAdmin()?'block':'none';
- loadNotifications();
  if(currentStory)renderChapterComments();
  if(activeCommentKey&&document.getElementById('paragraphCommentPanel')?.classList.contains('open'))toggleComments(activeCommentKey,true);
 }
@@ -3007,32 +3110,35 @@ async function ensureChapterContent(story,chapterIndex){
 }
 async function initAuth(){
  const bootstrapNavigationEpoch=navigationEpoch;
- const {data}=await sb.auth.getSession();
- authUser=data.session?.user||null;
- updateAuthUI();
- if(authUser)await syncProfile(authUser);
- // Community feeds are public: always hydrate comments/reviews from Supabase,
- // including visitors who are not signed in and devices with empty localStorage.
- await loadCloudStories();
- // Resolve the destination before dispatching it, without overriding navigation
- // that started while bootstrap was waiting (including a still-pending reader).
- const returnPath=sessionStorage.getItem('nha_return_path');
- if(authUser&&returnPath)sessionStorage.removeItem('nha_return_path');
- if(navigationEpoch===bootstrapNavigationEpoch){
-   if(authUser&&returnPath&&/^\/(truyen|user)\//.test(returnPath))setRoute(returnPath,true);
-   routeFromLocation();
- }
- Promise.allSettled([refreshPublicStoryCloudFields(),loadCloudComments(),loadCloudReviews()]).then(()=>{
-   // Refresh the current component, not the navigation captured at request start.
-   refreshHydratedVisibleView();
- });
- sb.auth.onAuthStateChange(async(_event,session)=>{
-   authUser=session?.user||null;
-   updateAuthUI();
-   if(authUser)await syncProfile(authUser);
-   if(_event!=='INITIAL_SESSION'&&location.pathname.startsWith('/user/'))routeFromLocation();
- });
+ let resolveMetadata;
+ authMetadataReady=new Promise(resolve=>resolveMetadata=resolve);
+ const revision=authEventRevision;
+ authSubscription?.unsubscribe();
+ const subscribed=sb.auth.onAuthStateChange((event,session)=>{authLastWork=handleAuthState(event,session)});
+ authSubscription=subscribed?.data?.subscription||null;
+ try{
+   const {data}=await sb.auth.getSession();
+   if(authEventRevision===revision)applyAuthUser(data.session?.user||null);
+   while(authAccount?.owner){
+     const state=authAccount;
+     await Promise.race([syncProfile(authUser).catch(error=>{if(authAccountCurrent(state))console.warn('bootstrap profile',error)}),state.invalidated]);
+     if(authAccountCurrent(state))break;
+   }
+   // Public data is still loaded exactly through the existing bootstrap path.
+   await loadCloudStories();
+   const returnPath=sessionStorage.getItem('nha_return_path');
+   if(authUser&&returnPath)sessionStorage.removeItem('nha_return_path');
+   if(navigationEpoch===bootstrapNavigationEpoch){
+     if(authUser&&returnPath&&/^\/(truyen|user)\//.test(returnPath))setRoute(returnPath,true);
+     routeFromLocation();
+   }
+   Promise.allSettled([refreshPublicStoryCloudFields(),loadCloudComments(),loadCloudReviews()]).then(()=>refreshHydratedVisibleView());
+   // Join bootstrap's existing membership batch; retain its actual outcome.
+   if(authAccount?.owner)authAccount.likesInitial=refreshChapterLikeState(loadedChapterLikeIds(),true);
+ }finally{resolveMetadata();}
+ authLastWork=hydrateAuthAccount(authAccount);
 }
+
 function isSiteAdmin(){const u=profileUsername(),n=slugify(authUser?.user_metadata?.full_name||authUser?.user_metadata?.name||'');return !!authUser && (u==='alex'||u==='thao-tran'||n==='alex'||n==='thao-tran')}
 let adminLibraryTab='published',managedDrafts=[],editingManagedStoryId=null,activeManagedStory=null,activeManagedSource='published',activeManagedChapter=-1,chapterAutosaveTimer=null;
 managedDrafts.forEach(st=>{if(st.mainGenre==='Tiên hiệp'||st.mainGenre==='Huyền huyễn')st.mainGenre='Huyền ảo'});
@@ -3351,34 +3457,39 @@ function previewProfileAvatar(input){
  pendingAvatarFile=input.files?.[0]||null;
  if(!pendingAvatarFile)return;
  if(pendingAvatarFile.size>5*1024*1024){document.getElementById('profileEditMessage').textContent='Ảnh tối đa 5 MB nha.';pendingAvatarFile=null;input.value='';return}
- const r=new FileReader();r.onload=()=>document.getElementById('editAvatarPreview').src=r.result;r.readAsDataURL(pendingAvatarFile);
+ const state=captureAuthAccount(authUser);
+ const r=new FileReader();r.onload=()=>{if(authAccountCurrent(state)&&document.getElementById('editAvatarPreview'))document.getElementById('editAvatarPreview').src=r.result};r.readAsDataURL(pendingAvatarFile);
 }
 async function saveProfileChanges(){
  if(!authUser)return;
+ const user=authUser,state=captureAuthAccount(user);
  const msg=document.getElementById('profileEditMessage');
  const display_name=document.getElementById('editDisplayName').value.trim();
  const bio=document.getElementById('editBio').value.trim();
  if(!display_name){msg.textContent='Tên hiển thị không được để trống.';return}
  msg.textContent='Đang lưu…';
- let avatar_url=memberProfile?.avatar_url||googleAvatar(authUser);
+ let avatar_url=memberProfile?.avatar_url||googleAvatar(user);
  if(pendingAvatarFile){
    const ext=(pendingAvatarFile.name.split('.').pop()||'jpg').toLowerCase();
-   const path=`${authUser.id}/avatar-${Date.now()}.${ext}`;
+   const path=`${user.id}/avatar-${Date.now()}.${ext}`;
    const {error:upErr}=await sb.storage.from('avatars').upload(path,pendingAvatarFile,{upsert:true,contentType:pendingAvatarFile.type});
+   if(!authAccountCurrent(state))return;
    if(upErr){msg.textContent='Chưa tải được avatar. Cần bật bucket avatars trong Supabase trước.';return}
    const {data:pub}=sb.storage.from('avatars').getPublicUrl(path); avatar_url=pub.publicUrl;
  }
  // Prefer UPDATE for an existing profile. If the row does not exist yet, create it.
  let {data,error}=await sb.from('profiles')
    .update({display_name,bio,avatar_url})
-   .eq('id',authUser.id)
+   .eq('id',user.id)
    .select('id,display_name,avatar_url,bio,saved_stories_public,role')
    .maybeSingle();
+ if(!authAccountCurrent(state))return;
  if(!error && !data){
    const inserted=await sb.from('profiles')
-     .insert({id:authUser.id,display_name,bio,avatar_url})
+     .insert({id:user.id,display_name,bio,avatar_url})
      .select('id,display_name,avatar_url,bio,saved_stories_public,role')
      .maybeSingle();
+   if(!authAccountCurrent(state))return;
    data=inserted.data; error=inserted.error;
  }
  if(error){
@@ -3386,11 +3497,13 @@ async function saveProfileChanges(){
    msg.textContent='Chưa lưu được hồ sơ. Kiểm tra quyền profiles trong Supabase nha.';
    return;
  }
- memberProfile=data||{...(memberProfile||{}),id:authUser.id,display_name,bio,avatar_url};
+ if(data&&data.id!==user.id)return;
+ ++state.profileGeneration;state.profileReady=true;
+ memberProfile=data||{...(memberProfile||{}),id:user.id,display_name,bio,avatar_url};
  pendingAvatarFile=null;
  updateAuthUI();
  msg.textContent='Đã lưu ✓';
- setTimeout(()=>openProfile('profile'),350);
+ setTimeout(()=>{if(authAccountCurrent(state))openProfile('profile')},350);
 }
 let profileRequestId=0;
 function profileLocalCounts(userId){
@@ -3431,6 +3544,7 @@ function renderProfileActivity(kind='all'){
  c.innerHTML=`<h3>${label}</h3>${rows.length?rows.map(r=>`<article class="community-card"><div class="community-body">${esc(r.text)}</div><div class="muted" style="margin-top:8px;font-size:12px">${r.type==='review'?'Review':'Bình luận'} · ${r.createdAt?commentTime(r):''}</div></article>`).join(''):'<p class="muted">Chưa có hoạt động nào.</p>'}`;
 }
 function setProfileHeader(profile,own=false){
+ document.getElementById('profilePage').dataset.profileOwner=own?(authUser?.id||''):'';
  document.getElementById('profileName').textContent=profile.display_name||'Thành viên';
  const email=document.getElementById('profileEmail');email.textContent=own?(authUser?.email||''):'';email.style.pointerEvents='none';email.style.textDecoration='none';
  const avatar=document.getElementById('profileAvatar');
@@ -3817,17 +3931,18 @@ function saveCloudSavedStories(state=activateMemberSync()){
 const localSaveV179=save;
 save=function(){localSaveV179()}; // Admin/legacy saves do not dirty reading history.
 const syncProfileV179=syncProfile;
-syncProfile=async function(u){
- await syncProfileV179(u);
- /* Restore account UI first; heavy cloud state must never make the user look logged out. */
- updateAuthUI();
- Promise.allSettled([
-   loadCloudMemberState(),
-   refreshPublicStoryCloudFields(),
-   loadCloudComments(),
-   loadCloudReviews()
- ]).then(()=>{cloudSyncReady=true;render();});
- return memberProfile;
+syncProfile=function(u,force=false){
+ const state=captureAuthAccount(u);if(!state)return Promise.resolve(null);
+ if(state.profileFlight){
+   if(force)return state.profileFlight.then(()=>authAccountCurrent(state)?syncProfile(authUser,true):null);
+   return state.profileFlight;
+ }
+ if(state.profileReady&&!force)return Promise.resolve(memberProfile);
+ const job=syncProfileV179(u).then(profile=>{
+   if(!profile||!authAccountCurrent(state))return null;
+   state.profileReady=true;updateAuthUI();refreshAuthOwnedView(state);return profile;
+ }).finally(()=>{if(state.profileFlight===job)state.profileFlight=null});
+ state.profileFlight=job;return job;
 };
 
 submitStoryComment=async function(event){event.preventDefault();if(!introStory||!authUser)return;const input=document.getElementById('storyCommentInput'),text=input?.value.trim();if(!text)return;input.disabled=true;const ok=await insertCloudComment(storyCommentKey(introStory.id),text,{mentions:selectedCommentMentions(input)});finishCommentMentionDraft(input,ok);if(ok){storyCommentPage=1;renderAllStoryComments();renderHomeComments();}};

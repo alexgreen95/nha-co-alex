@@ -148,14 +148,14 @@ test('overlapping bounded reads respect latest chapter snapshot; UI updates befo
  }finally{block.resolve();await page.close()}
 });
 
-test('auth refresh uses bounded RPCs, keeps other systems unchanged, and reload restores membership',async()=>{
+test('cached profile refresh avoids chapter RPCs, keeps other systems unchanged, and reload restores membership',async()=>{
  const traffic=[];
- const page=await feedPage(0,{initScript:sdkUser(A),fixtures:{stories:[row],chapters,chapter_likes:[{chapter_id:11,user_id:A}],nca_story_view_counts:[{story_id:1,view_count:10000}]},onRequest:(u,req)=>{if(u.pathname.startsWith('/rest/v1/'))traffic.push({type:u.pathname.split('/').pop(),method:req.method()})}});
+ const page=await feedPage(0,{initScript:sdkUser(A),fixtures:{profiles:[{id:A,display_name:'Reader',role:'reader'}],stories:[row],chapters,chapter_likes:[{chapter_id:11,user_id:A}],nca_story_view_counts:[{story_id:1,view_count:10000}]},onRequest:(u,req)=>{if(u.pathname.startsWith('/rest/v1/'))traffic.push({type:u.pathname.split('/').pop(),method:req.method()})}});
  try{
   assert.deepEqual((await snapshot(page)).liked,['1_0']);traffic.length=0;
   const unchanged=await page.evaluate(()=>JSON.stringify({comments,reviews,progress}));
   await page.evaluate(async()=>{const original=refreshPublicStoryCloudFields;let job;refreshPublicStoryCloudFields=(...args)=>(job=original(...args));try{await syncProfile(authUser);await job}finally{refreshPublicStoryCloudFields=original}});
-  assert.equal(traffic.filter(c=>c.type==='nca_chapter_like_counts').length,1);assert.equal(traffic.filter(c=>c.type==='nca_my_chapter_likes').length,1);assert(!traffic.some(c=>c.type==='chapter_likes'||c.type==='story_likes'));
+  assert.equal(traffic.filter(c=>c.type==='nca_chapter_like_counts').length,0);assert.equal(traffic.filter(c=>c.type==='nca_my_chapter_likes').length,0);assert(!traffic.some(c=>c.type==='chapter_likes'||c.type==='story_likes'));
   assert.equal(await page.evaluate(()=>JSON.stringify({comments,reviews,progress})),unchanged);
   await page.reload({waitUntil:'networkidle'});assert.deepEqual((await snapshot(page)).liked,['1_0']);assert.equal((await snapshot(page)).total,1051);assert.deepEqual(page.errors,[]);
  }finally{await page.close()}

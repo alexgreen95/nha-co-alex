@@ -1882,7 +1882,19 @@ function goHome(){
  }
 }
 function chapterLikeKey(storyId,chapterIndex){return `${storyId}_${chapterIndex}`}
-function storyLikeTotal(story){return (story.chapters||[]).reduce((sum,_,i)=>sum+(Number(chapterLikes[chapterLikeKey(story.id,i)])||0),0)}
+function mapStoryBaselines(story,row){
+ story.baselineViews=Math.max(0,Number(row.baseline_views)||0);
+ story.baselineLikes=Math.max(0,Number(row.baseline_likes)||0);
+ // RPC values already include the baseline. Hydration only supplies a floor.
+ story.views=Math.max(Number(story.views)||0,story.baselineViews);
+ return story;
+}
+function storyLikeTotal(story){return (Number(story.baselineLikes)||0)+(story.chapters||[]).reduce((sum,_,i)=>sum+(Number(chapterLikes[chapterLikeKey(story.id,i)])||0),0)}
+function refreshStoryHeartStats(story){
+ const stats=[...document.querySelectorAll(`.story-card[onclick="openStory(${story.id})"] .stats .stat:nth-child(2),.profile-story-tile[onclick="openStory(${story.id})"] .profile-story-stats span:nth-child(2)`)];
+ if(introStory&&String(introStory.id)===String(story.id))stats.push(document.querySelector('#introStats .stat:nth-child(2)'));
+ for(const stat of stats)if(stat)stat.innerHTML=`${icon('heart')} ${storyLikeTotal(story)}`;
+}
 function renderChapterHeart(){const box=document.getElementById('chapterHeartRow');if(!box||!currentStory)return;const key=chapterLikeKey(currentStory.id,currentChapter),count=Number(chapterLikes[key])||0,on=likedChapters.includes(key);box.innerHTML=`<button class="chapter-heart-btn ${on?'liked':''}" type="button" onclick="toggleChapterLike()" aria-label="${on?'Bỏ tim':'Thả tim'} chương này">${icon('heart')} <span>${count}</span></button>`}
 async function toggleChapterLike(){
  if(!currentStory)return;
@@ -1898,6 +1910,7 @@ async function toggleChapterLike(){
  else{likedChapters.push(key);chapterLikes[key]=(Number(chapterLikes[key])||0)+1}
  renderChapterHeart();
  if(introStory&&String(introStory.id)===String(currentStory.id)){introStory.likes=storyLikeTotal(currentStory);}
+ refreshStoryHeartStats(currentStory);
 }
 function primaryGenreClass(name){
  const g=String(name||'').trim().toLowerCase();
@@ -2755,6 +2768,7 @@ async function refreshPublicStoryCloudFields(){
    for(const st of stories){
      const r=(storyRows||[]).find(x=>String(x.id)===String(st.id));
      if(r){
+       mapStoryBaselines(st,r);
        st.cover=r.cover_url||r.cover||st.cover||'';
        if(r.author!==undefined && r.author!==null) st.author=r.author;
         st.subtags=Array.isArray(r.tags)?r.tags:(Array.isArray(r.subtags)?r.subtags:(st.subtags||[]));
@@ -2786,7 +2800,7 @@ async function loadCloudStories(){
   const chaptersByStory={};
   for(const c of chapterRows){if(c.published===false)continue;(chaptersByStory[c.story_id]||(chaptersByStory[c.story_id]=[])).push(c)}
   Object.values(chaptersByStory).forEach(a=>a.sort((x,y)=>(Number(x.chapter_number)||0)-(Number(y.chapter_number)||0)));
-  const mapped=storyRows.filter(r=>r.published!==false).map(r=>({
+  const mapped=storyRows.filter(r=>r.published!==false).map(r=>mapStoryBaselines({
    id:Number(r.id),title:r.title||r.name||`Truyện ${r.id}`,author:r.author||'',
    mainGenre:['Hiện đại','Cổ đại','Tương lai','Huyền ảo','Tây huyễn','Tu tiên','Tận thế'].includes(r.main_genre||r.genre)?(r.main_genre||r.genre):'',
    genre:r.genre||r.main_genre||'',subtags:Array.isArray(r.subtags)?r.subtags:(Array.isArray(r.tags)?r.tags:[]),
@@ -2794,7 +2808,7 @@ async function loadCloudStories(){
    summary:r.summary||r.description||'',longIntro:r.long_description||'',cover:r.cover_url||r.cover||'',views:Number(r.views)||0,likes:Number(r.likes)||0,
    updatedAt:r.updated_at||r.created_at||'',
    chapters:(chaptersByStory[r.id]||[]).map(c=>({id:c.id,chapterNumber:Number(c.chapter_number)||null,title:c.title||`Chương ${c.chapter_number||''}`,publishState:'published',paras:[],_parasLoaded:false,_chapterContent:c.content||c.body||c.text||''}))
-  }));
+  },r));
   if(mapped.length){
    stories=mapped.sort((a,b)=>(Date.parse(b.updatedAt)||0)-(Date.parse(a.updatedAt)||0));
    render();
@@ -3060,6 +3074,7 @@ async function saveManagedStory(mode){
        return;
      }
      const cv=cloudVerify.data;
+     mapStoryBaselines(row,cv);
      row.title=cv.title||cv.name||row.title;
      row.author=cv.author||row.author||'';
      row.mainGenre=(cv.main_genre||cv.genre||row.mainGenre);

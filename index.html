@@ -981,6 +981,7 @@ body.night,body.purplenight{--chapter-heart-unliked:#b9b9b9;--chapter-heart-like
 .chapter-end-nav .chapter-heart-btn::before{content:"";position:absolute;left:50%;top:50%;width:44px;height:44px;transform:translate(-50%,-50%)}
 .chapter-end-nav .chapter-heart-btn.liked{color:var(--chapter-heart-liked);border-color:var(--line);background:var(--soft)}
 .chapter-end-nav .chapter-heart-btn .ico{width:20px;height:20px;opacity:1;fill:currentColor;stroke:none;filter:none;transition:filter .15s ease}
+.chapter-end-nav .chapter-heart-btn:not(.liked) .ico{fill:none;stroke:currentColor;stroke-width:1.7}
 .chapter-end-nav .chapter-heart-btn.liked .ico{filter:drop-shadow(0 0 2px color-mix(in srgb,currentColor 35%,transparent))}
 .chapter-end-nav .chapter-heart-btn:not(:disabled):hover,
 .chapter-end-nav .chapter-heart-btn:focus-visible{transform:none}

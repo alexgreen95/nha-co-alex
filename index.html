@@ -1881,6 +1881,12 @@ function goHome(){
    location.assign('/');
  }
 }
+function formatStoryStat(value){
+ const raw=Number(value),number=Number.isFinite(raw)?Math.max(0,Math.trunc(raw)):0;
+ if(number<1000)return String(number);
+ const divisor=number<1000000?1000:1000000,suffix=number<1000000?'K':'M';
+ return (number/divisor).toFixed(2).replace(/\.?0+$/,'')+suffix;
+}
 function chapterLikeKey(storyId,chapterIndex){return `${storyId}_${chapterIndex}`}
 function mapStoryBaselines(story,row){
  story.baselineViews=Math.max(0,Number(row.baseline_views)||0);
@@ -1893,7 +1899,7 @@ function storyLikeTotal(story){return (Number(story.baselineLikes)||0)+(story.ch
 function refreshStoryHeartStats(story){
  const stats=[...document.querySelectorAll(`.story-card[onclick="openStory(${story.id})"] .stats .stat:nth-child(2),.profile-story-tile[onclick="openStory(${story.id})"] .profile-story-stats span:nth-child(2)`)];
  if(introStory&&String(introStory.id)===String(story.id))stats.push(document.querySelector('#introStats .stat:nth-child(2)'));
- for(const stat of stats)if(stat)stat.innerHTML=`${icon('heart')} ${storyLikeTotal(story)}`;
+ for(const stat of stats)if(stat)stat.innerHTML=`${icon('heart')} ${formatStoryStat(storyLikeTotal(story))}`;
 }
 function renderChapterHeart(){const box=document.getElementById('chapterHeartRow');if(!box||!currentStory)return;const key=chapterLikeKey(currentStory.id,currentChapter),count=Number(chapterLikes[key])||0,on=likedChapters.includes(key);box.innerHTML=`<button class="chapter-heart-btn ${on?'liked':''}" type="button" onclick="toggleChapterLike()" aria-label="${on?'Bỏ tim':'Thả tim'} chương này">${icon('heart')} <span>${count}</span></button>`}
 async function toggleChapterLike(){
@@ -1923,7 +1929,7 @@ function primaryGenreClass(name){
 function card(s){
  const hasProgress=progress[s.id] && (progress[s.id].chapter>0 || progress[s.id].scroll>80);
  return `<div class="card story-card clickable-story" onclick="openStory(${s.id})"><div class="story-cover">${s.cover?`<img src="${esc(s.cover)}" alt="Bìa ${esc(s.title)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`:`Nhà có Alex<br>${esc(s.title)}`}</div><div class="story-info"><h3 class="story-title-link" title="${esc(s.title)}"><span>${esc(s.title)}</span></h3><div class="muted">${esc(s.author)}</div><div class="genre ${primaryGenreClass(s.mainGenre||s.genre)}">${esc(s.mainGenre||s.genre)}</div><div class="meta-row"><span class="meta-pill ${s.status==='completed'?'status-done':'status-ongoing'}">${s.status==='completed'?'✓ Đã hoàn thành':'◷ Đang làm'}</span></div>
- <div class="stats"><span class="stat">${icon('eye')} ${s.views||0}</span><span class="stat">${icon('heart')} ${storyLikeTotal(s)}</span><span class="stat">${icon('comment')} ${storyCommentCount(s)}</span></div>
+ <div class="stats"><span class="stat">${icon('eye')} ${formatStoryStat(s.views)}</span><span class="stat">${icon('heart')} ${formatStoryStat(storyLikeTotal(s))}</span><span class="stat">${icon('comment')} ${storyCommentCount(s)}</span></div>
  <div class="story-actions"><button class="btn" onclick="event.stopPropagation();${hasProgress?`read(${s.id})`:`openStory(${s.id})`}">${hasProgress?'Đọc tiếp':'Đọc'}</button> <button class="btn" onclick="event.stopPropagation();toggleSave(${s.id})">${saved.includes(s.id)?'★ Đã lưu':'☆ Lưu'}</button></div></div></div>`;
 }
 function render(){
@@ -1945,7 +1951,7 @@ function toggleSortSub(e,btn){e.stopPropagation();let row=btn.closest('.sort-row
 function chooseSort(e,type,value,label){e.stopPropagation();storyFilter[type]=value;document.getElementById('sortLabel').textContent='Sắp xếp theo: '+label;document.getElementById('sortMenu').classList.remove('open');document.querySelectorAll('.sort-row').forEach(x=>x.classList.remove('open'));render()}
 document.addEventListener('click',e=>{if(!e.target.closest('.sort-wrap'))document.getElementById('sortMenu')?.classList.remove('open')});
 let introStory=null;
-function openStory(id,updateRoute=true){let s=stories.find(x=>x.id===id);if(!s)return;if(updateRoute)setRoute(storyPath(s));introStory=s;displayPage('storyIntro');document.getElementById('introTitle').textContent=s.title;document.getElementById('introAuthor').textContent='Tác giả: '+s.author;document.getElementById('introGenre').textContent=s.mainGenre||s.genre;document.getElementById('introStatus').textContent=s.status==='completed'?'Đã hoàn thành':'Đang làm';document.getElementById('introSubtags').innerHTML=(s.subtags||[]).map(t=>`<span class="intro-subtag">${esc(t)}</span>`).join('');const introSummaryEl=document.getElementById('introSummary');introSummaryEl.textContent=s.summary||'';introSummaryEl.style.whiteSpace='pre-line';introSummaryEl.style.display=s.summary?'':'none';document.getElementById('introStats').innerHTML=`<span class="stat">${icon('eye')} ${s.views||0}</span><span class="stat">${icon('heart')} ${storyLikeTotal(s)}</span><span class="stat">${icon('comment')} ${storyCommentCount(s)}</span>`;document.getElementById('introCover').innerHTML=s.cover?`<img src="${esc(s.cover)}" alt="Bìa ${esc(s.title)}">`:`Nhà có Alex<br>${esc(s.title)}`;let pr=progress[id];document.getElementById('introReadBtn').textContent=pr?'Đọc tiếp · '+s.chapters[Math.min(pr.chapter||0,s.chapters.length-1)].title.split(':')[0]:'Bắt đầu đọc';document.getElementById('introSaveBtn').textContent=saved.includes(id)?'★ Đã lưu':'☆ Lưu truyện';document.getElementById('introChapters').innerHTML=s.chapters.map((c,i)=>`<button onclick="read(${s.id},${i})">${esc(c.title)}</button>`).join('');renderStoryAbout();storyCommentPage=1;reviewComposerOpen=false;renderStoryReviews();renderAllStoryComments();showIntroTab('about',document.querySelector('.intro-tabs button'));window.scrollTo(0,0)}
+function openStory(id,updateRoute=true){let s=stories.find(x=>x.id===id);if(!s)return;if(updateRoute)setRoute(storyPath(s));introStory=s;displayPage('storyIntro');document.getElementById('introTitle').textContent=s.title;document.getElementById('introAuthor').textContent='Tác giả: '+s.author;document.getElementById('introGenre').textContent=s.mainGenre||s.genre;document.getElementById('introStatus').textContent=s.status==='completed'?'Đã hoàn thành':'Đang làm';document.getElementById('introSubtags').innerHTML=(s.subtags||[]).map(t=>`<span class="intro-subtag">${esc(t)}</span>`).join('');const introSummaryEl=document.getElementById('introSummary');introSummaryEl.textContent=s.summary||'';introSummaryEl.style.whiteSpace='pre-line';introSummaryEl.style.display=s.summary?'':'none';document.getElementById('introStats').innerHTML=`<span class="stat">${icon('eye')} ${formatStoryStat(s.views)}</span><span class="stat">${icon('heart')} ${formatStoryStat(storyLikeTotal(s))}</span><span class="stat">${icon('comment')} ${storyCommentCount(s)}</span>`;document.getElementById('introCover').innerHTML=s.cover?`<img src="${esc(s.cover)}" alt="Bìa ${esc(s.title)}">`:`Nhà có Alex<br>${esc(s.title)}`;let pr=progress[id];document.getElementById('introReadBtn').textContent=pr?'Đọc tiếp · '+s.chapters[Math.min(pr.chapter||0,s.chapters.length-1)].title.split(':')[0]:'Bắt đầu đọc';document.getElementById('introSaveBtn').textContent=saved.includes(id)?'★ Đã lưu':'☆ Lưu truyện';document.getElementById('introChapters').innerHTML=s.chapters.map((c,i)=>`<button onclick="read(${s.id},${i})">${esc(c.title)}</button>`).join('');renderStoryAbout();storyCommentPage=1;reviewComposerOpen=false;renderStoryReviews();renderAllStoryComments();showIntroTab('about',document.querySelector('.intro-tabs button'));window.scrollTo(0,0)}
 function readableParagraphs(text){const raw=String(text||'').replace(/\r\n?/g,'\n').trim();if(!raw)return '';return raw.split(/\n\s*\n+/).map(p=>'<p>'+esc(p.replace(/\n+/g,' ').replace(/\s+/g,' ').trim())+'</p>').join('')}
 function renderStoryAbout(){if(!introStory)return;const v=document.getElementById('introAboutView'),b=document.getElementById('introAboutEditBtn'),e=document.getElementById('introAboutEdit');if(v)v.innerHTML=readableParagraphs(introStory.longIntro||'Chưa có phần giới thiệu chi tiết.');if(b)b.style.display=isSiteAdmin()?'inline-flex':'none';if(e)e.hidden=true;if(v)v.hidden=false}
 function editStoryAbout(){if(!introStory||!isSiteAdmin())return;document.getElementById('introAboutInput').value=introStory.longIntro||'';document.getElementById('introAboutView').hidden=true;document.getElementById('introAboutEdit').hidden=false;document.getElementById('introAboutEditBtn').style.display='none'}
@@ -2052,9 +2058,9 @@ const storyViewCountRequests=new Map(),storyViewWriteRevisions=new Map();
 let storyViewCountRequest=0;
 function applyStoryViewCount(story,count){
  story.views=count;
- const stats=[...document.querySelectorAll(`.story-card[onclick="openStory(${story.id})"] .stats .stat:first-child`)];
+ const stats=[...document.querySelectorAll(`.story-card[onclick="openStory(${story.id})"] .stats .stat:first-child,.profile-story-tile[onclick="openStory(${story.id})"] .profile-story-stats span:first-child`)];
  if(introStory&&String(introStory.id)===String(story.id))stats.push(document.querySelector('#introStats .stat:first-child'));
- for(const stat of stats)if(stat)stat.innerHTML=`${icon('eye')} ${count}`;
+ for(const stat of stats)if(stat)stat.innerHTML=`${icon('eye')} ${formatStoryStat(count)}`;
 }
 async function refreshStoryViewCounts(storyIds){
  const ids=[...new Set((storyIds||[]).map(String).filter(id=>/^\d+$/.test(id)))];
@@ -3357,7 +3363,7 @@ function profileShelfCard(story,withProgress=false){
    <div class="profile-story-author">${esc(story.author||'')}</div>
    <div class="profile-story-genre ${primaryGenreClass(story.mainGenre||story.genre)}">${esc(story.mainGenre||story.genre||'')}</div>
    <div class="profile-story-status ${story.status==='completed'?'done':'ongoing'}">${story.status==='completed'?'✓ Đã hoàn thành':'◷ Đang làm'}</div>
-   <div class="profile-story-stats"><span>${icon('eye')} ${story.views||0}</span><span>${icon('heart')} ${storyLikeTotal(story)}</span><span>${icon('comment')} ${storyCommentCount(story)}</span></div>
+   <div class="profile-story-stats"><span>${icon('eye')} ${formatStoryStat(story.views)}</span><span>${icon('heart')} ${formatStoryStat(storyLikeTotal(story))}</span><span>${icon('comment')} ${storyCommentCount(story)}</span></div>
    ${withProgress&&chapterLabel?`<button class="profile-continue" type="button" onclick="event.stopPropagation();read(${story.id})">Đọc tiếp · ${esc(chapterLabel.split(':')[0])}</button>`:''}
   </div>
  </article>`;

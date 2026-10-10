@@ -31,7 +31,7 @@ test('anonymous: uncached/cached opens, navigation, refresh and bounded requests
   assert.equal(traffic.filter(u=>u.pathname.startsWith('/rest/v1/')).length+mock.requests.length,4);
   assert.equal(mock.requests[0].body.user_id,null);
   assert.equal(await page.evaluate(()=>stories[0].views),100001);
-  assert.equal((await page.locator('.story-card .stats .stat').first().textContent()).trim(),'100001');
+  assert.equal((await page.locator('.story-card .stats .stat').first().textContent()).trim(),'100K');
   traffic.length=0;mock.requests.length=0;
   await page.evaluate(async()=>{await read(1,0)});
   assert.equal(traffic.filter(u=>/\/(paragraphs|chapter_images)$/.test(u.pathname)).length,0);

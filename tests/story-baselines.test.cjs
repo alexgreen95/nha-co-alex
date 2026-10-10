@@ -11,11 +11,11 @@ test('zero real events: same totals on home/detail/saved/profile; chapter is rea
  const {page,traffic}=await setup();try{
   assert.deepEqual(await summary(page),{views:10000,baselineViews:10000,baselineLikes:1050,total:1050,liked:[]});
   const get=sel=>page.locator(sel).allTextContents();
-  assert.deepEqual((await get('#stories .stats .stat')).map(x=>x.trim()),['10000','1050','7']);
+  assert.deepEqual((await get('#stories .stats .stat')).map(x=>x.trim()),['10K','1.05K','7']);
   await page.evaluate(()=>{openStory(1);saved=[1];renderSaved();renderProfileStoryShelf('saved');currentStory=stories[0];currentChapter=0;renderChapterHeart()});
-  assert.deepEqual((await get('#introStats .stat')).map(x=>x.trim()),['10000','1050','7']);
-  assert.deepEqual((await get('#saved .stats .stat')).map(x=>x.trim()),['10000','1050','7']);
-  assert.deepEqual((await get('.profile-story-stats span')).map(x=>x.trim()),['10000','1050','7']);
+  assert.deepEqual((await get('#introStats .stat')).map(x=>x.trim()),['10K','1.05K','7']);
+  assert.deepEqual((await get('#saved .stats .stat')).map(x=>x.trim()),['10K','1.05K','7']);
+  assert.deepEqual((await get('.profile-story-stats span')).map(x=>x.trim()),['10K','1.05K','7']);
   assert.equal((await page.locator('#chapterHeartRow button span').textContent()).trim(),'0');
   assert.equal(traffic.filter(u=>u.pathname.startsWith('/rest/v1/')).length,11);
   assert(!traffic.some(u=>u.pathname.endsWith('/story_likes')||u.pathname.endsWith('/story_views')));assert.deepEqual(page.errors,[]);
@@ -59,7 +59,7 @@ test('signed-in chapter like/unlike changes only real count; every story stat up
   await page.evaluate(A=>{authUser={id:A};activateMemberSync();openStory(1);saved=[1];renderSaved();renderProfileStoryShelf('saved');currentStory=stories[0];currentChapter=0;renderChapterHeart()},A);
   await page.evaluate(()=>toggleChapterLike());assert.equal((await summary(page)).total,1051);assert.deepEqual((await summary(page)).liked,['1_0']);
   assert.equal((await page.locator('#chapterHeartRow button span').textContent()).trim(),'1');
-  for(const sel of ['#stories .stats .stat:nth-child(2)','#saved .stats .stat:nth-child(2)','#introStats .stat:nth-child(2)','.profile-story-stats span:nth-child(2)'])assert.equal((await page.locator(sel).textContent()).trim(),'1051');
+  for(const sel of ['#stories .stats .stat:nth-child(2)','#saved .stats .stat:nth-child(2)','#introStats .stat:nth-child(2)','.profile-story-stats span:nth-child(2)'])assert.equal((await page.locator(sel).textContent()).trim(),'1.05K');
   await page.evaluate(()=>toggleChapterLike());assert.equal((await summary(page)).total,1050);assert.deepEqual((await summary(page)).liked,[]);assert.equal((await page.locator('#chapterHeartRow button span').textContent()).trim(),'0');
   assert.deepEqual(calls.map(c=>c.method),['POST','DELETE']);assert.deepEqual(calls[0].body,{chapter_id:11,user_id:A});assert(calls[1].query.includes('chapter_id=eq.11')&&calls[1].query.includes('user_id=eq.'+A));assert.equal((await summary(page)).baselineLikes,1050);assert.deepEqual(page.errors,[]);
  }finally{await page.close()}

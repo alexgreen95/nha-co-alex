@@ -3861,26 +3861,44 @@ function queueSavedStoryState(state=activateMemberSync()){
  clearTimeout(state.savedTimer);const epoch=state.epoch;
  state.savedTimer=setTimeout(()=>{if(memberSyncCurrent(state,epoch))saveCloudSavedStories(state)},450);
 }
-async function loadCloudChapterMap(){
-  let data;try{data=await fetchAllRows('chapters','id','id,story_id,chapter_number')}catch(error){console.warn('chapter map sync',error);return}
-  const next={};
-  for(const c of data||[]){
-    const idx=Math.max(0,Number(c.chapter_number||1)-1);
-    next[`${Number(c.story_id)}_${idx}`]=Number(c.id);
-  }
-  cloudChapterMap=next;
+// Member maps include hidden chapters permitted by RLS; never derive from public stories.
+const memberChapterMapFlights=new Map();
+function loadCloudChapterMap(state=activateMemberSync()){
+  if(!state||!memberSyncCurrent(state,state.epoch))return Promise.resolve(null);
+  const epoch=state.epoch,revision=publicMetadataRevision,target=stories;
+  const key=JSON.stringify([state.owner,epoch,revision]);
+  const flight=memberChapterMapFlights.get(key);
+  if(flight?.target===target)return flight.job;
+  const current=()=>memberSyncCurrent(state,epoch)&&revision===publicMetadataRevision&&stories===target;
+  const job=(async()=>{
+    try{
+      const data=await fetchAllRows('chapters','id','id,story_id,chapter_number');
+      if(!current())return {map:null,current};
+      const next={};
+      for(const c of data||[]){
+        const idx=Math.max(0,Number(c.chapter_number||1)-1);
+        next[`${Number(c.story_id)}_${idx}`]=Number(c.id);
+      }
+      cloudChapterMap=next;
+      return {map:next,current};
+    }catch(error){console.warn('chapter map sync',error);return null}
+  })().finally(()=>{if(memberChapterMapFlights.get(key)?.job===job)memberChapterMapFlights.delete(key)});
+  memberChapterMapFlights.set(key,{target,job});return job;
 }
-async function loadCloudMemberState(){
+async function loadCloudMemberState(metadataRetries=1){
   const state=activateMemberSync();if(!state)return;
   const epoch=state.epoch,load=++state.loadGeneration,signal=state.controller.signal,startGeneration=state.generation;
   const protectProgress=new Set(state.dirty.keys()),protectSaved=new Set(state.savedDirty.keys());
-  await loadCloudChapterMap();
+  const chapterSnapshot=await loadCloudChapterMap(state);
   if(!memberSyncCurrent(state,epoch)||load!==state.loadGeneration)return;
+  if(!chapterSnapshot)return;
+  if(!chapterSnapshot.current())return metadataRetries>0?loadCloudMemberState(metadataRetries-1):undefined;
   const [savedRes,progressRes]=await Promise.all([
     sb.from('saved_stories').select('story_id').eq('user_id',state.owner).abortSignal(signal),
     sb.from('reading_progress').select('story_id,chapter_id,scroll_position,updated_at').eq('user_id',state.owner).abortSignal(signal)
   ]);
   if(!memberSyncCurrent(state,epoch)||load!==state.loadGeneration)return;
+  if(!chapterSnapshot.current())return metadataRetries>0?loadCloudMemberState(metadataRetries-1):undefined;
   if(savedRes.error)console.warn('saved stories sync',savedRes.error);
   else{
     state.savedBase=new Set((savedRes.data||[]).map(r=>Number(r.story_id)).filter(Number.isFinite));
@@ -3891,7 +3909,7 @@ async function loadCloudMemberState(){
   }
   if(progressRes.error)console.warn('reading progress sync',progressRes.error);
   else{
-    const reverse=Object.fromEntries(Object.entries(cloudChapterMap).map(([k,v])=>[String(v),k]));
+    const reverse=Object.fromEntries(Object.entries(chapterSnapshot.map).map(([k,v])=>[String(v),k]));
     const next={};
     for(const r of (progressRes.data||[])){
       const sid=Number(r.story_id);

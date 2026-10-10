@@ -1793,8 +1793,10 @@ function storyCommentCount(s){
 function slugify(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/đ/g,'d').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
 function storyPath(story){return '/truyen/'+slugify(story.title)}
 function chapterPath(story,ci){return storyPath(story)+'/chuong-'+(ci+1)}
+let navigationEpoch=0;
 function setRoute(path,replace=false,state={}){
  if(location.pathname===path)return;
+ ++navigationEpoch;
  const nextState={...(history.state||{}),...(state||{})};
  if(replace)history.replaceState(nextState,'',path);
  else history.pushState(nextState,'',path);
@@ -1803,6 +1805,8 @@ function storyBySlug(slug){return stories.find(x=>slugify(x.title)===slug)}
 function profileUsername(){return slugify(userDisplayName(authUser)||String(authUser?.email||'thanh-vien').split('@')[0])||'thanh-vien'}
 function profilePath(){return '/user/'+profileUsername()}
 function routeFromLocation(){
+ // Claim navigation before a routed reader reaches its first await/displayPage.
+ ++navigationEpoch;
  const p=location.pathname.split('/').filter(Boolean);
  if(p[0]==='quan-ly-thu-vien'&&p[1]==='truyen'&&p[2]&&p[3]==='chuong'&&p[4]){openChapterAdmin(decodeURIComponent(p[2]),Number(p[4]),false);return}
  if(p[0]==='quan-ly-thu-vien'&&p[1]==='truyen'&&p[2]){openStoryAdmin(decodeURIComponent(p[2]),'published',false);return}
@@ -1822,6 +1826,7 @@ function routeFromLocation(){
 }
 const pageIds=['home','storyIntro','reader','library','login','profilePage','adminLibrary','storyAdmin','chapterAdmin'];
 function displayPage(id){
+ ++navigationEpoch;
  if(id!=='profilePage')++profileRequestId;
  activeReply=null;
  document.querySelectorAll('.reply-compose').forEach(form=>form.remove());
@@ -2058,7 +2063,28 @@ function toggleSortSub(e,btn){e.stopPropagation();let row=btn.closest('.sort-row
 function chooseSort(e,type,value,label){e.stopPropagation();storyFilter[type]=value;document.getElementById('sortLabel').textContent='Sắp xếp theo: '+label;document.getElementById('sortMenu').classList.remove('open');document.querySelectorAll('.sort-row').forEach(x=>x.classList.remove('open'));render()}
 document.addEventListener('click',e=>{if(!e.target.closest('.sort-wrap'))document.getElementById('sortMenu')?.classList.remove('open')});
 let introStory=null;
-function openStory(id,updateRoute=true){let s=stories.find(x=>x.id===id);if(!s)return;if(updateRoute)setRoute(storyPath(s));introStory=s;displayPage('storyIntro');document.getElementById('introTitle').textContent=s.title;document.getElementById('introAuthor').textContent='Tác giả: '+s.author;document.getElementById('introGenre').textContent=s.mainGenre||s.genre;document.getElementById('introStatus').textContent=s.status==='completed'?'Đã hoàn thành':'Đang làm';document.getElementById('introSubtags').innerHTML=(s.subtags||[]).map(t=>`<span class="intro-subtag">${esc(t)}</span>`).join('');const introSummaryEl=document.getElementById('introSummary');introSummaryEl.textContent=s.summary||'';introSummaryEl.style.whiteSpace='pre-line';introSummaryEl.style.display=s.summary?'':'none';document.getElementById('introStats').innerHTML=`<span class="stat">${icon('eye')} ${formatStoryStat(s.views)}</span><span class="stat">${icon('heart')} ${formatStoryStat(storyLikeTotal(s))}</span><span class="stat">${icon('comment')} ${storyCommentCount(s)}</span>`;document.getElementById('introCover').innerHTML=s.cover?`<img src="${esc(s.cover)}" alt="Bìa ${esc(s.title)}">`:`Nhà có Alex<br>${esc(s.title)}`;let pr=progress[id];document.getElementById('introReadBtn').textContent=pr?'Đọc tiếp · '+s.chapters[Math.min(pr.chapter||0,s.chapters.length-1)].title.split(':')[0]:'Bắt đầu đọc';document.getElementById('introSaveBtn').textContent=saved.includes(id)?'★ Đã lưu':'☆ Lưu truyện';document.getElementById('introChapters').innerHTML=s.chapters.map((c,i)=>`<button onclick="read(${s.id},${i})">${esc(c.title)}</button>`).join('');renderStoryAbout();storyCommentPage=1;reviewComposerOpen=false;renderStoryReviews();renderAllStoryComments();showIntroTab('about',document.querySelector('.intro-tabs button'));window.scrollTo(0,0)}
+function renderStoryIntroMetadata(s){
+ const id=s.id;
+ document.getElementById('introTitle').textContent=s.title;document.getElementById('introAuthor').textContent='Tác giả: '+s.author;document.getElementById('introGenre').textContent=s.mainGenre||s.genre;document.getElementById('introStatus').textContent=s.status==='completed'?'Đã hoàn thành':'Đang làm';document.getElementById('introSubtags').innerHTML=(s.subtags||[]).map(t=>`<span class="intro-subtag">${esc(t)}</span>`).join('');const introSummaryEl=document.getElementById('introSummary');introSummaryEl.textContent=s.summary||'';introSummaryEl.style.whiteSpace='pre-line';introSummaryEl.style.display=s.summary?'':'none';document.getElementById('introStats').innerHTML=`<span class="stat">${icon('eye')} ${formatStoryStat(s.views)}</span><span class="stat">${icon('heart')} ${formatStoryStat(storyLikeTotal(s))}</span><span class="stat">${icon('comment')} ${storyCommentCount(s)}</span>`;document.getElementById('introCover').innerHTML=s.cover?`<img src="${esc(s.cover)}" alt="Bìa ${esc(s.title)}">`:`Nhà có Alex<br>${esc(s.title)}`;let pr=progress[id];document.getElementById('introReadBtn').textContent=pr?'Đọc tiếp · '+s.chapters[Math.min(pr.chapter||0,s.chapters.length-1)].title.split(':')[0]:'Bắt đầu đọc';document.getElementById('introSaveBtn').textContent=saved.includes(id)?'★ Đã lưu':'☆ Lưu truyện';document.getElementById('introChapters').innerHTML=s.chapters.map((c,i)=>`<button onclick="read(${s.id},${i})">${esc(c.title)}</button>`).join('');
+}
+function refreshHydratedVisibleView(){
+ // read() claims currentStory before awaiting content, even while intro is visible.
+ // Never touch that navigation or use retained introStory to choose a destination.
+ if(currentStory)return;
+ if(!document.getElementById('home').classList.contains('hidden')&&location.pathname==='/'){
+   render();
+   if(document.getElementById('reviewsPanel').classList.contains('active'))renderHomeReviews();
+   return;
+ }
+ if(document.getElementById('storyIntro').classList.contains('hidden')||!introStory)return;
+ const activeStory=stories.find(s=>s.id===introStory.id);
+ if(!activeStory||location.pathname!==storyPath(activeStory))return;
+ introStory=activeStory;
+ renderStoryIntroMetadata(activeStory);
+ // Keep an active editor, tab, comment page and review draft intact.
+ if(document.getElementById('introAboutEdit').hidden)renderStoryAbout();
+}
+function openStory(id,updateRoute=true){let s=stories.find(x=>x.id===id);if(!s)return;if(updateRoute)setRoute(storyPath(s));introStory=s;displayPage('storyIntro');renderStoryIntroMetadata(s);renderStoryAbout();storyCommentPage=1;reviewComposerOpen=false;renderStoryReviews();renderAllStoryComments();showIntroTab('about',document.querySelector('.intro-tabs button'));window.scrollTo(0,0)}
 function readableParagraphs(text){const raw=String(text||'').replace(/\r\n?/g,'\n').trim();if(!raw)return '';return raw.split(/\n\s*\n+/).map(p=>'<p>'+esc(p.replace(/\n+/g,' ').replace(/\s+/g,' ').trim())+'</p>').join('')}
 function renderStoryAbout(){if(!introStory)return;const v=document.getElementById('introAboutView'),b=document.getElementById('introAboutEditBtn'),e=document.getElementById('introAboutEdit');if(v)v.innerHTML=readableParagraphs(introStory.longIntro||'Chưa có phần giới thiệu chi tiết.');if(b)b.style.display=isSiteAdmin()?'inline-flex':'none';if(e)e.hidden=true;if(v)v.hidden=false}
 function editStoryAbout(){if(!introStory||!isSiteAdmin())return;document.getElementById('introAboutInput').value=introStory.longIntro||'';document.getElementById('introAboutView').hidden=true;document.getElementById('introAboutEdit').hidden=false;document.getElementById('introAboutEditBtn').style.display='none'}
@@ -2980,27 +3006,31 @@ async function ensureChapterContent(story,chapterIndex){
  return ch._parasLoading;
 }
 async function initAuth(){
+ const bootstrapNavigationEpoch=navigationEpoch;
  const {data}=await sb.auth.getSession();
  authUser=data.session?.user||null;
  updateAuthUI();
  if(authUser)await syncProfile(authUser);
  // Community feeds are public: always hydrate comments/reviews from Supabase,
  // including visitors who are not signed in and devices with empty localStorage.
- const cloudStoriesReady=await loadCloudStories();
-  // Route ngay sau khi metadata truyện về; stats/bình luận/review tải nền, không chặn Trang chủ.
-  if(location.pathname!=='/') routeFromLocation();
-  Promise.allSettled([refreshPublicStoryCloudFields(),loadCloudComments(),loadCloudReviews()]).then(()=>{
-    render();
-    if(introStory) openStory(introStory.id,false);
-  });
+ await loadCloudStories();
+ // Resolve the destination before dispatching it, without overriding navigation
+ // that started while bootstrap was waiting (including a still-pending reader).
  const returnPath=sessionStorage.getItem('nha_return_path');
- if(authUser&&returnPath){sessionStorage.removeItem('nha_return_path');if(/^\/(truyen|user)\//.test(returnPath)){setRoute(returnPath,true);routeFromLocation()}}
- else if(location.pathname.startsWith('/user/'))routeFromLocation();
+ if(authUser&&returnPath)sessionStorage.removeItem('nha_return_path');
+ if(navigationEpoch===bootstrapNavigationEpoch){
+   if(authUser&&returnPath&&/^\/(truyen|user)\//.test(returnPath))setRoute(returnPath,true);
+   routeFromLocation();
+ }
+ Promise.allSettled([refreshPublicStoryCloudFields(),loadCloudComments(),loadCloudReviews()]).then(()=>{
+   // Refresh the current component, not the navigation captured at request start.
+   refreshHydratedVisibleView();
+ });
  sb.auth.onAuthStateChange(async(_event,session)=>{
    authUser=session?.user||null;
    updateAuthUI();
    if(authUser)await syncProfile(authUser);
-   if(location.pathname.startsWith('/user/'))routeFromLocation();
+   if(_event!=='INITIAL_SESSION'&&location.pathname.startsWith('/user/'))routeFromLocation();
  });
 }
 function isSiteAdmin(){const u=profileUsername(),n=slugify(authUser?.user_metadata?.full_name||authUser?.user_metadata?.name||'');return !!authUser && (u==='alex'||u==='thao-tran'||n==='alex'||n==='thao-tran')}

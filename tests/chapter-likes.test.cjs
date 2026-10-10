@@ -68,7 +68,7 @@ test('like/unlike authoritative counts, all UI surfaces, baseline, hidden chapte
  const {page,mock}=await setup([{chapter_id:12,user_id:B},{chapter_id:13,user_id:A}]);try{
   await page.evaluate(()=>{openStory(1);saved=[1];renderSaved();renderProfileStoryShelf('saved');currentStory=stories[0];currentChapter=0;renderChapterHeart()});assert.equal((await snapshot(page)).total,1051);assert.deepEqual((await snapshot(page)).liked,[]);
   await page.evaluate(()=>toggleChapterLike());assert.deepEqual(await snapshot(page),{count:1,total:1052,liked:['1_0'],baseline:1050});
-  assert.equal(await page.locator('#chapterHeartRow button span').textContent(),'1');
+  assert.equal(await page.locator('#chapterHeartRow button span').count(),0);
   for(const sel of ['#stories .stats .stat:nth-child(2)','#saved .stats .stat:nth-child(2)','#introStats .stat:nth-child(2)','.profile-story-stats span:nth-child(2)'])assert.equal((await page.locator(sel).textContent()).trim(),'1.05K');
   assert.deepEqual(mock.calls.map(c=>c.type),['chapter_likes','nca_chapter_like_counts','nca_my_chapter_likes']);
   mock.calls.length=0;await page.evaluate(()=>toggleChapterLike());assert.deepEqual(await snapshot(page),{count:0,total:1051,liked:[],baseline:1050});assert.equal(mock.calls.length,3);
@@ -143,7 +143,7 @@ test('overlapping bounded reads respect latest chapter snapshot; UI updates befo
   block.resolve();await page.evaluate(()=>window.oldBatch);assert.equal((await snapshot(page)).count,1);assert.deepEqual((await snapshot(page)).liked,['1_0']);
   block=deferred();waiting=0;mock.readHook=()=>{waiting++;return block.promise};
   await page.evaluate(()=>{window.unlikeAndReconcile=toggleChapterLike()});await waitUntil(()=>waiting===2);
-  assert.equal((await snapshot(page)).count,0);assert.equal(await page.locator('#chapterHeartRow button span').textContent(),'0');assert.deepEqual((await snapshot(page)).liked,[]);
+  assert.equal((await snapshot(page)).count,0);assert.equal(await page.locator('#chapterHeartRow button span').count(),0);assert.deepEqual((await snapshot(page)).liked,[]);
   block.resolve();await page.evaluate(()=>window.unlikeAndReconcile);assert.equal((await snapshot(page)).count,0);assert.deepEqual(page.errors,[]);
  }finally{block.resolve();await page.close()}
 });
@@ -165,7 +165,7 @@ test('chapter switch while write is pending updates original chapter without cha
  const {page,mock}=await setup([{chapter_id:12,user_id:B}]);const block=deferred();let waiting=0;try{
   mock.writeHook=()=>{waiting++;return block.promise};await page.evaluate(()=>{window.originalLike=toggleChapterLike()});await waitUntil(()=>waiting===1);
   await page.evaluate(()=>{currentChapter=1;renderChapterHeart()});block.resolve();await page.evaluate(()=>window.originalLike);
-  assert.equal(await page.evaluate(()=>currentChapter),1);assert.equal((await snapshot(page)).count,1);assert.equal(await page.locator('#chapterHeartRow button span').textContent(),'1');
+  assert.equal(await page.evaluate(()=>currentChapter),1);assert.equal((await snapshot(page)).count,1);assert.equal(await page.locator('#chapterHeartRow button span').count(),0);
   assert(!(await page.locator('#chapterHeartRow button').getAttribute('class')).includes('liked'));assert.equal((await snapshot(page)).total,1052);assert.deepEqual(page.errors,[]);
  }finally{block.resolve();await page.close()}
 });

@@ -14,7 +14,7 @@ test('all story displays and DOM refresh format only presentation; chapter/comme
   const heartSelectors=['#stories .stat:nth-child(2)','#introStats .stat:nth-child(2)','#saved .stat:nth-child(2)','.profile-story-stats span:nth-child(2)'];
   for(const sel of viewSelectors)assert.equal((await page.locator(sel).textContent()).trim(),'1.27M');
   for(const sel of heartSelectors)assert.equal((await page.locator(sel).textContent()).trim(),'6.29K');
-  assert.equal((await page.locator('#chapterHeartRow button span').textContent()).trim(),'1001');
+  assert.equal(await page.locator('#chapterHeartRow button span').count(),0);assert.equal(await page.evaluate(()=>chapterLikes['1_0']),1001);
   assert.equal((await page.locator('#introStats .stat:nth-child(3)').textContent()).trim(),'7');
   await page.evaluate(()=>{applyStoryViewCount(stories[0],4550021);chapterLikes['1_0']=0;refreshStoryHeartStats(stories[0]);renderChapterHeart()});
   for(const sel of viewSelectors)assert.equal((await page.locator(sel).textContent()).trim(),'4.55M');

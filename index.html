@@ -969,6 +969,25 @@ body.pastel .chapter-end-nav #nextChapter{background:#dcebf4;border-color:#c6dfe
 .chapter-center-actions{display:flex;align-items:center;gap:7px;grid-column:2}
 .chapter-center-actions .chapter-home-btn svg,.chapter-center-actions .chapter-heart-btn .ico,.chapter-center-actions .chapter-heart-btn span{opacity:.82}
 .chapter-home-btn{display:inline-grid;place-items:center;width:42px;height:42px;min-width:42px;padding:0!important}.chapter-home-btn svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+/* Icon-only chapter heart; semantic colors follow light/dark reader themes. */
+:root{--chapter-heart-unliked:#737373}
+body{--chapter-heart-liked:color-mix(in srgb,var(--accent) 80%,var(--fg))}
+body.night,body.purplenight{--chapter-heart-unliked:#b9b9b9;--chapter-heart-liked:var(--accent)}
+.chapter-end-nav .chapter-heart-btn{
+ width:44px;height:44px;min-width:44px;min-height:44px;padding:0;border:0;
+ outline:0;background:transparent;box-shadow:none!important;border-radius:0;
+ display:inline-grid;place-items:center;color:var(--chapter-heart-unliked);transform:none;
+}
+.chapter-end-nav .chapter-heart-btn.liked{color:var(--chapter-heart-liked);background:transparent;border:0}
+.chapter-end-nav .chapter-heart-btn .ico{width:20px;height:20px;opacity:1;fill:none;stroke-width:1.7;transition:filter .15s ease}
+.chapter-end-nav .chapter-heart-btn.liked .ico{fill:currentColor}
+.chapter-end-nav .chapter-heart-btn:not(:disabled):hover,
+.chapter-end-nav .chapter-heart-btn:focus-visible{background:transparent;box-shadow:none!important;transform:none;outline:0}
+.chapter-end-nav .chapter-heart-btn:hover .ico{filter:drop-shadow(0 0 1px currentColor)}
+.chapter-end-nav .chapter-heart-btn:focus-visible .ico{filter:drop-shadow(0 0 2px currentColor)}
+.comment-meta .comment-heart-icon{font-style:normal;display:inline-block;transform:scale(1.25);transform-origin:center;pointer-events:none}
+
+
 .story-admin-editbar{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px}
 .story-admin-editbar button{border:1px solid var(--line);background:var(--soft);color:var(--fg);border-radius:10px;padding:9px 12px}
 @media(max-width:600px){.intro-tabs{gap:16px;padding-left:14px!important;padding-right:14px!important}.intro-tabs button{padding-left:4px;padding-right:4px}.chapter-center-actions{gap:5px}.chapter-home-btn{width:40px;height:40px;min-width:40px;padding:0!important}}
@@ -1965,7 +1984,7 @@ async function refreshChapterLikeState(requestedIds=loadedChapterLikeIds()){
  await Promise.all(jobs);
  renderChapterHeart();for(const st of stories)refreshStoryHeartStats(st);
 }
-function renderChapterHeart(){activateChapterLikeAccount();const box=document.getElementById('chapterHeartRow');if(!box||!currentStory)return;const key=chapterLikeKey(currentStory.id,currentChapter),count=Number(chapterLikes[key])||0,on=!!authUser&&likedChapters.includes(key);box.innerHTML=`<button class="chapter-heart-btn ${on?'liked':''}" type="button" onclick="toggleChapterLike()" aria-label="${on?'Bỏ tim':'Thả tim'} chương này">${icon('heart')} <span>${count}</span></button>`}
+function renderChapterHeart(){activateChapterLikeAccount();const box=document.getElementById('chapterHeartRow');if(!box||!currentStory)return;const key=chapterLikeKey(currentStory.id,currentChapter),on=!!authUser&&likedChapters.includes(key);box.innerHTML=`<button class="chapter-heart-btn ${on?'liked':''}" type="button" onclick="toggleChapterLike()" aria-pressed="${on}" aria-label="${on?'Bỏ tim':'Thả tim'} chương này">${icon('heart')}</button>`}
 function toggleChapterLike(){
  if(!currentStory)return;
  if(!authUser){requestCommentLogin('thả tim chương');return}
@@ -2499,7 +2518,7 @@ function commentMarkup(comment,key,list,headerExtra=''){
   <a class="comment-avatar" href="${profileLink}" data-user-profile="${username}" aria-label="Hồ sơ ${esc(comment.name||'Thành viên')}">${avatar}</a>
   <div class="comment-main"><div class="comment-author-line"><a class="comment-author" href="${profileLink}" data-user-profile="${username}">${esc(comment.name||'Thành viên')}</a>${isAdminComment(comment)?'<span class="admin-badge">ADMIN</span>':''}${headerExtra}${commentOwnerMenu(comment)}</div>
    <div class="comment-bubble">${target?`<span class="comment-reply-to">Trả lời ${esc(target.name)}</span>`:''}<p class="comment-text">${commentTextHTML(comment.text,comment.mentions)}</p></div>
-   <div class="comment-meta"><button type="button" data-comment-action="like" data-comment-id="${esc(comment.id)}" aria-pressed="${liked}" aria-label="Thả tim bình luận của ${esc(comment.name)}">${liked?'♥':'♡'} <span>${Math.max(0,Number(comment.likes)||0)}</span></button><button type="button" data-comment-action="reply" data-comment-id="${esc(comment.id)}">Trả lời</button>${commentTime(comment)}${comment.editedAt?'<span class="comment-edited">· Đã chỉnh sửa</span>':''}</div>
+   <div class="comment-meta"><button type="button" data-comment-action="like" data-comment-id="${esc(comment.id)}" aria-pressed="${liked}" aria-label="Thả tim bình luận của ${esc(comment.name)}"><i class="comment-heart-icon" aria-hidden="true">${liked?'♥':'♡'}</i> <span>${Math.max(0,Number(comment.likes)||0)}</span></button><button type="button" data-comment-action="reply" data-comment-id="${esc(comment.id)}">Trả lời</button>${commentTime(comment)}${comment.editedAt?'<span class="comment-edited">· Đã chỉnh sửa</span>':''}</div>
   </div></article>`;
 }
 function beginEditComment(key,id){
@@ -3195,7 +3214,7 @@ function toggleNotifications(){
 function setNotifFilter(type){notifFilter=type;document.querySelectorAll('.notif-filters button').forEach(b=>b.classList.toggle('active',(b.getAttribute('onclick')||'').includes(`'${type}'`)));loadNotifications()}
 function notifText(n){
  const labels={
-   story_like:'đã thả tim truyện của bạn.',
+   story_like:n.chapter_id!=null?'đã thả tim một chương truyện của bạn.':'đã thả tim truyện của bạn.',
    comment:stories.find(s=>String(s.id)===String(n.story_id))?`đã bình luận về ${stories.find(s=>String(s.id)===String(n.story_id)).title}.`:'đã bình luận về truyện của bạn.',
    reply:'đã trả lời bình luận của bạn.',
    mention:'đã nhắc đến bạn trong một bình luận.',
@@ -3243,7 +3262,7 @@ async function openNotification(id){
  const {error}=await sb.from('notifications').update({is_read:true}).eq('id',n.id).eq('user_id',userId);
  if(error)console.warn('notification mark read',error);
  if(authUser?.id!==userId)return;
- await loadNotifications();document.getElementById('notifPanel').classList.remove('open');
+ await loadNotifications();if(authUser?.id!==userId||notificationOwner!==userId)return;document.getElementById('notifPanel').classList.remove('open');
  if(n.comment_id){
   const {data:comment,error}=await sb.from('comments').select('*').eq('id',n.comment_id).maybeSingle();
   if(error||!comment||authUser?.id!==userId)return;
@@ -3262,6 +3281,11 @@ async function openNotification(id){
    if(comment.scope==='paragraph'){jumpToParagraphOnly(key);toggleComments(key,true);}
   }
   requestAnimationFrame(()=>focusExactComment(comment.id));
+ }else if(n.chapter_id!=null&&['story_like','chapter_like'].includes(n.type)){
+  const story=stories.find(s=>String(s.id)===String(n.story_id));
+  const chapterIndex=story?.chapters.findIndex(c=>String(c.id)===String(n.chapter_id))??-1;
+  if(chapterIndex>=0)await read(story.id,chapterIndex);
+  else if(story)openStory(story.id);
  }else if(n.story_id)openStory(Number(n.story_id));
 }
 document.addEventListener('click',event=>{const item=event.target.closest('[data-notification-id]');if(item)openNotification(item.dataset.notificationId).catch(error=>console.warn('notification navigation',error));});

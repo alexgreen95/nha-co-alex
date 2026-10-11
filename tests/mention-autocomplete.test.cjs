@@ -95,3 +95,22 @@ test('saved mention rendering uses stored recipient IDs and leaves unselected us
   assert.deepEqual(page.errors,[]);
  }finally{await page.close();}
 });
+
+test('focused valid mention survives temporary offscreen smooth-scroll geometry while its search is pending',async()=>{
+ const {page,reads}=await setup();try{
+  await input(page).scrollIntoViewIfNeeded();
+  await input(page).evaluate(el=>{window.mentionRect=el.getBoundingClientRect.bind(el);el.getBoundingClientRect=()=>({top:innerHeight+20,bottom:innerHeight+112,left:20,right:300,width:280,height:92});});
+  await input(page).fill('@al');
+  await page.waitForFunction(()=>mentionActive?.query==='al'&&mentionActive.rows.length===4);
+  assert(await popup(page).isHidden());assert.equal(await input(page).getAttribute('aria-expanded'),'false');
+  const version=await page.evaluate(()=>mentionSearchVersion);
+  await input(page).evaluate(el=>{el.getBoundingClientRect=window.mentionRect;positionMentionPopup()});
+  await popup(page).waitFor({state:'visible'});
+  assert.equal(await page.evaluate(()=>mentionSearchVersion),version);assert.equal(await input(page).getAttribute('aria-expanded'),'true');
+  assert.equal(reads.filter(u=>u.searchParams.has('limit')).length,1);
+  await choose(page,'user-accent');
+  assert.deepEqual(await page.evaluate(()=>selectedCommentMentions(document.getElementById('storyCommentInput')).map(x=>x.id)),['user-accent']);
+  await input(page).fill('ordinary text');await popup(page).waitFor({state:'hidden'});
+  assert.equal(await page.evaluate(()=>mentionActive),null);assert.deepEqual(page.errors,[]);
+ }finally{await page.close()}
+});

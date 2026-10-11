@@ -1553,9 +1553,24 @@ body.night .status-done,body.purplenight .status-done{color:#a3d8bf!important}bo
  .intro-info,.intro-tag-status{display:contents}.intro-cover{grid-area:cover}.intro-title{grid-area:title;font-size:22px;margin:0;align-self:start;overflow-wrap:anywhere}#introAuthor{grid-area:author;font-size:15px;align-self:start}#introStats{grid-area:stats;margin:0;gap:9px;font-size:13px}#introSubtags{grid-area:tags;min-width:0}.intro-subtag{max-width:100%;overflow-wrap:anywhere}.intro-status-row{grid-area:status}#introSummary{grid-area:summary;margin:0}.intro-actions{grid-area:actions;margin-top:4px;flex-wrap:nowrap;gap:8px;min-width:0}.intro-actions .btn{min-height:40px;padding:8px!important;font-size:13px;white-space:nowrap;min-width:0}#introReadBtn{flex:0 1 auto;max-width:calc(100% - 112px);overflow:hidden}#introReadBtn .action-label{min-width:0;overflow:hidden;text-overflow:ellipsis}#introSaveBtn{flex:0 0 auto}
  .intro-tabs{display:grid;grid-template-columns:1fr 1.75fr .8fr;gap:0!important;padding:0 5px!important;overflow:visible;white-space:normal}.intro-tabs button{min-width:0;min-height:44px;font-size:12px;padding:10px 2px!important;white-space:nowrap}
 }
+/* Detail presentation: centered width, flowing badges, one active indicator. */
+#storyIntro{max-width:880px;padding-left:28px;padding-right:28px}
+.intro-actions{justify-content:center}
+.intro-tabs button{font-size:16px}
+.intro-tabs button.active::after{content:none!important;display:none!important}
+.intro-tabs{border-bottom:1px solid var(--line)!important;padding-bottom:5px!important}
+#introComments .intro-community-toolbar>strong{display:inline-block;padding:7px 13px;border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line));border-radius:10px;background:color-mix(in srgb,var(--accent) 12%,var(--card));color:var(--fg)}
+@media(max-width:700px){
+ #storyIntro{padding-left:24px;padding-right:24px}
+ .story-intro-top{grid-template-columns:96px minmax(0,1fr);grid-template-areas:"cover title" "cover author" "cover stats" "cover tags" "summary summary" "actions actions";gap:7px 10px;padding:13px!important}
+ .intro-tag-status{grid-area:tags;display:flex;flex-wrap:wrap;gap:5px;margin:0;min-width:0}
+ #introSubtags,.intro-status-row{display:contents}
+ .intro-actions{justify-content:center}
+ .intro-tabs button{font-size:13px}
+}
 /* Notification filter accents follow each chip, including its selected border. */
-.notif-filters button{--chip:#c681a1;background:color-mix(in srgb,var(--chip) 15%,var(--card))!important;border-color:color-mix(in srgb,var(--chip) 55%,var(--line))!important}
-.notif-filters button:nth-child(2){--chip:#9c89c7}.notif-filters button:nth-child(3){--chip:#73b5a4}.notif-filters button:nth-child(4){--chip:#d9b861}.notif-filters button:nth-child(5){--chip:#79a9cf}
+.notif-filters button{--chip:var(--accent);background:color-mix(in srgb,var(--chip) 15%,var(--card))!important;border-color:color-mix(in srgb,var(--chip) 55%,var(--line))!important}
+body.pastel .notif-filters button:nth-child(2){--chip:#9c89c7}body.pastel .notif-filters button:nth-child(3){--chip:#73b5a4}body.pastel .notif-filters button:nth-child(4){--chip:#d9b861}body.pastel .notif-filters button:nth-child(5){--chip:#79a9cf}
 .notif-filters button.active{border-color:var(--chip)!important;box-shadow:inset 0 -2px 0 var(--chip)!important}
 .notif-item{display:flex;align-items:flex-start;gap:9px}.notif-copy{flex:1;min-width:0;overflow-wrap:anywhere}.notif-actor-avatar{width:28px;height:28px;flex:0 0 28px;object-fit:cover;border-radius:50%}.notif-avatar-fallback{display:grid;place-items:center;background:var(--soft);color:var(--fg);font-weight:700}.notif-story-cover{width:30px;height:44px;object-fit:cover;flex:0 0 30px;border-radius:5px}
 </style>
@@ -2521,10 +2536,13 @@ function closeMentionPopup(){
  mentionActive=null;if(mentionPopup)mentionPopup.hidden=true;
 }
 function positionMentionPopup(){
- if(!mentionActive||!mentionPopup||mentionPopup.hidden)return;
+ if(!mentionActive||!mentionPopup)return;
  const input=mentionActive.input;if(!input.isConnected){closeMentionPopup();return}
  const rect=input.getBoundingClientRect(),viewport=window.visualViewport,topEdge=viewport?.offsetTop||0,bottomEdge=topEdge+(viewport?.height||innerHeight),leftEdge=viewport?.offsetLeft||0,width=viewport?.width||innerWidth;
- if(rect.bottom<topEdge||rect.top>bottomEdge){closeMentionPopup();return}
+ // Smooth scrolling may temporarily move the focused composer outside the viewport.
+ // Hide the popup without invalidating its still-valid query or pending search.
+ if(rect.bottom<topEdge||rect.top>bottomEdge){mentionPopup.hidden=true;input.setAttribute('aria-expanded','false');return}
+ mentionPopup.hidden=false;input.setAttribute('aria-expanded','true');
  mentionPopup.style.width=Math.min(320,width-16)+'px';
  const above=rect.top-topEdge-14,below=bottomEdge-rect.bottom-14,useAbove=above>=150||above>below;
  mentionPopup.style.maxHeight=Math.max(40,Math.min(240,useAbove?above:below))+'px';
@@ -2535,7 +2553,7 @@ function renderMentionPopup(status=''){
  const active=mentionActive;if(!active)return;const popup=ensureMentionPopup();
  const duplicateNames=new Map();for(const p of active.rows)duplicateNames.set(mentionUsername(p),(duplicateNames.get(mentionUsername(p))||0)+1);
  popup.innerHTML=active.rows.length?active.rows.map((p,i)=>{
-  const username=mentionUsername(p),avatar=p.avatar_url?`<img class="mention-option-avatar" src="${esc(p.avatar_url)}" alt="" referrerpolicy="no-referrer">`:`<span class="mention-option-avatar" aria-hidden="true">${esc(Array.from(p.display_name||'T')[0])}</span>`;
+  const username=mentionUsername(p),avatar=siteAvatarURL(p.avatar_url)?`<img class="mention-option-avatar" src="${esc(siteAvatarURL(p.avatar_url))}" alt="" referrerpolicy="no-referrer">`:`<span class="mention-option-avatar" aria-hidden="true">${esc(avatarInitials(p.display_name))}</span>`;
   const detail=(p.display_name||'Thành viên')+(duplicateNames.get(username)>1?' · '+String(p.id).slice(-6):'');
   return `<button type="button" role="option" tabindex="-1" id="mentionOption${i}" data-mention-index="${i}" data-mention-user-id="${esc(p.id)}" class="mention-option" aria-selected="${i===active.index}">${avatar}<span class="mention-option-label"><strong>@${esc(username)}</strong><small>${esc(detail)}</small></span></button>`;
  }).join(''):`<div class="mention-status" role="status">${esc(status||'Không tìm thấy tài khoản phù hợp.')}</div>`;
@@ -2930,10 +2948,14 @@ async function signOut(){
  show('home');
 }
 let memberProfile=null;
-function googleDisplayName(u){ return u?.user_metadata?.full_name || u?.user_metadata?.name || u?.email?.split('@')[0] || 'Thành viên'; }
-function googleAvatar(u){ return u?.user_metadata?.avatar_url || u?.user_metadata?.picture || ''; }
-function userDisplayName(u){ return (u?.id===authUser?.id&&memberProfile?.id===u?.id?memberProfile?.display_name:'') || googleDisplayName(u); }
-function userAvatar(u){ return (u?.id===authUser?.id&&memberProfile?.id===u?.id?memberProfile?.avatar_url:'') || googleAvatar(u); }
+function siteDisplayName(name){const text=String(name||'').trim();return text&&!text.includes('@')?text:'Thành viên'}
+function googleDisplayName(u){return siteDisplayName(u?.user_metadata?.full_name||u?.user_metadata?.name)}
+function avatarInitials(name){const words=siteDisplayName(name).split(/\s+/);return (words.length>1?Array.from(words[0])[0]+Array.from(words.at(-1))[0]:Array.from(words[0])[0]).toUpperCase()}
+function siteAvatarURL(url){const value=String(url||'');try{const host=new URL(value).hostname;if(/(^|\.)googleusercontent\.com$|(^|\.)ggpht\.com$/.test(host))return ''}catch{}return value}
+function initialsAvatar(name){const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="80" height="80" rx="40" fill="#e6dfe9"/><text x="40" y="43" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="28" fill="#504655">${esc(avatarInitials(name))}</text></svg>`;return 'data:image/svg+xml,'+encodeURIComponent(svg)}
+function googleAvatar(){return ''}
+function userDisplayName(u){ return siteDisplayName((u?.id===authUser?.id&&memberProfile?.id===u?.id?memberProfile?.display_name:'') || googleDisplayName(u)); }
+function userAvatar(u){ return siteAvatarURL(u?.id===authUser?.id&&memberProfile?.id===u?.id?memberProfile?.avatar_url:'') || initialsAvatar(userDisplayName(u)); }
 // Auth coordination wraps, rather than replaces, the Step 2/3 account guards.
 let authAccount=null,authAccountEpoch=0,authEventRevision=0,authLastWork=Promise.resolve();
 let authMetadataReady=Promise.resolve(),authSubscription=null;
@@ -3470,9 +3492,9 @@ function notificationHead(state,mutation,forceRefresh=false){
  })();return job.promise;
 }
 function notificationRowMarkup(n,actors){
- const actor=actors[n.actor_id],name=(actor?.display_name||'').trim()||(n.actor_id?'Thành viên':'Hệ thống');
+ const actor=actors[n.actor_id],name=n.actor_id?siteDisplayName(actor?.display_name):'Hệ thống';
  const eligible=['comment','reply','mention','comment_like'].includes(n.type),story=eligible?stories.find(s=>String(s.id)===String(n.story_id)):null;
- const avatar=eligible&&n.actor_id?(actor?.avatar_url?`<img class="notif-actor-avatar" src="${esc(actor.avatar_url)}" alt="" loading="lazy" referrerpolicy="no-referrer">`:`<span class="notif-actor-avatar notif-avatar-fallback" aria-hidden="true">${esc(Array.from(name)[0])}</span>`):'';
+ const avatar=eligible&&n.actor_id?(siteAvatarURL(actor?.avatar_url)?`<img class="notif-actor-avatar" src="${esc(siteAvatarURL(actor.avatar_url))}" alt="" loading="lazy" referrerpolicy="no-referrer">`:`<span class="notif-actor-avatar notif-avatar-fallback" aria-hidden="true">${esc(avatarInitials(name))}</span>`):'';
  const cover=story?.cover?`<img class="notif-story-cover" src="${esc(story.cover)}" alt="" loading="lazy">`:'';
  return `<div class="notif-item ${n.is_read?'':'unread'}" data-notification-id="${esc(n.id)}" role="link" tabindex="0">${avatar}<span class="notif-copy">${esc(name)} ${esc(notifText(n))}</span>${cover}</div>`;
 }
@@ -3551,7 +3573,6 @@ function profileEditMarkup(){
    <div class="profile-fields">
     <label>Tên hiển thị<input id="editDisplayName" maxlength="50" value="${name}"></label>
     <label>Giới thiệu<textarea id="editBio" maxlength="240" placeholder="Viết đôi dòng về bạn...">${bio}</textarea></label>
-    <label>Email<input value="${esc(authUser?.email||'')}" disabled></label>
     <div class="profile-edit-actions"><button class="btn" onclick="saveProfileChanges()">Lưu thay đổi</button><button class="btn" onclick="openProfile('profile')">Hủy</button><span id="profileEditMessage" class="profile-edit-note"></span></div>
    </div>
  </div>`;
@@ -3571,7 +3592,7 @@ async function saveProfileChanges(){
  const bio=document.getElementById('editBio').value.trim();
  if(!display_name){msg.textContent='Tên hiển thị không được để trống.';return}
  msg.textContent='Đang lưu…';
- let avatar_url=memberProfile?.avatar_url||googleAvatar(user);
+ let avatar_url=memberProfile?.avatar_url||'';
  if(pendingAvatarFile){
    const ext=(pendingAvatarFile.name.split('.').pop()||'jpg').toLowerCase();
    const path=`${user.id}/avatar-${Date.now()}.${ext}`;
@@ -3648,10 +3669,10 @@ function renderProfileActivity(kind='all'){
 }
 function setProfileHeader(profile,own=false){
  document.getElementById('profilePage').dataset.profileOwner=own?(authUser?.id||''):'';
- document.getElementById('profileName').textContent=profile.display_name||'Thành viên';
- const email=document.getElementById('profileEmail');email.textContent=own?(authUser?.email||''):'';email.style.pointerEvents='none';email.style.textDecoration='none';
+ document.getElementById('profileName').textContent=siteDisplayName(profile.display_name);
+ const email=document.getElementById('profileEmail');email.textContent='';email.hidden=true;email.style.pointerEvents='none';email.style.textDecoration='none';
  const avatar=document.getElementById('profileAvatar');
- avatar.src=profile.avatar_url||'';avatar.style.visibility=profile.avatar_url?'visible':'hidden';
+ avatar.src=siteAvatarURL(profile.avatar_url)||initialsAvatar(profile.display_name);avatar.style.visibility='visible';
  const badge=document.getElementById('profileAdminBadge');if(badge)badge.classList.toggle('hidden',!(own&&isSiteAdmin()));
  renderProfileMeta(profile,own);
  document.querySelector('.profile-edit-top').classList.toggle('hidden',!own);
@@ -4055,7 +4076,7 @@ async function loadCloudReviews(){
   const {data,error}=await sb.from('reviews').select('*').order('created_at',{ascending:true});
   if(error){console.warn('reviews sync',error.message||error,error);return}
   const rows=data||[],prof=await cloudProfiles(rows.map(r=>r.user_id)),next={};
-  for(const r of rows){const p=prof[r.user_id]||{};(next[r.story_id]||(next[r.story_id]=[])).push({id:r.id,userId:r.user_id,username:slugify(p.display_name||'thanh-vien'),name:p.display_name||'Thành viên',avatar:p.avatar_url||'',role:p.role||'',isAdmin:String(p.role||'').toLowerCase()==='admin',text:r.content||'',html:r.content_html||'',createdAt:r.created_at,editedAt:r.edited_at,likes:0,comments:0});}
+  for(const r of rows){const p=prof[r.user_id]||{};(next[r.story_id]||(next[r.story_id]=[])).push({id:r.id,userId:r.user_id,username:slugify(p.display_name||'thanh-vien'),name:siteDisplayName(p.display_name),avatar:siteAvatarURL(p.avatar_url)||initialsAvatar(p.display_name),role:p.role||'',isAdmin:String(p.role||'').toLowerCase()==='admin',text:r.content||'',html:r.content_html||'',createdAt:r.created_at,editedAt:r.edited_at,likes:0,comments:0});}
   reviews=next;renderHomeReviews();if(introStory)renderStoryReviews();
 }
 let cloudChapterMap={};
@@ -4778,7 +4799,7 @@ initAuth().catch(()=>{updateAuthUI(); if(!location.pathname.startsWith('/quan-ly
   for(const [id,p] of profiles)state.profiles.set(id,p);
   for(const id of list){const e=state.entities.get(id);if(!e||(state.entityStamps.get(id)||0)>job.stamp)continue;
    const mentions=associations.get(id)||[],p=profiles.get(e.userId);state.mentions.set(id,mentions);
-   Object.assign(e,{mentions,name:p?.display_name||'Thành viên',username:p?slugify(p.display_name||'thanh-vien'):'',avatar:p?.avatar_url||'',enriched:!!p});
+   Object.assign(e,{mentions,name:siteDisplayName(p?.display_name),username:p?slugify(p.display_name||'thanh-vien'):'',avatar:siteAvatarURL(p?.avatar_url)||initialsAvatar(p?.display_name),enriched:!!p});
   }
   rememberMentionProfiles([...profiles.values()]);
   const ok=await refreshCommentLikeEnrichment(list);return job.current()&&ok;

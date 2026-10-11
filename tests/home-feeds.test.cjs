@@ -62,7 +62,10 @@ test('homepage comment opens its source only through its location link and colla
     }
     await more.click();
     await card.locator('[data-comment-location]').click();
-    await page.waitForFunction(()=>document.getElementById('introComments').classList.contains('active'));
+    await page.waitForFunction(()=>!document.getElementById('storyIntro').classList.contains('hidden'));
+    assert(await page.locator('#introComments').isVisible());
+    assert.equal(await page.locator('.intro-tabs button').count(),3);
+    assert.equal(await page.locator('#introComments.intro-pane').count(),0);
     assert.notEqual(page.url(),initialUrl);
     await page.waitForFunction(()=>document.querySelector('#storyCommentList .comment-item[data-comment-id="7"]')?.classList.contains('jump-flash'));
     assert.equal(await page.locator('#storyCommentList .comment-item[data-comment-id="7"]').count(),1,'Home location resolves and focuses the exact legacy-activity source');

@@ -1525,7 +1525,7 @@ body.purplenight .hero-fade-top{
 .story-actions .btn,.intro-actions .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px}
 .story-actions .ico,.intro-actions .ico{flex-shrink:0;width:17px;height:17px}
 @media(min-width:701px){header .nav{max-width:1240px;padding-left:28px;padding-right:28px}header .brand-house{width:44px;height:44px}header .brand-house .brand-icon{width:44px;height:44px}}
-#stories.grid{width:calc(100% - 24px)!important;max-width:1200px!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:14px!important}
+#stories.grid{width:calc(100% - 48px)!important;max-width:1100px!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:14px!important}
 #stories .story-card{height:auto!important;min-height:0!important;grid-template-columns:88px minmax(0,1fr)!important;padding:11px!important;gap:11px!important;align-items:center!important}
 #stories .story-card .story-cover{width:88px!important;height:auto!important;aspect-ratio:3/5!important;padding:0!important;overflow:hidden}
 #stories .story-info{justify-content:center;gap:6px!important;padding:0!important;align-self:center!important}
@@ -1555,7 +1555,7 @@ body.night .status-done,body.purplenight .status-done{color:#a3d8bf!important}bo
 }
 /* Detail presentation: centered width, flowing badges, one active indicator. */
 #storyIntro{max-width:880px;padding-left:28px;padding-right:28px}
-.intro-actions{justify-content:center}
+.intro-actions{justify-content:flex-start}
 .intro-tabs button{font-size:16px}
 .intro-tabs button.active::after{content:none!important;display:none!important}
 .intro-tabs{border-bottom:1px solid var(--line)!important;padding-bottom:5px!important}
@@ -1566,8 +1566,17 @@ body.night .status-done,body.purplenight .status-done{color:#a3d8bf!important}bo
  .intro-tag-status{grid-area:tags;display:flex;flex-wrap:wrap;gap:5px;margin:0;min-width:0}
  #introSubtags,.intro-status-row{display:contents}
  .intro-actions{justify-content:center}
- .intro-tabs button{font-size:13px}
+ #introReadBtn{flex:1.2 1 0;max-width:none}
+ #introSaveBtn{flex:1 1 0}
+ .intro-tabs button{font-size:14px}
 }
+/* Feedback is a normal themed navigation link, never a floating action. */
+.feedback-link{display:inline-flex;align-items:center;gap:8px;color:var(--fg);text-decoration:none;border-radius:9px;min-height:44px;padding:10px 11px;box-sizing:border-box}
+.feedback-link .ico{width:17px;height:17px;flex:0 0 17px}
+.feedback-link:hover{background:var(--soft)}
+.feedback-link:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.account-menu .feedback-link{width:100%;font-size:14px}
+.login .feedback-link{margin-top:12px;border:1px solid var(--line)}
 /* Notification filter accents follow each chip, including its selected border. */
 .notif-filters button{--chip:var(--accent);background:color-mix(in srgb,var(--chip) 15%,var(--card))!important;border-color:color-mix(in srgb,var(--chip) 55%,var(--line))!important}
 body.pastel .notif-filters button:nth-child(2){--chip:#9c89c7}body.pastel .notif-filters button:nth-child(3){--chip:#73b5a4}body.pastel .notif-filters button:nth-child(4){--chip:#d9b861}body.pastel .notif-filters button:nth-child(5){--chip:#79a9cf}
@@ -1659,6 +1668,7 @@ document.body.classList.add('gate-locked','gate-checking');
         <button onclick="openProfile('saved')">Truyện đã lưu</button>
         <button onclick="openProfile('reading')">Đang đọc</button>
         <button id="adminLibraryMenuBtn" style="display:none" onclick="openAdminLibrary()">Quản lý thư viện</button>
+        <a class="feedback-link" href="https://forms.gle/2DDU2T5HSJDryGSq7" target="_blank" rel="noopener noreferrer" title="Báo lỗi &amp; góp ý"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11a8 8 0 0 1-8 8H7l-4 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v4Z"/><path d="M8 8h8M8 12h5"/></svg><span>Báo lỗi &amp; góp ý</span></a>
         <button class="logout" onclick="signOut()">Đăng xuất</button>
       </div>
     </div>
@@ -1722,7 +1732,7 @@ if(location.pathname==='/' || location.pathname===''){const b=document.getElemen
 
 <main id="library" class="container hidden"><h2>Tủ truyện</h2><p class="muted">Truyện bà đã lưu sẽ nằm ở đây.</p><div id="saved" class="grid"></div></main>
 
-<main id="login" class="container hidden"><div class="login"><h2>Đăng nhập vào Nhà có Alex</h2><p class="muted">Đăng nhập để bình luận, thả tim, lưu truyện và giữ tiến độ đọc.</p><div class="oauth"><button onclick="signInGoogle()">Tiếp tục với Google</button></div><p id="authMessage" class="muted" style="font-size:12px;margin-top:20px"></p></div></main>
+<main id="login" class="container hidden"><div class="login"><h2>Đăng nhập vào Nhà có Alex</h2><p class="muted">Đăng nhập để bình luận, thả tim, lưu truyện và giữ tiến độ đọc.</p><div class="oauth"><button onclick="signInGoogle()">Tiếp tục với Google</button></div><a class="feedback-link" href="https://forms.gle/2DDU2T5HSJDryGSq7" target="_blank" rel="noopener noreferrer" title="Báo lỗi &amp; góp ý"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11a8 8 0 0 1-8 8H7l-4 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v4Z"/><path d="M8 8h8M8 12h5"/></svg><span>Báo lỗi &amp; góp ý</span></a><p id="authMessage" class="muted" style="font-size:12px;margin-top:20px"></p></div></main>
 
 <main id="profilePage" class="container hidden">
   <div class="profile-shell">

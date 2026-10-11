@@ -65,7 +65,7 @@ for(const target of ['home','intro','reader-completed','reader-pending','profile
   }
   if(target==='profile')await openUserProfile('ban-doc',true);
   if(target==='intro'){
-   showIntroTab('chapters',document.querySelectorAll('.intro-tabs button')[1]);
+   showIntroTab('chapters',document.querySelector('.intro-tabs button[onclick*="chapters"]'));
    document.getElementById('introAboutEdit').hidden=false;document.getElementById('introAboutInput').value='Unsaved intro draft';
   }
   window.beforeHydration={path:location.pathname,historyLength:history.length,epoch:navigationEpoch,story:currentStory,profile:document.getElementById('profileContent').innerHTML};

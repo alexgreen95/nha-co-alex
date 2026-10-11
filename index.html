@@ -1525,27 +1525,33 @@ body.purplenight .hero-fade-top{
 .story-actions .btn,.intro-actions .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px}
 .story-actions .ico,.intro-actions .ico{flex-shrink:0;width:17px;height:17px}
 @media(min-width:701px){header .nav{max-width:1240px;padding-left:28px;padding-right:28px}header .brand-house{width:44px;height:44px}header .brand-house .brand-icon{width:44px;height:44px}}
-#stories.grid{width:calc(100% - 24px)!important;max-width:1200px!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px!important}
-#stories .story-card{height:auto!important;min-height:0!important;grid-template-columns:112px minmax(0,1fr)!important;padding:12px!important;gap:14px!important;align-items:center!important}
-#stories .story-card .story-cover{width:112px!important;height:auto!important;aspect-ratio:3/5!important;padding:0!important;overflow:hidden}
-#stories .story-info{justify-content:center;gap:7px!important;padding:0!important;align-self:center!important}
-#stories .story-title-link{min-height:0!important;margin:0!important}
+#stories.grid{width:calc(100% - 24px)!important;max-width:1200px!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:14px!important}
+#stories .story-card{height:auto!important;min-height:0!important;grid-template-columns:88px minmax(0,1fr)!important;padding:11px!important;gap:11px!important;align-items:center!important}
+#stories .story-card .story-cover{width:88px!important;height:auto!important;aspect-ratio:3/5!important;padding:0!important;overflow:hidden}
+#stories .story-info{justify-content:center;gap:6px!important;padding:0!important;align-self:center!important}
+#stories .story-info .story-title-link{font-size:18px!important;min-height:0!important;margin:0!important;height:auto!important;line-height:1.25!important}
+#stories .story-title-link>span{max-height:2.5em}
 #stories .story-info>.story-author{font-size:14px!important;line-height:1.35!important}
 #stories .story-classification{margin:0!important;align-items:center;gap:6px}
-#stories .story-classification .genre{margin:0!important;min-width:0}
+#stories .story-classification .genre{--genre-tone:#8b72a6;margin:0!important;min-width:0;max-width:100%;display:inline-block;padding:3px 7px!important;border:1px solid color-mix(in srgb,var(--genre-tone) 38%,var(--line));border-radius:999px;font-size:11px!important;line-height:1.3!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:color-mix(in srgb,var(--genre-tone) 35%,var(--fg))!important;background:color-mix(in srgb,var(--genre-tone) 10%,var(--card))}
+#stories .story-classification .meta-pill{padding:3px 7px!important;font-size:11px!important;line-height:1.3!important;white-space:nowrap}
+#stories .genre.genre-hien-dai{--genre-tone:#8873b0}#stories .genre.genre-huyen-ao{--genre-tone:#a36f91}#stories .genre.genre-co-dai{--genre-tone:#a17d54}#stories .genre.genre-tuong-lai{--genre-tone:#568493}#stories .genre.genre-tay-huyen{--genre-tone:#6884a7}#stories .genre.genre-tu-tien{--genre-tone:#568c80}#stories .genre.genre-tan-the{--genre-tone:#a5786d}
+body.night #stories .story-classification .genre,body.purplenight #stories .story-classification .genre{color:color-mix(in srgb,var(--genre-tone) 28%,var(--fg))!important;background:color-mix(in srgb,var(--genre-tone) 16%,var(--card))}
+#introComments{display:block;margin-top:22px;padding:20px 0 0;border-top:1px solid var(--line);scroll-margin-top:100px}
 #stories .stats{margin:0!important;padding:0!important;gap:10px!important;flex-wrap:wrap}
 #stories .story-actions{margin:0!important;padding:0!important;flex-wrap:nowrap;gap:6px}
 #stories .story-actions .btn{padding:7px 9px!important;white-space:nowrap;font-size:13px!important}
-@media(max-width:900px){#stories.grid{grid-template-columns:1fr!important;max-width:650px!important}}
+@media(min-width:701px) and (max-width:1140px){#stories.grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:700px){#stories.grid{grid-template-columns:1fr!important;max-width:650px!important}}
 @media(max-width:700px){#stories .story-card{grid-template-columns:88px minmax(0,1fr)!important;padding:10px!important;gap:10px!important}#stories .story-card .story-cover{width:88px!important}#stories .story-info{gap:6px!important}#stories .story-info>.story-author{font-size:14px!important}#stories .story-actions .btn{padding:6px 7px!important;font-size:12px!important}#stories .stats{gap:8px!important}}
 .intro-info{min-width:0}.intro-tag-status{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0 8px}.intro-subtags{margin:0!important;gap:6px}.intro-status-row{display:flex}.intro-status-row .meta-pill{font-size:12px;padding:4px 8px}#introSecondaryTags{display:contents}#introAuthor{font-size:16px;line-height:1.4}#introStats{margin:0 0 12px;flex-wrap:wrap}#introSummary{line-height:1.6;margin:12px 0 0}
 .status-done{color:color-mix(in srgb,#4b977c 75%,var(--fg))!important;background:color-mix(in srgb,#77bba0 15%,var(--card))!important;border-color:color-mix(in srgb,#77bba0 45%,var(--line))!important}
 .status-ongoing{color:color-mix(in srgb,#bd8a3a 75%,var(--fg))!important;background:color-mix(in srgb,#e4ba68 15%,var(--card))!important;border-color:color-mix(in srgb,#e4ba68 45%,var(--line))!important}
 body.night .status-done,body.purplenight .status-done{color:#a3d8bf!important}body.night .status-ongoing,body.purplenight .status-ongoing{color:#f0d093!important}
 @media(max-width:700px){
- .story-intro-top{grid-template-columns:88px minmax(0,1fr);grid-template-areas:"cover title" "cover author" "stats stats" "tags tags" "status status" "summary summary" "actions actions";gap:10px 12px;padding:16px!important}
- .intro-info,.intro-tag-status{display:contents}.intro-cover{grid-area:cover}.intro-title{grid-area:title;font-size:23px;margin:0;align-self:start;overflow-wrap:anywhere}#introAuthor{grid-area:author;font-size:15px;align-self:start}#introStats{grid-area:stats;margin:4px 0}#introSubtags{grid-area:tags}.intro-status-row{grid-area:status}#introSummary{grid-area:summary;margin:0}.intro-actions{grid-area:actions;margin-top:4px;flex-wrap:nowrap;gap:8px;min-width:0}.intro-actions .btn{min-height:40px;padding:8px!important;font-size:13px;white-space:nowrap;min-width:0}#introReadBtn{flex:1 1 auto;overflow:hidden}#introReadBtn .action-label{min-width:0;overflow:hidden;text-overflow:ellipsis}#introSaveBtn{flex:0 0 auto}
- .intro-tabs{display:grid;grid-template-columns:1fr 1.75fr .8fr 1fr;gap:0!important;padding:0 5px!important;overflow:visible;white-space:normal}.intro-tabs button{min-width:0;min-height:44px;font-size:12px;padding:10px 2px!important;white-space:nowrap}
+ .story-intro-top{grid-template-columns:88px minmax(0,1fr);grid-template-areas:"cover title" "cover author" "cover stats" "cover tags" "cover status" "summary summary" "actions actions";gap:7px 12px;padding:16px!important}
+ .intro-info,.intro-tag-status{display:contents}.intro-cover{grid-area:cover}.intro-title{grid-area:title;font-size:22px;margin:0;align-self:start;overflow-wrap:anywhere}#introAuthor{grid-area:author;font-size:15px;align-self:start}#introStats{grid-area:stats;margin:0;gap:9px;font-size:13px}#introSubtags{grid-area:tags;min-width:0}.intro-subtag{max-width:100%;overflow-wrap:anywhere}.intro-status-row{grid-area:status}#introSummary{grid-area:summary;margin:0}.intro-actions{grid-area:actions;margin-top:4px;flex-wrap:nowrap;gap:8px;min-width:0}.intro-actions .btn{min-height:40px;padding:8px!important;font-size:13px;white-space:nowrap;min-width:0}#introReadBtn{flex:0 1 auto;max-width:calc(100% - 112px);overflow:hidden}#introReadBtn .action-label{min-width:0;overflow:hidden;text-overflow:ellipsis}#introSaveBtn{flex:0 0 auto}
+ .intro-tabs{display:grid;grid-template-columns:1fr 1.75fr .8fr;gap:0!important;padding:0 5px!important;overflow:visible;white-space:normal}.intro-tabs button{min-width:0;min-height:44px;font-size:12px;padding:10px 2px!important;white-space:nowrap}
 }
 /* Notification filter accents follow each chip, including its selected border. */
 .notif-filters button{--chip:#c681a1;background:color-mix(in srgb,var(--chip) 15%,var(--card))!important;border-color:color-mix(in srgb,var(--chip) 55%,var(--line))!important}
@@ -1683,9 +1689,9 @@ if(location.pathname==='/' || location.pathname===''){const b=document.getElemen
 
 <main id="storyIntro" class="container hidden"><div class="story-intro">
   <div class="story-intro-top"><div class="intro-cover" id="introCover"></div><div class="intro-info"><h1 class="intro-title" id="introTitle"></h1><div class="muted" id="introAuthor"></div><div class="intro-tag-status"><div id="introSubtags" class="intro-subtags"><span class="intro-subtag" id="introGenre"></span><span id="introSecondaryTags"></span></div><div class="intro-status-row"><span class="meta-pill" id="introStatus"></span></div></div><div class="stats" id="introStats"></div><p id="introSummary" class="muted"></p><div class="intro-actions"><button class="btn" id="introReadBtn" onclick="startFromIntro()">Bắt đầu đọc</button><button class="btn" id="introSaveBtn" onclick="toggleIntroSave()">Lưu truyện</button></div></div></div>
-  <div class="intro-tabs"><button class="active" onclick="showIntroTab('about',this)">Giới thiệu</button><button onclick="showIntroTab('chapters',this)">Danh sách chương</button><button onclick="showIntroTab('reviews',this)">Review</button><button onclick="showIntroTab('comments',this)">Bình luận</button></div>
+  <div class="intro-tabs"><button class="active" onclick="showIntroTab('about',this)">Giới thiệu</button><button onclick="showIntroTab('chapters',this)">Danh sách chương</button><button onclick="showIntroTab('reviews',this)">Review</button></div>
   <div id="introAbout" class="intro-pane active"><div id="introAboutView" class="story-about-text"></div><div id="introAboutEdit" hidden><textarea id="introAboutInput" class="story-about-editor" placeholder="Viết phần giới thiệu truyện..."></textarea><div class="story-about-actions"><button class="btn" type="button" onclick="cancelStoryAboutEdit()">Hủy</button><button class="btn" type="button" onclick="saveStoryAbout()">Lưu giới thiệu</button></div></div></div>
-  <div id="introChapters" class="intro-pane chapter-list"></div><div id="introReviews" class="intro-pane"><div class="intro-community-toolbar"><strong>Review</strong><button class="btn" type="button" onclick="toggleReviewComposer()">✎ <span id="reviewComposerLabel">Viết review</span></button></div><div id="reviewComposer"></div><div id="introReviewList" class="review-list"></div></div><div id="introComments" class="intro-pane all-comments"><div class="intro-community-toolbar"><strong>Bình luận</strong></div><div id="storyCommentComposer"></div><div id="storyCommentList" class="story-comment-page"></div><div id="storyCommentPagination" class="story-comment-pagination"></div></div>
+  <div id="introChapters" class="intro-pane chapter-list"></div><div id="introReviews" class="intro-pane"><div class="intro-community-toolbar"><strong>Review</strong><button class="btn" type="button" onclick="toggleReviewComposer()">✎ <span id="reviewComposerLabel">Viết review</span></button></div><div id="reviewComposer"></div><div id="introReviewList" class="review-list"></div></div><div id="introComments" class="all-comments"><div class="intro-community-toolbar"><strong>Bình luận</strong></div><div id="storyCommentComposer"></div><div id="storyCommentList" class="story-comment-page"></div><div id="storyCommentPagination" class="story-comment-pagination"></div></div>
 </div></main>
 
 <main id="reader" class="container hidden">
@@ -2089,6 +2095,9 @@ function primaryGenreClass(name){
  if(g==='huyền ảo'||g==='tiên hiệp'||g==='huyền huyễn')return 'genre-huyen-ao';
  if(g==='cổ đại')return 'genre-co-dai';
  if(g==='tương lai')return 'genre-tuong-lai';
+ if(g==='tây huyễn')return 'genre-tay-huyen';
+ if(g==='tu tiên')return 'genre-tu-tien';
+ if(g==='tận thế')return 'genre-tan-the';
  return 'genre-other';
 }
 function card(s){
@@ -2144,7 +2153,7 @@ function renderStoryAbout(){if(!introStory)return;const v=document.getElementByI
 function editStoryAbout(){if(!introStory||!isSiteAdmin())return;document.getElementById('introAboutInput').value=introStory.longIntro||'';document.getElementById('introAboutView').hidden=true;document.getElementById('introAboutEdit').hidden=false;document.getElementById('introAboutEditBtn').style.display='none'}
 function cancelStoryAboutEdit(){renderStoryAbout()}
 async function saveStoryAbout(){if(!introStory||!isSiteAdmin())return;const text=document.getElementById('introAboutInput').value.trim();const r=await sb.from('stories').update({long_description:text}).eq('id',introStory.id);if(r.error){console.warn('long_description cloud save',r.error);alert('Chưa lưu được Giới thiệu chi tiết: '+(r.error.message||'Supabase từ chối cập nhật.'));return}introStory.longIntro=text;renderStoryAbout()}
-function showIntroTab(name,btn){document.querySelectorAll('.intro-pane').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.intro-tabs button').forEach(x=>x.classList.remove('active'));document.getElementById('intro'+name[0].toUpperCase()+name.slice(1))?.classList.add('active');btn?.classList.add('active')}
+function showIntroTab(name,btn){if(name==='comments'){document.getElementById('introComments')?.scrollIntoView({block:'start',behavior:'auto'});return;}document.querySelectorAll('.intro-pane').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.intro-tabs button').forEach(x=>x.classList.remove('active'));document.getElementById('intro'+name[0].toUpperCase()+name.slice(1))?.classList.add('active');btn?.classList.add('active')}
 function startFromIntro(){if(!introStory)return;let pr=progress[introStory.id]||{chapter:0,scroll:0};read(introStory.id,pr.chapter||0);if(pr.scroll)setTimeout(()=>window.scrollTo(0,pr.scroll),30)}
 function toggleIntroSave(){if(!introStory)return;toggleSave(introStory.id);document.getElementById('introSaveBtn').innerHTML=icon(saved.includes(introStory.id)?'bookmarkSaved':'bookmark')+(saved.includes(introStory.id)?'Đã lưu':'Lưu truyện')}
 function storyCommentKey(storyId){return `story_${storyId}`}

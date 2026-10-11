@@ -31,7 +31,7 @@ test('bell filters by recipient, counts all unread types, marks only that recipi
   assert.equal(rows[2].is_read,false);
   await page.evaluate(async()=>{notifFilter='all';await loadNotifications();await openNotification('n-reply');});
   assert.equal(await page.locator('#notifBadge').textContent(),'0');
-  assert(await page.locator('#introComments').evaluate(el=>el.classList.contains('active')));
+  assert(await page.locator('#introComments').isVisible());assert.equal(await page.locator('.intro-tabs button').count(),3);
   assert.equal(await page.locator('#storyCommentList .comment-item[data-comment-id="101"]').count(),1);
   assert(await page.locator('#storyCommentList .comment-item[data-comment-id="101"]').evaluate(el=>el.classList.contains('jump-flash')),'exact reply is focused, not merely fetched');
   assert(requests.filter(r=>r.method!=='OPTIONS').every(r=>r.url.searchParams.get('user_id')==='eq.reader-user'));

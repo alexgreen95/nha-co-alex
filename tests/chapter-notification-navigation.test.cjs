@@ -1,5 +1,6 @@
 const {test,before,after}=require('node:test'),assert=require('node:assert/strict');
-const {startBrowser,stopBrowser,feedPage}=require('./helpers/public-feed-browser.cjs');
+const {startBrowser,stopBrowser,feedPage:legacyFeedPage}=require('./helpers/public-feed-browser.cjs');
+const feedPage=(n,options={})=>legacyFeedPage(n,{canonicalComments:true,...options});
 before(startBrowser);after(stopBrowser);
 async function setup(){
  const page=await feedPage(0,{fixtures:{chapters:[{id:17,story_id:1,chapter_number:2,published:true,title:'Second'},{id:99,story_id:1,chapter_number:18,published:true,title:'Eighteenth'}]}});
@@ -38,21 +39,21 @@ test('chapter notification uses existing read once: one view event per real cach
  }finally{await page.close()}
 });
 test('comment-like/reply/mention keep comment target precedence and paragraph navigation',async()=>{
- const page=await setup();try{
+ const page=await feedPage(0,{fixtures:{chapters:[{id:17,story_id:1,chapter_number:2,published:true,title:'Second'},{id:99,story_id:1,chapter_number:18,published:true,title:'Eighteenth'}],paragraphs:Array.from({length:4},(_,i)=>({chapter_id:99,paragraph_number:i+1,content:'Paragraph '+i}))}});try{
+  page.mockFixtures.comments.push({id:'101',user_id:'reader-user',scope:'paragraph',story_id:1,chapter_index:1,paragraph_index:3,content:'Root',created_at:'2026-10-09T11:00:00Z'},{id:'102',parent_id:'101',reply_to_user_id:'reader-user',user_id:'admin-user',scope:'paragraph',story_id:1,chapter_index:1,paragraph_index:3,content:'Reply',created_at:'2026-10-09T12:00:00Z'});
+  await page.evaluate(()=>{authUser={id:'reader-user'};notificationOwner=authUser.id;loadNotifications=async()=>{};window.navigationCalls=[];window.viewEvents=[];recordStoryView=async id=>viewEvents.push(id);const ordinaryRead=read,jump=jumpToParagraphOnly,toggle=toggleComments,focus=focusExactComment;read=async(...args)=>{navigationCalls.push(['read',...args]);return ordinaryRead(...args)};jumpToParagraphOnly=key=>{navigationCalls.push(['paragraph',key]);return jump(key)};toggleComments=(key,on)=>{navigationCalls.push(['comments',key,on]);return toggle(key,on)};focusExactComment=id=>{navigationCalls.push(['focus',id]);return focus(id)}});
+  await page.route('**/rest/v1/notifications**',route=>route.fulfill({status:204,headers:{'access-control-allow-origin':'*'}}));
   for(const type of ['comment_like','reply','mention']){
    const calls=await page.evaluate(async type=>{
-    authUser={id:'reader-user'};notificationOwner=authUser.id;navigationCalls=[];
-    const c={id:'paragraph-reply',scope:'paragraph',story_id:1,chapter_index:1,paragraph_index:3};
-    comments['1_1_3']=[{id:'paragraph-root',text:'Root'},{id:c.id,parentId:'paragraph-root',text:'Reply'}];
-    sb.from=table=>table==='comments'?{select:()=>({eq:()=>({maybeSingle:async()=>({data:c,error:null})})})}:{update:()=>({eq(){return this},then(resolve){resolve({error:null})}})};
-    loadCloudComments=async()=>{};loadNotifications=async()=>{};jumpToParagraphOnly=key=>navigationCalls.push(['paragraph',key]);toggleComments=(key,on)=>navigationCalls.push(['comments',key,on]);focusExactComment=id=>navigationCalls.push(['focus',id]);
-    notificationRows.set('p',{id:'p',type,story_id:1,chapter_id:99,comment_id:c.id});await openNotification('p');await new Promise(requestAnimationFrame);return navigationCalls;
+    navigationCalls=[];notificationRows.set('p',{id:'p',type,story_id:1,chapter_id:99,comment_id:'102'});await openNotification('p');return navigationCalls;
    },type);
-   assert.deepEqual(calls,[['read',1,1],['paragraph','1_1_3'],['comments','1_1_3',true],['focus','paragraph-reply']]);
+   const expected=[['paragraph','1_1_3'],['comments','1_1_3',true],['focus','102']];if(type==='comment_like')expected.unshift(['read',1,1]);assert.deepEqual(calls,expected);
+   assert.equal(await page.locator('#paragraphCommentPanelBody .comment-item[data-comment-id="102"]').count(),1);assert.equal(await page.evaluate(()=>currentChapter),1);
   }
-  assert.deepEqual(page.errors,[]);
+  assert.deepEqual(await page.evaluate(()=>viewEvents),[1],'same completed reader is reused for subsequent targets');assert.deepEqual(page.errors,[]);
  }finally{await page.close()}
 });
+
 test('REST integration: normal read and notification read each INSERT one view and refresh total once, cached or uncached',async()=>{
  const requests=[],page=await feedPage(0,{fixtures:{chapters:[{id:99,story_id:1,chapter_number:18,published:true,title:'Chapter eighteen'}],paragraphs:[{chapter_id:99,paragraph_number:1,content:'Actual chapter text'}],nca_story_view_counts:[{story_id:1,view_count:100}]},onRequest:(url,req)=>{if(url.pathname.startsWith('/rest/v1/'))requests.push({path:url.pathname,method:req.method()})}});
  let views=100;const headers={'access-control-allow-origin':'*','access-control-allow-headers':'*','access-control-allow-methods':'*','access-control-expose-headers':'content-range'};

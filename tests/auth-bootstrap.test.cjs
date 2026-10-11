@@ -9,6 +9,8 @@ async function setup(){
  await page.route('**/rest/v1/**',async route=>{
   const req=route.request(),url=new URL(req.url()),table=url.pathname.split('/').pop(),uid=(url.searchParams.get('user_id')||url.searchParams.get('id')||'eq.').slice(3);
   if(req.method()==='OPTIONS')return route.fulfill({status:200,headers});
+  // Activity content is a separate Step 5C-C lane; auth/history budget stays independently asserted.
+  if(table==='nca_comment_activity_page')return route.fulfill({status:200,headers,json:{status:'ok',rows:[],has_more:false,next_cursor:null,page_size:req.postDataJSON().p_limit}});
   const body=req.postData()?req.postDataJSON():null,call={table,method:req.method(),uid,body};mock.calls.push(call);let data=[];
   if(table==='profiles'){
    if(mock.profileHook)await mock.profileHook(call);
@@ -47,7 +49,7 @@ for(const timing of ['before','after'])test(`signed bootstrap INITIAL_SESSION ${
  assert.equal(requests.filter(r=>r.table==='profiles'&&r.query.includes('id=eq.reader-user')).length,1);
  assert.equal(requests.filter(r=>r.table==='reading_progress').length,1);assert.equal(requests.filter(r=>r.table==='saved_stories').length,1);
  assert.equal(requests.filter(r=>r.table==='notifications').length,2);
- assert.equal(requests.filter(r=>r.table==='stories').length,1);assert.equal(requests.filter(r=>r.table==='comments').length,1);assert.equal(requests.filter(r=>r.table==='reviews').length,1);
+ assert.equal(requests.filter(r=>r.table==='stories').length,1);assert.equal(requests.filter(r=>r.table==='comments').length,0);assert.equal(requests.filter(r=>r.table==='reviews').length,1);
  assert.deepEqual(page.errors,[]);
  }finally{await page.close()}
 });

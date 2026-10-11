@@ -1,5 +1,6 @@
 const {test,before,after}=require('node:test'),assert=require('node:assert/strict');
-const {startBrowser,stopBrowser,feedPage}=require('./helpers/public-feed-browser.cjs');
+const {startBrowser,stopBrowser,feedPage:legacyFeedPage}=require('./helpers/public-feed-browser.cjs');
+const feedPage=(n,options={})=>legacyFeedPage(n,{canonicalComments:true,...options});
 before(startBrowser);after(stopBrowser);
 const A='reader-user',B='other-user';
 const H={'access-control-allow-origin':'*','access-control-allow-headers':'*','access-control-allow-methods':'*','access-control-expose-headers':'content-range'};
@@ -31,7 +32,7 @@ for(const order of ['full-first','poll-first'])test(`${order}: separate list/bad
  const {page,m}=await setup();const h=await hold(m,order==='full-first'?'GET':'HEAD');
  try{
   if(order==='full-first')await page.evaluate(()=>{window.pending=loadNotifications(false,{forceRefresh:true})});else await page.evaluate(()=>{window.pending=loadNotifications(true)});
-  await wait(h.started);m.rows.push({id:'new',user_id:A,actor_id:'admin-user',type:'mention',is_read:false});
+  await wait(h.started);if(order==='full-first')await page.waitForFunction(()=>notificationHeadFlight===null);m.rows.push({id:'new',user_id:A,actor_id:'admin-user',type:'mention',is_read:false});
   if(order==='full-first')await page.evaluate(()=>loadNotifications(true));else await page.evaluate(()=>loadNotifications(false,{forceRefresh:true}));
   h.g.resolve();await page.evaluate(()=>pending);const result=await ui(page);
   assert.deepEqual(result.ids,order==='full-first'?['n']:['n','new']);assert.equal(result.badge,'2');assert.deepEqual(page.errors,[]);
@@ -90,12 +91,14 @@ test('selected like-filter mark-all changes only like rows; global badge semanti
 for(const scenario of ['B','B-A','logout'])test(`held comment lookup cannot navigate after ${scenario}`,async()=>{
  const {page,m}=await setup(),g=gate();let started=false;
  try{
- m.rows[0].comment_id='comment-0';await page.evaluate(()=>loadNotifications(false,{forceRefresh:true}));
- await page.evaluate(()=>{window.commentLoads=0;window.nav=[];loadCloudComments=async()=>{commentLoads++};openStory=id=>nav.push(id)});
- await page.route('**/rest/v1/comments**',async route=>{if(route.request().method()==='OPTIONS')return route.fulfill({status:200,headers:H});started=true;await g.promise;return route.fulfill({status:200,headers:H,json:{id:'comment-0',user_id:A,scope:'story',story_id:1}})});
+ m.rows[0].comment_id='1';await page.evaluate(()=>loadNotifications(false,{forceRefresh:true}));
+ await page.evaluate(()=>{window.commentLoads=0;window.nav=[];window.focused=[];focusExactComment=id=>focused.push(id);loadCloudComments=async()=>{commentLoads++};openStory=id=>nav.push(id)});
+ await page.route('**/rest/v1/rpc/nca_comment_target_path',async route=>{if(route.request().method()==='OPTIONS')return route.fulfill({status:200,headers:H});
+ const body=route.request().postDataJSON();assert.equal(body.p_comment_id,'1');const result=require('./helpers/comment-pages-fixture.cjs').commentPagesFixture('nca_comment_target_path',body,page.mockFixtures,A);
+ started=true;await g.promise;return route.fulfill({status:200,headers:H,json:result});});
  await page.evaluate(()=>{window.openJob=openNotification('n')});await wait(()=>started);
  await page.evaluate(async({scenario,A,B})=>{authUser=scenario==='logout'?null:{id:B};resetAuthAccount(authUser?.id||null);await loadNotifications(false,{forceRefresh:true});if(scenario==='B-A'){authUser={id:A};resetAuthAccount(A);await loadNotifications(false,{forceRefresh:true})}},{scenario,A,B});
- g.resolve();await page.evaluate(()=>openJob);assert.equal(await page.evaluate(()=>commentLoads),0);assert.deepEqual(await page.evaluate(()=>nav),[]);assert.deepEqual(page.errors,[]);
+ g.resolve();await page.evaluate(()=>openJob);assert.equal(await page.evaluate(()=>commentLoads),0);assert.deepEqual(await page.evaluate(()=>nav),[]);assert.deepEqual(await page.evaluate(()=>focused),[]);assert.deepEqual(page.errors,[]);
  }finally{g.resolve();await page.close()}
 });
 

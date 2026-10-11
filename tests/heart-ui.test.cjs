@@ -1,6 +1,7 @@
 const {test,before,after}=require('node:test');
 const assert=require('node:assert/strict'),fs=require('node:fs');
-const {startBrowser,stopBrowser,feedPage}=require('./helpers/public-feed-browser.cjs');
+const {startBrowser,stopBrowser,feedPage:legacyFeedPage}=require('./helpers/public-feed-browser.cjs');
+const feedPage=(n,options={})=>legacyFeedPage(n,{canonicalComments:true,...options});
 before(startBrowser);after(stopBrowser);
 const A='00000000-0000-0000-0000-000000000001';
 async function cssSnapshot(page){return page.locator('#chapterHeartRow button').evaluate(el=>{
@@ -14,7 +15,7 @@ async function cssSnapshot(page){return page.locator('#chapterHeartRow button').
 })}
 
 test('all seven themes: matching Home frame, gray outline/filled accent, icon-only liked glow, stable hover/focus and 44px hit area',async()=>{
- const calls=[],page=await feedPage(0,{fixtures:{stories:[{id:1,title:'Heart UI',author:'Writer',published:true,baseline_likes:1050}],chapters:[{id:11,story_id:1,chapter_number:1,published:true,title:'Chapter'}]},onRequest:u=>{if(u.pathname.startsWith('/rest/v1/'))calls.push(u.pathname)}});
+ const calls=[],page=await feedPage(0,{initScript:()=>{const interval=window.setInterval;window.setInterval=(fn,delay,...args)=>delay===30000?0:interval(fn,delay,...args)},fixtures:{stories:[{id:1,title:'Heart UI',author:'Writer',published:true,baseline_likes:1050}],chapters:[{id:11,story_id:1,chapter_number:1,published:true,title:'Chapter'}]},onRequest:u=>{if(u.pathname.startsWith('/rest/v1/'))calls.push(u.pathname)}});
  const report=[],silhouettes=new Map();try{
   await page.evaluate(A=>{authUser={id:A};activateChapterLikeAccount();currentStory=stories[0];currentChapter=0;show('reader');chapterLikes['1_0']=1001;renderChapterHeart()},A);calls.length=0;
   for(const width of [1280,390]){
@@ -36,16 +37,18 @@ test('all seven themes: matching Home frame, gray outline/filled accent, icon-on
 
 test('comment/reply hearts keep count, text size and layout; only icon scales across surfaces/themes',async()=>{
  const page=await feedPage(0);try{
-  await page.evaluate(()=>{comments.story_1[0].likes=123;comments.story_1.push({id:'reply-ui',userId:'reader-user',name:'Reader',username:'reader',text:'Reply',parentId:comments.story_1[0].id,createdAt:new Date().toISOString(),likes:4,likedBy:[]});window.__alexReplyState.set('story_1::'+comments.story_1[0].id,6);openStory(1);showIntroTab('comments',document.querySelectorAll('.intro-tabs button')[3])});
+  const root=page.mockFixtures.comments[0];page.mockFixtures.comments.push({id:'101',user_id:'reader-user',story_id:1,scope:'story',parent_id:root.id,content:'Reply',created_at:'2026-10-10T12:00:00Z'});
+  page.mockFixtures.comment_likes=[...Array.from({length:123},(_,i)=>({comment_id:root.id,user_id:'liker-'+i})),...Array.from({length:4},(_,i)=>({comment_id:'101',user_id:'reply-liker-'+i}))];
+  await page.evaluate(async()=>{openStory(1);showIntroTab('comments',document.querySelectorAll('.intro-tabs button')[3]);await scopedComments.roots({surface:'story',story:'1',page:'1'},{force:true});await scopedComments.thread('1',{force:true});window.__alexReplyState.set('story_1::1',6);renderAllStoryComments()});
   for(const theme of ['light','smoky','dustyrose','mistblue','pastel','night','purplenight']){
    await page.evaluate(theme=>setTheme(theme),theme);
-   for(const selector of ['#introComments .comment-item[data-comment-id="comment-0"] [data-comment-action="like"]','#introComments .comment-replies [data-comment-action="like"]']){
+   for(const selector of ['#introComments .comment-item[data-comment-id="1"] [data-comment-action="like"]','#introComments .comment-replies [data-comment-action="like"]']){
     const button=page.locator(selector).first();assert.equal(await button.locator('i.comment-heart-icon').count(),1);assert.equal(await button.locator('i').getAttribute('aria-hidden'),'true');assert.equal(await button.locator('span').count(),1);
     const geometry=await button.evaluate(el=>{const icon=el.querySelector('i'),count=el.querySelector('span'),c=getComputedStyle(count),b=el.getBoundingClientRect(),r=count.getBoundingClientRect(),i=icon.getBoundingClientRect();icon.style.transform='none';const old=el.getBoundingClientRect(),oldCount=count.getBoundingClientRect(),oldIcon=icon.getBoundingClientRect();icon.style.removeProperty('transform');return {countFont:c.fontSize,b:[b.width,b.height],old:[old.width,old.height],count:[r.x,r.y,r.width,r.height],oldCount:[oldCount.x,oldCount.y,oldCount.width,oldCount.height],iconScale:i.width/oldIcon.width}});
     assert.equal(geometry.countFont,'12px');assert.deepEqual(geometry.b,geometry.old);assert.deepEqual(geometry.count,geometry.oldCount);assert(Math.abs(geometry.iconScale-1.25)<.02);
    }
   }
-  assert.equal((await page.locator('#introComments .comment-item[data-comment-id="comment-0"] [data-comment-action="like"]').first().locator('span').textContent()).trim(),'123');
+  assert.equal((await page.locator('#introComments .comment-item[data-comment-id="1"] [data-comment-action="like"]').first().locator('span').textContent()).trim(),'123');
   assert.deepEqual(page.errors,[]);
  }finally{await page.close()}
 });

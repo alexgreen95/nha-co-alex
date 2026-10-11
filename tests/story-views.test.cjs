@@ -1,7 +1,7 @@
 // Step 5B comment RPC traffic is measured separately; core/event assertions stay unchanged.
 const {test,before,after}=require('node:test');
 const assert=require('node:assert/strict');
-const {startBrowser,stopBrowser,feedPage,isCommentEnrichmentRpc}=require('./helpers/public-feed-browser.cjs');
+const {startBrowser,stopBrowser,feedPage,isCommentEnrichmentRpc,isCommentPageRpc}=require('./helpers/public-feed-browser.cjs');
 before(startBrowser);after(stopBrowser);
 const fixtures={chapters:[{id:11,story_id:1,title:'Một',chapter_number:1,published:true},{id:12,story_id:1,title:'Hai',chapter_number:2,published:true}],paragraphs:[{paragraph_number:1,content:'Nội dung'}],nca_story_view_counts:[{story_id:1,view_count:100000}]};
 async function mockCounts(page,start=100000){
@@ -19,15 +19,16 @@ async function mockCounts(page,start=100000){
  return {requests,get count(){return count},set failInsert(v){failInsert=v},set failCount(v){failCount=v}};
 }
 test('anonymous: uncached/cached opens, navigation, refresh and bounded requests',async()=>{
- const traffic=[];const page=await feedPage(0,{fixtures,onRequest:url=>{if(!isCommentEnrichmentRpc(url))traffic.push(url)}});
+ const traffic=[],commentTraffic=[];const page=await feedPage(0,{fixtures,onRequest:(url,req)=>{if(isCommentPageRpc(url))commentTraffic.push({name:url.pathname.split('/').pop(),body:req.postDataJSON()});else if(!isCommentEnrichmentRpc(url))traffic.push(url)}});
  try{
   assert(!traffic.some(u=>u.pathname.endsWith('/story_views')));
-  assert.equal(traffic.filter(u=>u.pathname.startsWith('/rest/v1/')).length,9);
+  assert.equal(traffic.filter(u=>u.pathname.startsWith('/rest/v1/')).length,8,'Bootstrap removes global comments + global mention/profile enrichment; bounded activity enrichment retained');
   assert.equal(await page.evaluate(()=>stories[0].views),100000);
   const mock=await mockCounts(page);
   traffic.length=0;
   await page.evaluate(async()=>{await read(1,0)});
   assert.equal(traffic.filter(u=>/\/(paragraphs|chapter_images)$/.test(u.pathname)).length,2);
+  assert.deepEqual(mock.requests.map(r=>r.kind),['view','count'],'one view INSERT and one authoritative count RPC per open');
   assert.equal(mock.requests.length,2); // 2 content GET + INSERT + aggregate RPC = 4.
   assert.equal(traffic.filter(u=>u.pathname.startsWith('/rest/v1/')).length+mock.requests.length,4);
   assert.equal(mock.requests[0].body.user_id,null);
@@ -36,6 +37,7 @@ test('anonymous: uncached/cached opens, navigation, refresh and bounded requests
   traffic.length=0;mock.requests.length=0;
   await page.evaluate(async()=>{await read(1,0)});
   assert.equal(traffic.filter(u=>/\/(paragraphs|chapter_images)$/.test(u.pathname)).length,0);
+  assert.deepEqual(mock.requests.map(r=>r.kind),['view','count'],'one view INSERT and one authoritative count RPC per open');
   assert.equal(mock.requests.length,2); // Cached: INSERT + RPC only.
   assert.equal(traffic.filter(u=>u.pathname.startsWith('/rest/v1/')).length+mock.requests.length,2);
   await page.evaluate(async()=>{await moveChapter(1)});
@@ -49,7 +51,9 @@ test('anonymous: uncached/cached opens, navigation, refresh and bounded requests
   await page.reload({waitUntil:'networkidle'});
   await page.waitForFunction(()=>currentStory&&stories[0].views===100005);
   assert.equal(mock.count,100005,'refresh reader records exactly one event');
-  assert.equal(traffic.filter(u=>u.pathname.startsWith('/rest/v1/')).length+mock.requests.length,13);
+  assert.equal(traffic.filter(u=>u.pathname.startsWith('/rest/v1/')).length+mock.requests.length,12,'Reader bootstrap removes global comment history; bounded activity retained; view INSERT/RPC unchanged');
+  assert(commentTraffic.some(c=>c.name==='nca_context_comment_root_page'));assert(commentTraffic.every(c=>c.body.p_limit==null||c.body.p_limit<=20));
+  assert.equal(mock.requests.filter(r=>r.kind==='view').length,1);assert.equal(mock.requests.filter(r=>r.kind==='count').length,2,'refresh combines ordinary view reconciliation with bootstrap public counts');
   assert.deepEqual(page.errors,[]);
  }finally{await page.close()}
 });

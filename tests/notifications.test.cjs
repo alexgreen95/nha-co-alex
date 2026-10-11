@@ -1,10 +1,11 @@
 const {test,before,after}=require('node:test');
 const assert=require('node:assert/strict');
-const {startBrowser,stopBrowser,feedPage}=require('./helpers/public-feed-browser.cjs');
+const {startBrowser,stopBrowser,feedPage:legacyFeedPage}=require('./helpers/public-feed-browser.cjs');
+const feedPage=(n,options={})=>legacyFeedPage(n,{canonicalComments:true,...options});
 before(startBrowser);after(stopBrowser);
 test('bell filters by recipient, counts all unread types, marks only that recipient and opens a reply',async()=>{
  const page=await feedPage(0);const requests=[];
- const rows=[{id:'n-reply',user_id:'reader-user',actor_id:'admin-user',type:'reply',is_read:false,comment_id:'reply-test',story_id:1},{id:'n-like',user_id:'reader-user',type:'comment_like',is_read:false,comment_id:'comment-0',story_id:1},{id:'n-other',user_id:'someone-else',type:'reply',is_read:false,comment_id:'comment-0',story_id:1}];
+ const rows=[{id:'n-reply',user_id:'reader-user',actor_id:'admin-user',type:'reply',is_read:false,comment_id:'101',story_id:1},{id:'n-like',user_id:'reader-user',type:'comment_like',is_read:false,comment_id:'1',story_id:1},{id:'n-other',user_id:'someone-else',type:'reply',is_read:false,comment_id:'1',story_id:1}];
  const headers={'access-control-allow-origin':'*','access-control-allow-headers':'*','access-control-allow-methods':'*','access-control-expose-headers':'content-range'};
  try{
   await page.route('**/rest/v1/notifications**',route=>{
@@ -17,11 +18,8 @@ test('bell filters by recipient, counts all unread types, marks only that recipi
    if(req.method()==='PATCH'){selected.forEach(n=>n.is_read=req.postDataJSON().is_read);return route.fulfill({status:204,headers});}
    return route.fulfill({status:200,headers:{...headers,'content-range':`0-${Math.max(0,selected.length-1)}/${selected.length}`},contentType:'application/json',body:req.method()==='HEAD'?'':JSON.stringify(selected)});
   });
-  const reply={id:'reply-test',user_id:'admin-user',story_id:1,scope:'story',parent_id:'comment-0',content:'Nội dung trả lời',created_at:'2026-10-09T12:00:00Z'};
-  await page.route('**/rest/v1/comments**',route=>{
-   const url=new URL(route.request().url());const base=Array.from({length:7},(_,i)=>({id:'comment-'+i,user_id:'reader-user',content:'Bình luận '+i,scope:'story',story_id:1,created_at:'2026-10-09T10:00:00Z'}));
-   return route.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify(url.searchParams.has('id')?reply:[...base,reply])});
-  });
+  const reply={id:'101',user_id:'admin-user',story_id:1,scope:'story',parent_id:'1',content:'Nội dung trả lời',created_at:'2026-10-09T12:00:00Z'};
+  page.mockFixtures.comments.push(reply);
   await page.evaluate(async()=>{authUser={id:'reader-user'};await loadNotifications();});
   assert.equal(await page.locator('#notifList .notif-item').count(),2);
   assert.equal(await page.locator('#notifBadge').textContent(),'2');
@@ -34,7 +32,8 @@ test('bell filters by recipient, counts all unread types, marks only that recipi
   await page.evaluate(async()=>{notifFilter='all';await loadNotifications();await openNotification('n-reply');});
   assert.equal(await page.locator('#notifBadge').textContent(),'0');
   assert(await page.locator('#introComments').evaluate(el=>el.classList.contains('active')));
-  assert.equal(await page.locator('#storyCommentList .comment-item[data-comment-id="reply-test"]').count(),1);
+  assert.equal(await page.locator('#storyCommentList .comment-item[data-comment-id="101"]').count(),1);
+  assert(await page.locator('#storyCommentList .comment-item[data-comment-id="101"]').evaluate(el=>el.classList.contains('jump-flash')),'exact reply is focused, not merely fetched');
   assert(requests.filter(r=>r.method!=='OPTIONS').every(r=>r.url.searchParams.get('user_id')==='eq.reader-user'));
   await page.evaluate(async()=>{authUser={id:'someone-else'};const pending=loadNotifications();if(notificationRows.size!==0)throw new Error('Old account notification cache leaked');await pending;});
   assert.equal(await page.locator('#notifList .notif-item').count(),1);
@@ -75,18 +74,18 @@ test('all notification types show actor profile names across two recipient accou
    const filter=url.searchParams.get('type');if(filter)selected=selected.filter(n=>filter.startsWith('eq.')?filter==='eq.'+n.type:filter.includes(n.type));
    return route.fulfill({status:200,headers:{...headers,'content-range':`0-${selected.length-1}/${selected.length}`},contentType:'application/json',body:req.method()==='HEAD'?'':JSON.stringify(selected)});
   });
-  await page.route('**/rest/v1/profiles**',route=>{profileReads.push(new URL(route.request().url()));return route.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify([{id:'admin-user',display_name:'Alex',avatar_url:'https://example.invalid/avatar.png'},{id:'reader-user',display_name:'Bạn đọc <b>thử</b>'}])});});
+  await page.route('**/rest/v1/profiles**',route=>{profileReads.push(new URL(route.request().url()));return route.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify([{id:'admin-user',display_name:'Alex',avatar_url:'/assets/image-b46f827982ab.png'},{id:'reader-user',display_name:'Bạn đọc <b>thử</b>'}])});});
   await page.evaluate(async()=>{authUser={id:'reader-user'};await loadNotifications();});
   assert.equal(await page.locator('#notifList .notif-item').count(),types.length);
-  assert((await page.locator('#notifList .notif-item').allTextContents()).every(text=>text.startsWith('Alex ')));
+  assert((await page.locator('#notifList .notif-copy').allTextContents()).every(text=>text.startsWith('Alex ')));
   assert.equal(profileReads.length,1);assert.match(profileReads[0].searchParams.get('id'),/admin-user/);
-  assert.equal(await page.locator('#notifList img').count(),0);
+  assert.equal(await page.locator('#notifList .notif-actor-avatar').count(),4);assert.equal(await page.locator('#notifList .notif-story-cover').count(),0);
   for(const filter of ['like','reply','mention']){
    await page.evaluate(async filter=>{notifFilter=filter;await loadNotifications();},filter);
-   assert((await page.locator('#notifList .notif-item').allTextContents()).every(text=>text.startsWith('Alex ')));
+   assert((await page.locator('#notifList .notif-copy').allTextContents()).every(text=>text.startsWith('Alex ')));
   }
   await page.evaluate(async()=>{authUser={id:'admin-user'};notifFilter='all';await loadNotifications();});
-  assert((await page.locator('#notifList .notif-item').allTextContents()).every(text=>text.startsWith('Bạn đọc <b>thử</b> ')));
+  assert((await page.locator('#notifList .notif-copy').allTextContents()).every(text=>text.startsWith('Bạn đọc <b>thử</b> ')));
   assert.equal(await page.locator('#notifList b').count(),0);
   assert.equal(await page.locator('#notifBadge').textContent(),String(types.length));
   assert.deepEqual(page.errors,[]);

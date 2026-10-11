@@ -21,11 +21,11 @@ test('SQL scalar contracts match existing story/profile counts, paragraph marker
  const call=async(name,args)=>(await db.query(`SELECT ${name}(${args.map((_,i)=>'$'+(i+1)).join(',')}) AS v`,args)).rows[0].v;
  await db.exec('SET ROLE anon');const counts=await call('nca_story_comment_counts',[[1]]),markers=await call('nca_chapter_comment_counts',[1,0,[0,1]]),likes=await call('nca_comment_like_counts',[rows.map(r=>r.id)]),profileCount=Number(await call('nca_profile_comment_count',[A]));
  page=await feedPage(0,{fixtures:{comments:rows,comment_likes:[{comment_id:1,user_id:A},{comment_id:1,user_id:B},{comment_id:5,user_id:B}],profiles:[{id:A,display_name:'Reader A',role:'reader'},{id:B,display_name:'Reader B',role:'reader'}],stories:[{id:1,title:'Test',author:'Writer',published:true,baseline_views:10000,baseline_likes:1000}],chapters:[{id:11,story_id:1,chapter_number:1,published:true,title:'Chapter'}]}});
- await page.evaluate(A=>refreshProfileCommentCount(A),A);
+ await page.evaluate(async A=>{await refreshProfileCommentCount(A);await refreshChapterCommentCounts(1,0,[0,1])},A);
  const compare=await page.evaluate(({counts,markers,profileCount,A})=>{
  const story=stories[0];return {storyCount:storyCommentCount(story),sqlStory:counts[0].comment_count,
- general:commentList('chapter_1_0').length,sqlGeneral:markers.chapter_comment_count,
- markers:markers.paragraph_counts.map(x=>[commentList('1_0_'+x.paragraph_index).length,x.comment_count]),
+ general:chapterGeneralCommentTotal(story,0),sqlGeneral:markers.chapter_comment_count,
+ markers:markers.paragraph_counts.map(x=>[paragraphCommentTotal(story,0,x.paragraph_index),x.comment_count]),
  profile:profileLocalCounts(A).commentCount,sqlProfile:profileCount};
  },{counts,markers,profileCount,A});
  assert.equal(compare.storyCount,7);assert.equal(compare.storyCount,compare.sqlStory);assert.equal(compare.general,compare.sqlGeneral);assert.deepEqual(compare.markers,[[2,2],[1,1]]);assert.equal(compare.profile,compare.sqlProfile);
@@ -33,10 +33,10 @@ test('SQL scalar contracts match existing story/profile counts, paragraph marker
  let membership=[];if(owner){await db.exec('SET ROLE authenticated');await db.query("SELECT set_config('request.jwt.claim.sub',$1,false)",[owner]);membership=await call('nca_my_comment_likes',[rows.map(r=>r.id)])}
  await page.evaluate(async({owner,membership,likes})=>{
  authUser=owner?{id:owner}:null;resetAuthAccount(owner);
- syncCommentHeartAccount();await refreshCommentLikeEnrichment(Object.values(comments).flat().map(c=>c.id));
- if(owner)for(const row of Object.values(comments).flat())assertMembership(row.id);
+ syncCommentHeartAccount();await refreshCommentLikeEnrichment(likes.map(c=>c.comment_id));
+ if(owner)for(const row of likes)assertMembership(row.comment_id);
  function assertMembership(id){if(commentStats.membership.get(String(id))!==membership.map(String).includes(String(id)))throw new Error('SQL/browser membership mismatch')}
- openStory(1);showIntroTab('comments',document.querySelectorAll('.intro-tabs button')[3]);
+ openStory(1);showIntroTab('comments',document.querySelectorAll('.intro-tabs button')[3]);await scopedComments.roots({surface:'story',story:'1',page:'1'},{force:true});renderAllStoryComments();
  },{owner,membership,likes});
  const state=await page.locator('#storyCommentList [data-comment-id="1"] [data-comment-action="like"]').evaluate(el=>({pressed:el.getAttribute('aria-pressed'),count:el.querySelector('span').textContent}));
  assert.equal(state.count,'2');assert.equal(state.pressed,String(!!owner));

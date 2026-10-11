@@ -4,13 +4,13 @@ before(startBrowser);after(stopBrowser);
 const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {promise,resolve}};
 const rows=()=>Array.from({length:7},(_,i)=>({id:i+1,user_id:i%2?'B':'A',content:'Comment '+i,scope:i<3?'story':i===3?'chapter':'paragraph',story_id:1,chapter_index:i<3?null:0,paragraph_index:i<4?null:0,parent_id:i===1?1:null,created_at:'2026-10-10T00:00:00Z'}));
 async function setup(){
- const calls=[],page=await feedPage(0,{fixtures:{comments:rows(),comment_likes:[{comment_id:1,user_id:'A'},{comment_id:1,user_id:'B'}]}}),mock={calls,hook:null,fail:null};
+ const calls=[],page=await feedPage(0,{fixtures:{comments:rows(),comment_likes:[{comment_id:1,user_id:'A'},{comment_id:1,user_id:'B'}]}});await page.evaluate(()=>scopedComments.roots({surface:'story',story:'1',page:'1'}));const mock={calls,hook:null,fail:null};
  const headers={'access-control-allow-origin':'*','access-control-allow-headers':'*','access-control-allow-methods':'*'};
  await page.route('**/rest/v1/**',async route=>{
   const req=route.request(),url=new URL(req.url()),name=url.pathname.split('/').pop(),method=req.method();if(method==='OPTIONS')return route.fulfill({status:200,headers,body:''});
   if(!['nca_story_comment_counts','nca_chapter_comment_counts','nca_profile_comment_count','nca_comment_like_counts','nca_my_comment_likes'].includes(name)&&!['comments','comment_likes'].includes(name))return route.fallback();
   const body=req.postDataJSON(),call={name,body,method};calls.push(call);
-  const snapshot=await page.evaluate(()=>({owner:authUser?.id,rows:Object.values(comments).flat().map(c=>({id:c.id,userId:c.userId}))}));
+  const snapshot=await page.evaluate(()=>({owner:authUser?.id,rows:[...scopedComments.state.entities.values()].map(c=>({id:c.id,userId:c.userId}))}));
   if(mock.hook){const response=await mock.hook(call,snapshot);if(response!==undefined)return route.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify(response)})}
   if(mock.fail===name)return route.fulfill({status:500,headers,contentType:'application/json',body:JSON.stringify({message:'mock fail'})});
   let data;
@@ -41,7 +41,7 @@ test('authoritative counts remain exact despite incomplete global content; UI/pr
  await page.evaluate(async()=>{await refreshStoryCommentCounts([1],{force:true});await refreshChapterCommentCounts(1,0,[0,1]);await refreshProfileCommentCount('A');currentStory=stories[0];currentChapter=0;currentStory.chapters[0].paras=['First','Second'];renderChapter();});await settle(page);
  assert.equal(await page.evaluate(()=>storyCommentCount(stories[0])),40);assert.equal(await page.evaluate(()=>profileLocalCounts('A').commentCount),31);assert.equal(await page.evaluate(()=>chapterGeneralCommentTotal(stories[0],0)),9);
  assert.equal(await page.locator('#para_1_0_0 .comment-btn span').textContent(),'12');assert.equal(await page.locator('#para_1_0_1 .comment-btn').count(),0);
- assert(!mock.calls.some(c=>c.name==='nca_my_comment_likes'));assert.equal(await page.evaluate(()=>Object.values(comments).flat().length),7);
+ assert(!mock.calls.some(c=>c.name==='nca_my_comment_likes'));assert.equal(await page.evaluate(()=>Object.values(comments).flat().length),0);
  }finally{await page.close()}
 });
 test('signed membership uses current account only; logout clears UI membership; no raw like history GET',async()=>{

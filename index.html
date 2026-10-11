@@ -1519,6 +1519,40 @@ body.purplenight .hero-fade-top{
  body.night .hero-fade-top,body.purplenight .hero-fade-top{height:46px!important}
 }
 </style>
+<style id="ui-polish-presentation">
+/* UI polish only: compact story presentation; no fetching or state changes. */
+.profile-continue{display:inline-flex;align-items:center;gap:5px}.profile-continue .ico{flex-shrink:0}
+.story-actions .btn,.intro-actions .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.story-actions .ico,.intro-actions .ico{flex-shrink:0;width:17px;height:17px}
+@media(min-width:701px){header .nav{max-width:1240px;padding-left:28px;padding-right:28px}header .brand-house{width:44px;height:44px}header .brand-house .brand-icon{width:44px;height:44px}}
+#stories.grid{width:calc(100% - 24px)!important;max-width:1200px!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px!important}
+#stories .story-card{height:auto!important;min-height:0!important;grid-template-columns:112px minmax(0,1fr)!important;padding:12px!important;gap:14px!important;align-items:center!important}
+#stories .story-card .story-cover{width:112px!important;height:auto!important;aspect-ratio:3/5!important;padding:0!important;overflow:hidden}
+#stories .story-info{justify-content:center;gap:7px!important;padding:0!important;align-self:center!important}
+#stories .story-title-link{min-height:0!important;margin:0!important}
+#stories .story-info>.story-author{font-size:14px!important;line-height:1.35!important}
+#stories .story-classification{margin:0!important;align-items:center;gap:6px}
+#stories .story-classification .genre{margin:0!important;min-width:0}
+#stories .stats{margin:0!important;padding:0!important;gap:10px!important;flex-wrap:wrap}
+#stories .story-actions{margin:0!important;padding:0!important;flex-wrap:nowrap;gap:6px}
+#stories .story-actions .btn{padding:7px 9px!important;white-space:nowrap;font-size:13px!important}
+@media(max-width:900px){#stories.grid{grid-template-columns:1fr!important;max-width:650px!important}}
+@media(max-width:700px){#stories .story-card{grid-template-columns:88px minmax(0,1fr)!important;padding:10px!important;gap:10px!important}#stories .story-card .story-cover{width:88px!important}#stories .story-info{gap:6px!important}#stories .story-info>.story-author{font-size:14px!important}#stories .story-actions .btn{padding:6px 7px!important;font-size:12px!important}#stories .stats{gap:8px!important}}
+.intro-info{min-width:0}.intro-tag-status{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0 8px}.intro-subtags{margin:0!important;gap:6px}.intro-status-row{display:flex}.intro-status-row .meta-pill{font-size:12px;padding:4px 8px}#introSecondaryTags{display:contents}#introAuthor{font-size:16px;line-height:1.4}#introStats{margin:0 0 12px;flex-wrap:wrap}#introSummary{line-height:1.6;margin:12px 0 0}
+.status-done{color:color-mix(in srgb,#4b977c 75%,var(--fg))!important;background:color-mix(in srgb,#77bba0 15%,var(--card))!important;border-color:color-mix(in srgb,#77bba0 45%,var(--line))!important}
+.status-ongoing{color:color-mix(in srgb,#bd8a3a 75%,var(--fg))!important;background:color-mix(in srgb,#e4ba68 15%,var(--card))!important;border-color:color-mix(in srgb,#e4ba68 45%,var(--line))!important}
+body.night .status-done,body.purplenight .status-done{color:#a3d8bf!important}body.night .status-ongoing,body.purplenight .status-ongoing{color:#f0d093!important}
+@media(max-width:700px){
+ .story-intro-top{grid-template-columns:88px minmax(0,1fr);grid-template-areas:"cover title" "cover author" "stats stats" "tags tags" "status status" "summary summary" "actions actions";gap:10px 12px;padding:16px!important}
+ .intro-info,.intro-tag-status{display:contents}.intro-cover{grid-area:cover}.intro-title{grid-area:title;font-size:23px;margin:0;align-self:start;overflow-wrap:anywhere}#introAuthor{grid-area:author;font-size:15px;align-self:start}#introStats{grid-area:stats;margin:4px 0}#introSubtags{grid-area:tags}.intro-status-row{grid-area:status}#introSummary{grid-area:summary;margin:0}.intro-actions{grid-area:actions;margin-top:4px;flex-wrap:nowrap;gap:8px;min-width:0}.intro-actions .btn{min-height:40px;padding:8px!important;font-size:13px;white-space:nowrap;min-width:0}#introReadBtn{flex:1 1 auto;overflow:hidden}#introReadBtn .action-label{min-width:0;overflow:hidden;text-overflow:ellipsis}#introSaveBtn{flex:0 0 auto}
+ .intro-tabs{display:grid;grid-template-columns:1fr 1.75fr .8fr 1fr;gap:0!important;padding:0 5px!important;overflow:visible;white-space:normal}.intro-tabs button{min-width:0;min-height:44px;font-size:12px;padding:10px 2px!important;white-space:nowrap}
+}
+/* Notification filter accents follow each chip, including its selected border. */
+.notif-filters button{--chip:#c681a1;background:color-mix(in srgb,var(--chip) 15%,var(--card))!important;border-color:color-mix(in srgb,var(--chip) 55%,var(--line))!important}
+.notif-filters button:nth-child(2){--chip:#9c89c7}.notif-filters button:nth-child(3){--chip:#73b5a4}.notif-filters button:nth-child(4){--chip:#d9b861}.notif-filters button:nth-child(5){--chip:#79a9cf}
+.notif-filters button.active{border-color:var(--chip)!important;box-shadow:inset 0 -2px 0 var(--chip)!important}
+.notif-item{display:flex;align-items:flex-start;gap:9px}.notif-copy{flex:1;min-width:0;overflow-wrap:anywhere}.notif-actor-avatar{width:28px;height:28px;flex:0 0 28px;object-fit:cover;border-radius:50%}.notif-avatar-fallback{display:grid;place-items:center;background:var(--soft);color:var(--fg);font-weight:700}.notif-story-cover{width:30px;height:44px;object-fit:cover;flex:0 0 30px;border-radius:5px}
+</style>
 </head>
 <body class="gate-locked gate-checking">
 <div id="secretGate" aria-live="polite">
@@ -1648,7 +1682,7 @@ if(location.pathname==='/' || location.pathname===''){const b=document.getElemen
 </main>
 
 <main id="storyIntro" class="container hidden"><div class="story-intro">
-  <div class="story-intro-top"><div class="intro-cover" id="introCover"></div><div><h1 class="intro-title" id="introTitle"></h1><div class="muted" id="introAuthor"></div><div class="intro-tags"><span class="intro-tag" id="introGenre"></span><span class="intro-tag" id="introStatus"></span></div><div id="introSubtags" class="intro-subtags"></div><p id="introSummary" class="muted"></p><div class="stats" id="introStats"></div><div class="intro-actions"><button class="btn" id="introReadBtn" onclick="startFromIntro()">Bắt đầu đọc</button><button class="btn" id="introSaveBtn" onclick="toggleIntroSave()">☆ Lưu truyện</button></div></div></div>
+  <div class="story-intro-top"><div class="intro-cover" id="introCover"></div><div class="intro-info"><h1 class="intro-title" id="introTitle"></h1><div class="muted" id="introAuthor"></div><div class="intro-tag-status"><div id="introSubtags" class="intro-subtags"><span class="intro-subtag" id="introGenre"></span><span id="introSecondaryTags"></span></div><div class="intro-status-row"><span class="meta-pill" id="introStatus"></span></div></div><div class="stats" id="introStats"></div><p id="introSummary" class="muted"></p><div class="intro-actions"><button class="btn" id="introReadBtn" onclick="startFromIntro()">Bắt đầu đọc</button><button class="btn" id="introSaveBtn" onclick="toggleIntroSave()">Lưu truyện</button></div></div></div>
   <div class="intro-tabs"><button class="active" onclick="showIntroTab('about',this)">Giới thiệu</button><button onclick="showIntroTab('chapters',this)">Danh sách chương</button><button onclick="showIntroTab('reviews',this)">Review</button><button onclick="showIntroTab('comments',this)">Bình luận</button></div>
   <div id="introAbout" class="intro-pane active"><div id="introAboutView" class="story-about-text"></div><div id="introAboutEdit" hidden><textarea id="introAboutInput" class="story-about-editor" placeholder="Viết phần giới thiệu truyện..."></textarea><div class="story-about-actions"><button class="btn" type="button" onclick="cancelStoryAboutEdit()">Hủy</button><button class="btn" type="button" onclick="saveStoryAbout()">Lưu giới thiệu</button></div></div></div>
   <div id="introChapters" class="intro-pane chapter-list"></div><div id="introReviews" class="intro-pane"><div class="intro-community-toolbar"><strong>Review</strong><button class="btn" type="button" onclick="toggleReviewComposer()">✎ <span id="reviewComposerLabel">Viết review</span></button></div><div id="reviewComposer"></div><div id="introReviewList" class="review-list"></div></div><div id="introComments" class="intro-pane all-comments"><div class="intro-community-toolbar"><strong>Bình luận</strong></div><div id="storyCommentComposer"></div><div id="storyCommentList" class="story-comment-page"></div><div id="storyCommentPagination" class="story-comment-pagination"></div></div>
@@ -1797,7 +1831,7 @@ function save(){
 }
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function icon(type){
- const p={eye:'<path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/>',heart:'<path d="M20.8 4.6a5.4 5.4 0 0 0-7.6 0L12 5.8l-1.2-1.2a5.4 5.4 0 0 0-7.6 7.6L12 21l8.8-8.8a5.4 5.4 0 0 0 0-7.6Z"/>',comment:'<path d="M5 3.5h14a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H10.4l-6 4.3 2.8-4.3H5a3 3 0 0 1-3-3v-8a3 3 0 0 1 3-3Z"/>'};
+ const p={book:'<path d="M12 5v15M12 5C9 3 5 3 2 4v15c3-1 7-1 10 1 3-2 7-2 10-1V4c-3-1-7-1-10 1Z"/>',bookmark:'<path d="M6 3h12v18l-6-4-6 4Z"/>',bookmarkSaved:'<path fill="currentColor" d="M6 3h12v18l-6-4-6 4Z"/>',eye:'<path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/>',heart:'<path d="M20.8 4.6a5.4 5.4 0 0 0-7.6 0L12 5.8l-1.2-1.2a5.4 5.4 0 0 0-7.6 7.6L12 21l8.8-8.8a5.4 5.4 0 0 0 0-7.6Z"/>',comment:'<path d="M5 3.5h14a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H10.4l-6 4.3 2.8-4.3H5a3 3 0 0 1-3-3v-8a3 3 0 0 1 3-3Z"/>'};
  return `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${p[type]}</svg>`;
 }
 function storyCommentCount(s){
@@ -2059,9 +2093,9 @@ function primaryGenreClass(name){
 }
 function card(s){
  const hasProgress=progress[s.id] && (progress[s.id].chapter>0 || progress[s.id].scroll>80);
- return `<div class="card story-card clickable-story" onclick="openStory(${s.id})"><div class="story-cover">${s.cover?`<img src="${esc(s.cover)}" alt="Bìa ${esc(s.title)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`:`Nhà có Alex<br>${esc(s.title)}`}</div><div class="story-info"><h3 class="story-title-link" title="${esc(s.title)}"><span>${esc(s.title)}</span></h3><div class="muted">${esc(s.author)}</div><div class="genre ${primaryGenreClass(s.mainGenre||s.genre)}">${esc(s.mainGenre||s.genre)}</div><div class="meta-row"><span class="meta-pill ${s.status==='completed'?'status-done':'status-ongoing'}">${s.status==='completed'?'✓ Đã hoàn thành':'◷ Đang làm'}</span></div>
+ return `<div class="card story-card clickable-story" onclick="openStory(${s.id})"><div class="story-cover">${s.cover?`<img src="${esc(s.cover)}" alt="Bìa ${esc(s.title)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`:`Nhà có Alex<br>${esc(s.title)}`}</div><div class="story-info"><h3 class="story-title-link" title="${esc(s.title)}"><span>${esc(s.title)}</span></h3><div class="muted story-author">${esc(s.author)}</div><div class="meta-row story-classification"><span class="genre ${primaryGenreClass(s.mainGenre||s.genre)}">${esc(s.mainGenre||s.genre)}</span><span class="meta-pill ${s.status==='completed'?'status-done':'status-ongoing'}">${s.status==='completed'?'✓ Đã hoàn thành':'◷ Đang làm'}</span></div>
  <div class="stats"><span class="stat">${icon('eye')} ${formatStoryStat(s.views)}</span><span class="stat">${icon('heart')} ${formatStoryStat(storyLikeTotal(s))}</span><span class="stat">${icon('comment')} <bdi data-story-comment-count="${s.id}">${storyCommentCount(s)}</bdi></span></div>
- <div class="story-actions"><button class="btn" onclick="event.stopPropagation();${hasProgress?`read(${s.id})`:`openStory(${s.id})`}">${hasProgress?'Đọc tiếp':'Đọc'}</button> <button class="btn" onclick="event.stopPropagation();toggleSave(${s.id})">${saved.includes(s.id)?'★ Đã lưu':'☆ Lưu'}</button></div></div></div>`;
+ <div class="story-actions"><button class="btn" onclick="event.stopPropagation();${hasProgress?`read(${s.id})`:`openStory(${s.id})`}">${icon('book')}${hasProgress?'Đọc tiếp':'Đọc'}</button> <button class="btn" onclick="event.stopPropagation();toggleSave(${s.id})">${icon(saved.includes(s.id)?'bookmarkSaved':'bookmark')}${saved.includes(s.id)?'Đã lưu':'Lưu'}</button></div></div></div>`;
 }
 function render(){
  let q=(document.getElementById('q').value||'').toLowerCase();
@@ -2082,9 +2116,10 @@ function toggleSortSub(e,btn){e.stopPropagation();let row=btn.closest('.sort-row
 function chooseSort(e,type,value,label){e.stopPropagation();storyFilter[type]=value;document.getElementById('sortLabel').textContent='Sắp xếp theo: '+label;document.getElementById('sortMenu').classList.remove('open');document.querySelectorAll('.sort-row').forEach(x=>x.classList.remove('open'));render()}
 document.addEventListener('click',e=>{if(!e.target.closest('.sort-wrap'))document.getElementById('sortMenu')?.classList.remove('open')});
 let introStory=null;
+function storySummaryMarkup(text){return String(text).split('\n').map(line=>{const m=line.match(/^([^:]{1,80}:)(.*)$/);return m&&!m[2].startsWith('//')?'<strong>'+esc(m[1])+'</strong>'+esc(m[2]):esc(line)}).join('\n')}
 function renderStoryIntroMetadata(s){
  const id=s.id;
- document.getElementById('introTitle').textContent=s.title;document.getElementById('introAuthor').textContent='Tác giả: '+s.author;document.getElementById('introGenre').textContent=s.mainGenre||s.genre;document.getElementById('introStatus').textContent=s.status==='completed'?'Đã hoàn thành':'Đang làm';document.getElementById('introSubtags').innerHTML=(s.subtags||[]).map(t=>`<span class="intro-subtag">${esc(t)}</span>`).join('');const introSummaryEl=document.getElementById('introSummary');introSummaryEl.textContent=s.summary||'';introSummaryEl.style.whiteSpace='pre-line';introSummaryEl.style.display=s.summary?'':'none';document.getElementById('introStats').innerHTML=`<span class="stat">${icon('eye')} ${formatStoryStat(s.views)}</span><span class="stat">${icon('heart')} ${formatStoryStat(storyLikeTotal(s))}</span><span class="stat">${icon('comment')} <bdi data-story-comment-count="${s.id}">${storyCommentCount(s)}</bdi></span>`;document.getElementById('introCover').innerHTML=s.cover?`<img src="${esc(s.cover)}" alt="Bìa ${esc(s.title)}">`:`Nhà có Alex<br>${esc(s.title)}`;let pr=progress[id];document.getElementById('introReadBtn').textContent=pr?'Đọc tiếp · '+s.chapters[Math.min(pr.chapter||0,s.chapters.length-1)].title.split(':')[0]:'Bắt đầu đọc';document.getElementById('introSaveBtn').textContent=saved.includes(id)?'★ Đã lưu':'☆ Lưu truyện';document.getElementById('introChapters').innerHTML=s.chapters.map((c,i)=>`<button onclick="read(${s.id},${i})">${esc(c.title)}</button>`).join('');
+ document.getElementById('introTitle').textContent=s.title;document.getElementById('introAuthor').textContent='Tác giả: '+s.author;document.getElementById('introGenre').textContent=s.mainGenre||s.genre;document.getElementById('introStatus').textContent=s.status==='completed'?'Đã hoàn thành':'Đang làm';document.getElementById('introStatus').className='meta-pill '+(s.status==='completed'?'status-done':'status-ongoing');document.getElementById('introSecondaryTags').innerHTML=(s.subtags||[]).map(t=>`<span class="intro-subtag">${esc(t)}</span>`).join('');const introSummaryEl=document.getElementById('introSummary');introSummaryEl.innerHTML=storySummaryMarkup(s.summary||'');introSummaryEl.style.whiteSpace='pre-line';introSummaryEl.style.display=s.summary?'':'none';document.getElementById('introStats').innerHTML=`<span class="stat">${icon('eye')} ${formatStoryStat(s.views)}</span><span class="stat">${icon('heart')} ${formatStoryStat(storyLikeTotal(s))}</span><span class="stat">${icon('comment')} <bdi data-story-comment-count="${s.id}">${storyCommentCount(s)}</bdi></span>`;document.getElementById('introCover').innerHTML=s.cover?`<img src="${esc(s.cover)}" alt="Bìa ${esc(s.title)}">`:`Nhà có Alex<br>${esc(s.title)}`;let pr=progress[id];document.getElementById('introReadBtn').innerHTML=icon('book')+'<span class="action-label">'+esc(pr?'Đọc tiếp · '+s.chapters[Math.min(pr.chapter||0,s.chapters.length-1)].title.split(':')[0]:'Bắt đầu đọc')+'</span>';document.getElementById('introSaveBtn').innerHTML=icon(saved.includes(id)?'bookmarkSaved':'bookmark')+(saved.includes(id)?'Đã lưu':'Lưu truyện');document.getElementById('introChapters').innerHTML=s.chapters.map((c,i)=>`<button onclick="read(${s.id},${i})">${esc(c.title)}</button>`).join('');
 }
 function refreshHydratedVisibleView(){
  // read() claims currentStory before awaiting content, even while intro is visible.
@@ -2111,7 +2146,7 @@ function cancelStoryAboutEdit(){renderStoryAbout()}
 async function saveStoryAbout(){if(!introStory||!isSiteAdmin())return;const text=document.getElementById('introAboutInput').value.trim();const r=await sb.from('stories').update({long_description:text}).eq('id',introStory.id);if(r.error){console.warn('long_description cloud save',r.error);alert('Chưa lưu được Giới thiệu chi tiết: '+(r.error.message||'Supabase từ chối cập nhật.'));return}introStory.longIntro=text;renderStoryAbout()}
 function showIntroTab(name,btn){document.querySelectorAll('.intro-pane').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.intro-tabs button').forEach(x=>x.classList.remove('active'));document.getElementById('intro'+name[0].toUpperCase()+name.slice(1))?.classList.add('active');btn?.classList.add('active')}
 function startFromIntro(){if(!introStory)return;let pr=progress[introStory.id]||{chapter:0,scroll:0};read(introStory.id,pr.chapter||0);if(pr.scroll)setTimeout(()=>window.scrollTo(0,pr.scroll),30)}
-function toggleIntroSave(){if(!introStory)return;toggleSave(introStory.id);document.getElementById('introSaveBtn').textContent=saved.includes(introStory.id)?'★ Đã lưu':'☆ Lưu truyện'}
+function toggleIntroSave(){if(!introStory)return;toggleSave(introStory.id);document.getElementById('introSaveBtn').innerHTML=icon(saved.includes(introStory.id)?'bookmarkSaved':'bookmark')+(saved.includes(introStory.id)?'Đã lưu':'Lưu truyện')}
 function storyCommentKey(storyId){return `story_${storyId}`}
 function storyCommentKeys(story){
  const sid=String(story.id),keys=new Set([storyCommentKey(story.id)]);
@@ -2722,9 +2757,9 @@ document.addEventListener('click',event=>{
  if(locationButton){
   const key=locationButton.dataset.commentLocation,commentId=locationButton.dataset.commentId||null,demo=demoHomeComments.find(row=>row.key===key);
   if(demo){openCommentLocation(demo.storyId,0,demo.para,commentId);return}
-  if(key.startsWith('story_')){openCommentLocation(Number(key.split('_')[1]),null,null,commentId);return}
-  const [storyId,chapterIndex,paraIndex]=key.replace(/^chapter_/,'').split('_').map(Number);
-  openCommentLocation(storyId,chapterIndex,key.startsWith('chapter_')?null:paraIndex,commentId);
+  if(key.startsWith('story_')){openCommentLocation(key.split('_')[1],null,null,commentId);return}
+  const [storyId,chapterIndex,paraIndex]=key.replace(/^chapter_/,'').split('_');
+  openCommentLocation(storyId,Number(chapterIndex),key.startsWith('chapter_')?null:Number(paraIndex),commentId);
  }
 });
 document.addEventListener('click',event=>{
@@ -3172,7 +3207,7 @@ async function initAuth(){
      if(authUser&&returnPath&&/^\/(truyen|user)\//.test(returnPath))setRoute(returnPath,true);
      routeFromLocation();
    }
-   Promise.allSettled([refreshPublicStoryCloudFields({metadataSnapshot}),loadCloudComments(),loadCloudReviews()]).then(()=>refreshHydratedVisibleView());
+   Promise.allSettled([refreshPublicStoryCloudFields({metadataSnapshot}),loadCloudReviews()]).then(()=>refreshHydratedVisibleView());
    // Join bootstrap's existing membership batch; retain its actual outcome.
    if(authAccount?.owner)authAccount.likesInitial=refreshChapterLikeState(loadedChapterLikeIds(),true);
  }finally{resolveMetadata();}
@@ -3425,6 +3460,13 @@ function notificationHead(state,mutation,forceRefresh=false){
   }finally{if(notificationHeadFlight===job)notificationHeadFlight=null;}
  })();return job.promise;
 }
+function notificationRowMarkup(n,actors){
+ const actor=actors[n.actor_id],name=(actor?.display_name||'').trim()||(n.actor_id?'Thành viên':'Hệ thống');
+ const eligible=['comment','reply','mention','comment_like'].includes(n.type),story=eligible?stories.find(s=>String(s.id)===String(n.story_id)):null;
+ const avatar=eligible&&n.actor_id?(actor?.avatar_url?`<img class="notif-actor-avatar" src="${esc(actor.avatar_url)}" alt="" loading="lazy" referrerpolicy="no-referrer">`:`<span class="notif-actor-avatar notif-avatar-fallback" aria-hidden="true">${esc(Array.from(name)[0])}</span>`):'';
+ const cover=story?.cover?`<img class="notif-story-cover" src="${esc(story.cover)}" alt="" loading="lazy">`:'';
+ return `<div class="notif-item ${n.is_read?'':'unread'}" data-notification-id="${esc(n.id)}" role="link" tabindex="0">${avatar}<span class="notif-copy">${esc(name)} ${esc(notifText(n))}</span>${cover}</div>`;
+}
 async function loadNotifications(badgeOnly=false,{forceRefresh=false}={}){
  const state=captureNotificationAccount(),userId=state.owner,filter=notifFilter;
  const list=document.getElementById('notifList'),badge=document.getElementById('notifBadge');
@@ -3451,7 +3493,7 @@ async function loadNotifications(badgeOnly=false,{forceRefresh=false}={}){
    const actors=Object.fromEntries((actorResult.data||[]).map(p=>[p.id,p]));
    if(actorResult.error)console.warn('notification actors',actorResult.error);
    notificationRows=new Map((rows.data||[]).map(n=>[String(n.id),n]));
-   list.innerHTML=(rows.data||[]).length?rows.data.map(n=>`<div class="notif-item ${n.is_read?'':'unread'}" data-notification-id="${esc(n.id)}" role="link" tabindex="0">${esc((actors[n.actor_id]?.display_name||'').trim()||(n.actor_id?'Thành viên':'Hệ thống'))} ${esc(notifText(n))}</div>`).join(''):'<div class="notif-empty">Chưa có thông báo ở mục này.</div>';
+   list.innerHTML=(rows.data||[]).length?rows.data.map(n=>notificationRowMarkup(n,actors)).join(''):'<div class="notif-empty">Chưa có thông báo ở mục này.</div>';
    return headOK&&!actorResult.error;
   }finally{if(notificationFullFlight===job)notificationFullFlight=null;}
  })();return job.promise;
@@ -3472,24 +3514,8 @@ async function openNotification(id){
  if(error)console.warn('notification mark read',error);else ++notificationMutation;
  await loadNotifications(false,{forceRefresh:true});if(!notificationAccountCurrent(state)||notificationOwner!==userId)return;document.getElementById('notifPanel').classList.remove('open');
  if(n.comment_id){
-  const {data:comment,error}=await sb.from('comments').select('*').eq('id',n.comment_id).maybeSingle();
-  if(error||!comment||!notificationAccountCurrent(state))return;
-  await loadCloudComments();if(!notificationAccountCurrent(state))return;
-  const key=cloudCommentKey(comment),list=normalizedComments(key),target=list.find(c=>String(c.id)===String(comment.id));
-  if(!target)return;
-  const root=rootComment(list,target);
-  window.__alexReplyState?.set(key+'::'+root.id,list.length);
-  if(comment.scope==='story'){
-   openStory(Number(comment.story_id));
-   const entries=storyCommentKeys(introStory).flatMap(k=>{const rows=normalizedComments(k);return rows.filter(c=>rootComment(rows,c).id===c.id);}).sort((a,b)=>(Date.parse(b.createdAt)||0)-(Date.parse(a.createdAt)||0));
-   storyCommentPage=Math.floor(Math.max(0,entries.findIndex(c=>String(c.id)===String(root.id)))/20)+1;renderAllStoryComments();
-   showIntroTab('comments',document.querySelectorAll('.intro-tabs button')[3]);
-  }else{
-   await read(Number(comment.story_id),Number(comment.chapter_index));
-   if(!notificationAccountCurrent(state))return;
-   if(comment.scope==='paragraph'){jumpToParagraphOnly(key);toggleComments(key,true);}
-  }
-  requestAnimationFrame(()=>{if(notificationAccountCurrent(state))focusExactComment(comment.id)});
+  await window.scopedComments.navigate(n.comment_id);
+  if(!notificationAccountCurrent(state))return;
  }else if(n.chapter_id!=null&&['story_like','chapter_like'].includes(n.type)){
   const story=stories.find(s=>String(s.id)===String(n.story_id));
   const chapterIndex=story?.chapters.findIndex(c=>String(c.id)===String(n.chapter_id))??-1;
@@ -3623,9 +3649,8 @@ function setProfileHeader(profile,own=false){
  document.querySelector('.profile-tabs').classList.toggle('hidden',!own);
 }
 function knownCommentProfile(username){
- for(const list of Object.values(comments))for(const comment of list){
-  if((comment.username||slugify(comment.name))===username)return {id:comment.userId,display_name:comment.name,avatar_url:comment.avatar||'',bio:''};
- }
+ // Bounded enrichment caches only. No comment-history identity discovery.
+ for(const profile of mentionProfilesById.values())if(slugify(profile.display_name||'thanh-vien')===username)return profile;
  return null;
 }
 async function openUserProfile(username,updateRoute=true,section='profile'){
@@ -3685,7 +3710,7 @@ function profileShelfCard(story,withProgress=false){
    <div class="profile-story-genre ${primaryGenreClass(story.mainGenre||story.genre)}">${esc(story.mainGenre||story.genre||'')}</div>
    <div class="profile-story-status ${story.status==='completed'?'done':'ongoing'}">${story.status==='completed'?'✓ Đã hoàn thành':'◷ Đang làm'}</div>
    <div class="profile-story-stats"><span>${icon('eye')} ${formatStoryStat(story.views)}</span><span>${icon('heart')} ${formatStoryStat(storyLikeTotal(story))}</span><span>${icon('comment')} <bdi data-story-comment-count="${story.id}">${storyCommentCount(story)}</bdi></span></div>
-   ${withProgress&&chapterLabel?`<button class="profile-continue" type="button" onclick="event.stopPropagation();read(${story.id})">Đọc tiếp · ${esc(chapterLabel.split(':')[0])}</button>`:''}
+   ${withProgress&&chapterLabel?`<button class="profile-continue" type="button" onclick="event.stopPropagation();read(${story.id})">${icon('book')}Đọc tiếp · ${esc(chapterLabel.split(':')[0])}</button>`:''}
   </div>
  </article>`;
 }
@@ -3820,11 +3845,10 @@ async function cloudProfiles(ids){
   const {data}=await sb.from('profiles').select('id,display_name,avatar_url,role').in('id',uniq);
   return Object.fromEntries((data||[]).map(p=>[p.id,p]));
 }
-let commentContentRevision=0;
 // Step 5B: read-only authoritative counts; content loader remains legacy/global.
 const commentStats={stories:new Map(),chapters:new Map(),profiles:new Map(),likes:new Map(),membership:new Map(),account:null,
  flights:new Map(),stamps:new Map(),sequence:0,mutation:0,contentReady:false,writes:new Map(),queued:{story:new Set(),like:new Set(),profile:new Set(),chapter:new Map()},scheduled:false};
-function commentCloudIds(ids){return [...new Set((ids||[]).map(String).filter(id=>/^[1-9]\d*$/.test(id)))].sort((a,b)=>Number(a)-Number(b))}
+function commentCloudIds(ids){return [...new Set((ids||[]).filter(id=>typeof id!=='number'||Number.isSafeInteger(id)).map(String).filter(id=>/^[1-9]\d*$/.test(id)))].sort((a,b)=>a.length-b.length||(a<b?-1:a>b?1:0))}
 function commentAccountSnapshot(){return {owner:authUser?.id||null,account:authAccount,epoch:authAccount?.epoch}}
 function commentAccountMatches(s){return s.owner===(authUser?.id||null)&&s.account===authAccount&&s.epoch===authAccount?.epoch}
 function commentWritePending(id){return commentStats.writes.get(String(id))?.account===authAccount}
@@ -3881,18 +3905,33 @@ async function refreshProfileCommentCount(owner,options={}){
  return commentRead('profile',[String(owner)],()=>sb.rpc('nca_profile_comment_count',{p_user_id:owner}),
   (data,current)=>{const n=commentCountValue(data);if(current(owner))commentStats.profiles.set(String(owner),n)},options);
 }
+// Preserve the verified Step 5B JSON numeric bigint IDs before the SDK parses them.
+// This wraps only this request's existing fetch; auth/headers/number of requests are unchanged.
+function commentHeartRpc(name,args){
+ const query=sb.rpc(name,args),fetcher=query.fetch;
+ if(typeof fetcher!=='function'){if(query?.url)throw Error('Unsupported lossless comment RPC transport');return query;} // Pre-decoded test adapters only.
+ query.fetch=async function(...request){
+  const response=await fetcher.apply(this,request);if(!response.ok)return response;
+  const raw=await response.clone().text();
+  const exact=name==='nca_comment_like_counts'?raw.replace(/("comment_id"\s*:\s*)([0-9]+)(?=\s*[,}])/g,'$1"$2"')
+   :raw.replace(/([\[,])\s*([0-9]+)(?=\s*[,\]])/g,'$1"$2"');
+  if(exact===raw)return response;const headers=new Headers(response.headers);headers.delete('content-length');
+  return new Response(exact,{status:response.status,statusText:response.statusText,headers});
+ };
+ return query;
+}
 async function refreshCommentLikeEnrichment(ids,options={}){
  const input=commentCloudIds(ids),account=commentAccountSnapshot(),results=[];
  for(let i=0;i<input.length;i+=1000){
   if(!commentAccountMatches(account))return false;
-  const batch=input.slice(i,i+1000),work=[commentRead('like',batch,()=>sb.rpc('nca_comment_like_counts',{p_comment_ids:batch}),
+  const batch=input.slice(i,i+1000),work=[commentRead('like',batch,()=>commentHeartRpc('nca_comment_like_counts',{p_comment_ids:batch}),
    (data,current)=>{
     if(!Array.isArray(data))throw new Error('Invalid comment-like count response');
     const values=new Map(data.map(r=>[String(r.comment_id),commentCountValue(r.like_count)]));
     batch.forEach(id=>{if(current(id)&&!commentWritePending(id)){if(values.has(id))commentStats.likes.set(id,values.get(id));else commentStats.likes.delete(id)}});
     return batch.every(id=>!commentWritePending(id));
    },options)];
-  if(account.owner)work.push(commentRead('membership',batch,()=>sb.rpc('nca_my_comment_likes',{p_comment_ids:batch}),
+  if(account.owner)work.push(commentRead('membership',batch,()=>commentHeartRpc('nca_my_comment_likes',{p_comment_ids:batch}),
    (data,current,captured)=>{
     if(!Array.isArray(data)||data.some(id=>!batch.includes(String(id))))throw new Error('Invalid comment membership response');
     if(commentStats.account!==captured.account)return false;
@@ -3992,25 +4031,9 @@ async function refreshAffectedCommentCounts(key,owners=[]){
  await Promise.all(tasks);
 }
 
-async function loadCloudComments(){
-  const load=++commentContentRevision;
-  const {data,error}=await sb.from('comments').select('*').order('created_at',{ascending:true});
-  if(error){console.warn('comments sync',error.message||error,error);return}
-  const rows=data||[], mentionMap={};
-  // Read only mentions for the loaded comments; fetch only their public profiles.
-  for(let offset=0;offset<rows.length;offset+=100){
-   const result=await sb.from('comment_mentions').select('comment_id,mentioned_user_id').in('comment_id',rows.slice(offset,offset+100).map(r=>r.id));
-   for(const m of result.data||[])(mentionMap[m.comment_id]||(mentionMap[m.comment_id]=[])).push(m.mentioned_user_id);
-  }
-  const prof=await cloudProfiles([...rows.map(r=>r.user_id),...Object.values(mentionMap).flat()]);rememberMentionProfiles(Object.values(prof));
-  const next={};
-  for(const r of rows){const p=prof[r.user_id]||{},key=cloudCommentKey(r);(next[key]||(next[key]=[])).push({id:r.id,userId:r.user_id,username:slugify(p.display_name||'thanh-vien'),name:p.display_name||'Thành viên',avatar:p.avatar_url||'',text:r.content||'',mentions:mentionMap[r.id]||[],createdAt:r.created_at,editedAt:r.edited_at,parentId:r.parent_id,replyTo:r.reply_to_user_id,likes:commentStats.likes.get(String(r.id))??0,likedBy:[]});}
-  if(load!==commentContentRevision)return;
-  const initial=!commentStats.contentReady;commentStats.contentReady=true;
-  comments=next;refreshCommentViews();
-  const visibleIds=[...document.querySelectorAll('[data-comment-action="like"]')].map(el=>el.dataset.commentId);
-  await Promise.all([refreshStoryCommentCounts(initial&&!commentStats.mutation?stories.filter(s=>!commentStats.stories.has(String(s.id))).map(s=>s.id):undefined),refreshCommentLikeEnrichment(visibleIds)]);
-}
+// Deprecated compatibility entry point. Global cloud history loading is retired.
+// Kept for historical aliases only; scoped/activity resources are the sole cloud readers.
+async function loadCloudComments(){return false;}
 async function insertCloudComment(key,text,extra={}){
   const c=cloudCommentContext(key), payload={user_id:authUser.id,content:text,scope:c.scope,story_id:c.story_id,chapter_index:c.chapter_index,paragraph_index:c.paragraph_index,parent_id:extra.parentId||null,reply_to_user_id:extra.replyToUserId||null};
   const {data,error}=await sb.from('comments').insert(payload).select('*').single();
@@ -4609,7 +4632,7 @@ initAuth().catch(()=>{updateAuthUI(); if(!location.pathname.startsWith('/quan-ly
     thread.outerHTML=threadHTML(key,root,list,surface,location);
   }
   document.addEventListener('click',function(e){
-    const t=e.target.closest('.comment-reply-toggle,.comment-reply-more');if(!t)return;
+    const t=e.target.closest('.comment-reply-toggle,.comment-reply-more');if(!t||t.hasAttribute('data-scoped-thread'))return;
     e.preventDefault();e.stopPropagation();const sk=t.dataset.replyState;
     if(t.classList.contains('comment-reply-toggle')){const cur=Number(window.__alexReplyState.get(sk)||0);window.__alexReplyState.set(sk,cur>0?0:PAGE)}
     else window.__alexReplyState.set(sk,Number(window.__alexReplyState.get(sk)||0)+PAGE);
@@ -4680,5 +4703,431 @@ initAuth().catch(()=>{updateAuthUI(); if(!location.pathname.startsWith('/quan-ly
    requestAnimationFrame(()=>{feed.querySelectorAll('.home-review-card').forEach(card=>{const body=card.querySelector('.home-review-clamp'),btn=card.querySelector('.home-review-more');if(body&&btn)btn.hidden=body.scrollHeight<=body.clientHeight+2})});
    addMoreButton(feed,'reviews',rows.length,shown.length,window.renderHomeReviews);
  }
+})();
+</script>
+
+<script id="alex-scoped-comments-step5cb2">
+// Step 5C-B2: scoped content state is separate from the temporary Home/Profile snapshot.
+(function(){
+ const state={entities:new Map(),rootPages:new Map(),threads:new Map(),targetPaths:new Map(),mentions:new Map(),profiles:new Map(),tombstones:new Set(),entityStamps:new Map(),revisions:new Map(),flights:new Map(),stamps:new Map(),sequence:0,owner:null,writers:new Map()};
+ const decimal=value=>{
+  if(typeof value==='number'){if(!Number.isSafeInteger(value)||value<=0)throw Error('Unsafe legacy comment ID');value=String(value);}
+  if(typeof value!=='string'||! /^[1-9][0-9]*$/.test(value))throw Error('Invalid decimal ID');return value;
+ };
+ const counter=value=>{if(typeof value!=='string'||!/^(0|[1-9][0-9]*)$/.test(value))throw Error('Invalid exact counter');return value;};
+ const snapshot=()=>commentAccountSnapshot();
+ function owner(){const s=snapshot();if(!state.owner||!commentAccountMatches(state.owner)){if(state.owner?.owner){activeReply=null;for(const input of document.querySelectorAll(mentionInputSelector)){input.value='';input.disabled=false;mentionDrafts.delete(input);}}state.intent=null;state.owner=s;state.rootPages.clear();state.threads.clear();state.targetPaths.clear();state.mentions.clear();state.profiles.clear();state.flights.clear();state.stamps.clear();state.writers.clear();}return s;}
+ const current=s=>commentAccountMatches(s);
+ const rev=story=>state.revisions.get(story)||0;
+ function entity(row){
+  const id=decimal(row.id),storyId=decimal(row.story_id),parentId=row.parent_id==null?null:decimal(row.parent_id);
+  if(row.chapter_index!=null&&(!Number.isInteger(row.chapter_index)||row.chapter_index<0))throw Error('Invalid chapter index');
+  if(row.paragraph_index!=null&&(!Number.isInteger(row.paragraph_index)||row.paragraph_index<0))throw Error('Invalid paragraph index');
+  return {id,storyId,parentId,paragraphId:row.paragraph_id==null?null:decimal(row.paragraph_id),scope:row.scope,userId:row.user_id,replyTo:row.reply_to_user_id||null,text:row.content||'',createdAt:row.created_at,editedAt:row.edited_at,chapterIndex:row.chapter_index,paragraphIndex:row.paragraph_index,name:'Thành viên',username:'',avatar:'',mentions:[],enriched:false};
+ }
+ function context(e){return e.scope==='story'?['story',e.storyId]:e.scope==='chapter'?['chapter',e.storyId,e.chapterIndex]:['paragraph',e.storyId,e.chapterIndex,e.paragraphIndex];}
+ function keyOf(e){return e.scope==='story'?'story_'+e.storyId:e.scope==='chapter'?'chapter_'+e.storyId+'_'+e.chapterIndex:e.storyId+'_'+e.chapterIndex+'_'+e.paragraphIndex;}
+ function merge(rows,job){
+  for(const row of rows){const e=entity(row);if(!job.current()||state.tombstones.has(e.id)||(state.entityStamps.get(e.id)||0)>job.stamp)continue;
+   const previous=state.entities.get(e.id);state.entities.set(e.id,{...e,...(previous?.enriched?{name:previous.name,username:previous.username,avatar:previous.avatar,mentions:previous.mentions,enriched:true}:{}),rootId:previous?.rootId,descendantTotal:previous?.descendantTotal,descendantStamp:previous?.descendantStamp});state.entityStamps.set(e.id,job.stamp);
+  }
+ }
+ function setDescendantTotal(id,total,job){const e=state.entities.get(id);if(job.covered()&&e&&e.parentId===null&&!state.tombstones.has(id)&&(e.descendantStamp||0)<=job.stamp)Object.assign(e,{descendantTotal:total,descendantStamp:job.stamp});}
+ function resource(map,key){if(!map.has(key))map.set(key,{key,ready:false,ids:[],error:null});return map.get(key);}
+ async function run(kind,map,key,story,request,apply,{force=false,nav=null}={}){
+  const account=owner(),revision=rev(story),flightKey=kind+':'+key,previous=state.flights.get(flightKey);
+  if(!force&&previous?.covered())return previous.promise;
+  const stamp=++state.sequence;state.stamps.set(flightKey,stamp);
+  const r=resource(map,key),job={stamp,account,current:()=>current(account)&&rev(story)===revision&&(nav==null||navigationEpoch===nav),covered:()=>job.current()&&state.stamps.get(flightKey)===stamp};
+  r.loading=true;r.error=null;
+  job.promise=(async()=>{try{
+   const result=await request(job);if(!job.current())return false;if(result.error)throw result.error;
+   const applied=await apply(result.data,job,r);if(!job.covered())return false;
+   if(applied===false)throw Error('Incomplete scoped resource');r.ready=true;return true;
+  }catch(error){if(job.covered()){r.error=error.message||String(error);r.ready=false;}return false;
+  }finally{if(state.flights.get(flightKey)===job){state.flights.delete(flightKey);r.loading=false;}}})();state.flights.set(flightKey,job);return job.promise;
+ }
+ async function enrich(ids,job){
+  const list=[...new Set(ids)].filter(id=>!state.tombstones.has(id)),associations=new Map();
+  for(let start=0;start<list.length;start+=100){
+   const batch=list.slice(start,start+100);batch.forEach(id=>associations.set(id,[]));
+   for(let offset=0;;offset+=200){
+    const r=await sb.from('comment_mentions').select('comment_id::text,mentioned_user_id').in('comment_id',batch).order('id',{ascending:true}).range(offset,offset+199);
+    if(!job.current())return false;if(r.error)throw r.error;
+    if(!Array.isArray(r.data)||r.data.length>200)throw Error('Invalid mention page');
+    for(const m of r.data){const id=decimal(m.comment_id);if(!associations.has(id))throw Error('Mention outside requested set');associations.get(id).push(m.mentioned_user_id);}
+    if(r.data.length<200)break;
+   }
+  }
+  const profileIds=[...new Set(list.flatMap(id=>{const e=state.entities.get(id);return e?[e.userId,e.replyTo,...(associations.get(id)||[])].filter(Boolean):[]}))],profiles=new Map();
+  for(let start=0;start<profileIds.length;start+=200){
+   const batch=profileIds.slice(start,start+200),r=await sb.from('profiles').select('id,display_name,avatar_url,role').in('id',batch);
+   if(!job.current())return false;if(r.error)throw r.error;if(!Array.isArray(r.data)||r.data.length>200)throw Error('Invalid profile batch');
+   for(const p of r.data){if(!batch.includes(p.id))throw Error('Profile outside requested set');profiles.set(p.id,p);}
+  }
+  if(!job.covered())return false;
+  for(const [id,p] of profiles)state.profiles.set(id,p);
+  for(const id of list){const e=state.entities.get(id);if(!e||(state.entityStamps.get(id)||0)>job.stamp)continue;
+   const mentions=associations.get(id)||[],p=profiles.get(e.userId);state.mentions.set(id,mentions);
+   Object.assign(e,{mentions,name:p?.display_name||'Thành viên',username:p?slugify(p.display_name||'thanh-vien'):'',avatar:p?.avatar_url||'',enriched:!!p});
+  }
+  rememberMentionProfiles([...profiles.values()]);
+  const ok=await refreshCommentLikeEnrichment(list);return job.current()&&ok;
+ }
+ function allClassification(){return JSON.stringify([authAccount?.epoch,authAccount?.profileGeneration,authAccount?.profileReady,memberProfile?.id,memberProfile?.display_name,authUser?.user_metadata]);}
+ function descriptor(surface,tuple=null){
+  if(surface==='story'){if(!introStory)return null;return {surface,story:decimal(introStory.id),page:decimal(typeof storyCommentPage==='number'?Math.max(1,storyCommentPage):storyCommentPage)};}
+  if(surface==='chapter'){if(!currentStory)return null;return {surface,story:decimal(currentStory.id),ci:currentChapter,count:currentStory.chapters[currentChapter].paras.length,sort:chapterCommentSort,classification:chapterCommentSort==='all'?allClassification():null};}
+  const parts=String(tuple).split('_');if(parts.length!==3)return null;
+  const ci=Number(parts[1]),pi=Number(parts[2]);if(!Number.isInteger(ci)||ci<0||!Number.isInteger(pi)||pi<0)return null;
+  return {surface:'paragraph',story:decimal(parts[0]),ci,pi,sort:'newest'};
+ }
+ const pageKey=d=>JSON.stringify(d);
+ async function roots(d,{force=false,cursor=null,target=null,append=false}={}){
+  if(!d)return false;owner();const key=pageKey(d);
+  if(d.surface==='chapter'&&d.sort==='all'&&authUser&&!authAccount?.profileReady){resource(state.rootPages,key).error='Đang tải hồ sơ…';return false;}
+  const args=d.surface==='story'?{p_story_id:d.story,p_page_number:d.page,p_target_root_id:target}: {p_context:d.surface,p_story_id:d.story,p_chapter_index:d.ci,p_paragraph_index:d.surface==='paragraph'?d.pi:null,p_loaded_paragraph_count:d.surface==='chapter'?d.count:null,p_sort:d.sort,p_cursor:cursor,p_limit:20,p_target_root_id:target};
+  return run('roots',state.rootPages,key,d.story,()=>sb.rpc(d.surface==='story'?'nca_story_comment_root_page':'nca_context_comment_root_page',args),async(data,job,r)=>{
+   if(data?.status==='stale_cursor'&&cursor){const fresh=await sb.rpc('nca_context_comment_root_page',{...args,p_cursor:null});if(!job.current())return false;if(fresh.error)throw fresh.error;data=fresh.data;append=false;}
+   if(data?.status!=='ok')throw Error(data?.status||'Invalid root page');
+   const limit=d.surface==='story'?20:20;if(!Array.isArray(data.rows)||data.rows.length>limit)throw Error('Unbounded root page');
+   counter(data.root_total);if(d.surface==='story'){counter(data.page_count);decimal(data.actual_page);}
+   const rows=data.rows.map(row=>{counter(row.descendant_total);const e=entity(row.comment);
+    if(e.parentId!==null||e.storyId!==d.story)throw Error('Root outside requested story');
+    if(d.surface==='chapter'&&(e.chapterIndex!==d.ci||!(e.scope==='chapter'||((e.scope==='paragraph'||e.scope==null)&&e.paragraphIndex>=0&&e.paragraphIndex<d.count))))throw Error('Root outside loaded chapter prefix');
+    if(d.surface==='paragraph'&&(e.chapterIndex!==d.ci||e.paragraphIndex!==d.pi||!(e.scope==='paragraph'||e.scope==null)))throw Error('Root outside paragraph');return row.comment;});merge(rows,job);
+   if(!job.current())return false;
+   if(target&&data.target_status!=='found')throw Error('Target root no longer exists');
+   const ids=rows.map(row=>decimal(row.id));if(!job.covered())return false;if(!await enrich(ids,job))return false;if(!job.covered())return false;
+   ids.forEach((id,i)=>{const e=state.entities.get(id);if(e){e.rootId=id;setDescendantTotal(id,data.rows[i].descendant_total,job);}});
+   Object.assign(r,{ids:append?[...new Set([...r.ids,...ids])]:ids,data,descriptor:d,classification:data.viewer_classification?.fingerprint,classificationVersion:data.classification_version});
+   return true;
+  },{force});
+ }
+ async function thread(rootId,{force=false,cursor=null,target=null,append=false}={}){
+  rootId=decimal(rootId);const root=state.entities.get(rootId);if(!root||root.parentId!==null)return false;
+  return run('thread',state.threads,rootId,root.storyId,()=>sb.rpc('nca_comment_thread_page',{p_root_id:rootId,p_cursor:cursor,p_limit:6,p_target_comment_id:target}),async(data,job,r)=>{
+   if(data?.status==='target_not_found'){counter(data.descendant_total);if(job.covered()){r.data=data;setDescendantTotal(rootId,data.descendant_total,job);}return false;}
+   if(data?.status!=='ok')throw Error(data?.status||'Invalid thread page');counter(data.descendant_total);
+   if(!Array.isArray(data.rows)||data.rows.length>6)throw Error('Unbounded thread page');for(const row of data.rows){const e=entity(row);if(e.id===rootId||e.parentId===null||JSON.stringify(context(e))!==JSON.stringify(context(root)))throw Error('Reply outside thread context');}merge(data.rows,job);
+   const ids=data.rows.map(row=>decimal(row.id));if(!job.covered())return false;if(!await enrich(ids,job))return false;if(!job.covered())return false;
+   ids.forEach(id=>{const e=state.entities.get(id);if(e)e.rootId=rootId;});setDescendantTotal(rootId,data.descendant_total,job);
+   Object.assign(r,{ids:append?[...new Set([...r.ids,...ids])]:ids,data});return true;
+  },{force});
+ }
+ const edgeSelect='id::text,parent_id::text,story_id::text,scope,chapter_index,paragraph_index';
+ async function validateEdges(rows,job){
+  const seen=new Set(),original=new Map();for(const row of rows){const e=entity(row);if(seen.has(e.id))return false;seen.add(e.id);original.set(e.id,e);}
+  const observed=new Map(),ids=[...seen];
+  for(let offset=0;offset<ids.length;offset+=200){
+   const r=await sb.from('comments').select(edgeSelect).in('id',ids.slice(offset,offset+200)).limit(200);
+   if(!job.current())return false;if(r.error)throw r.error;
+   for(const row of r.data||[]){const id=decimal(row.id);if(observed.has(id)||!original.has(id))return false;observed.set(id,entity(row));}
+  }
+  if(observed.size!==ids.length)return false;
+  const effective=JSON.stringify(context(original.get(ids[0])));
+  for(let i=0;i<ids.length;i++){const expected=original.get(ids[i]),live=observed.get(ids[i]);
+   if(live.parentId!==expected.parentId||JSON.stringify(context(live))!==effective||expected.parentId!==(ids[i+1]||null)||state.tombstones.has(ids[i]))return false;
+  }
+  return true;
+ }
+ async function path(id,{force=false,nav=navigationEpoch}={}){
+  id=decimal(id);const key=id;
+  return run('path',state.targetPaths,key,'path',async job=>{
+   // One restart, at most 17 chunks per attempt. All earlier edges are re-read before success.
+   for(let attempt=0;attempt<2;attempt++){
+    let token=null,rows=[],seen=new Set();
+    for(let chunk=0;chunk<17;chunk++){
+     const r=await sb.rpc('nca_comment_target_path',{p_comment_id:id,p_continuation:token});if(!job.current())return {error:Error('Cancelled path')};if(r.error)return r;
+     const data=r.data;if(!Array.isArray(data?.rows)||data.rows.length>(token?64:65))return {error:Error('Invalid path chunk')};
+     for(const row of data.rows){const k=decimal(row.id);if(seen.has(k))return {error:Error('cycle')};seen.add(k);rows.push(row);}
+     if(data.status==='resolved'){
+      if(decimal(data.root?.id)!==decimal(rows.at(-1)?.id)||decimal(data.target_id)!==id)return {error:Error('Invalid resolved path')};
+      if(await validateEdges(rows,job))return {data:{...data,rows}};
+      if(!job.current())return {error:Error('Cancelled path')};break;
+     }
+     if(data.status!=='more')return {error:Error(data.status||'Invalid path')};token=data.continuation;
+     if(chunk===16)return {error:Error('Path budget reached; retry required')};
+    }
+   }
+   return {error:Error('Path changed during validation; retry required')};
+  },async(data,job,r)=>{merge(data.rows,job);if(!job.covered())return false;Object.assign(r,{ids:data.rows.map(row=>decimal(row.id)),data});return true;},{force,nav});
+ }
+ function mutate(story,{invalidate=true}={}){state.revisions.set(story,rev(story)+1);state.revisions.set('path',rev('path')+1);++commentStats.mutation;for(const r of state.rootPages.values())if(invalidate&&r.descriptor?.story===story)r.ready=false;for(const r of state.threads.values())if(invalidate&&state.entities.get(r.key)?.storyId===story)r.ready=false;state.targetPaths.clear();}
+ function lookup(id,key){try{const k=decimal(id);return state.tombstones.has(k)?null:state.entities.get(k)||null;}catch{return null;}}
+ function drafts(fn){
+  const savedDrafts=[...document.querySelectorAll(mentionInputSelector)].map(input=>({id:input.id,value:input.value,start:input.selectionStart,end:input.selectionEnd,focused:document.activeElement===input,disabled:input.disabled,tokens:reconcileMentionDraft(input).tokens.map(x=>({...x}))}));
+  const scroll=[...document.querySelectorAll('.paragraph-comment-panel,#storyCommentList,#chapterCommentsList')].map(el=>[el,el.scrollTop]),x=scrollX,y=scrollY;
+  closeMentionPopup();closeEmojiPicker();fn();for(const d of savedDrafts){const input=document.getElementById(d.id);if(!input)continue;input.value=d.value;input.disabled=d.disabled;mentionDrafts.set(input,{value:d.value,tokens:d.tokens});input.setSelectionRange(d.start,d.end);if(d.focused)input.focus({preventScroll:true});}
+  for(const [el,top] of scroll)el.scrollTop=top;window.scrollTo(x,y);window.syncStoryCommentMore?.(document);
+ }
+ function storyFor(id){return stories.find(s=>{try{return decimal(s.id)===id;}catch{return false;}});}
+ function locationHTML(e){const story=storyFor(e.storyId);if(!story)return '';
+  if(e.scope==='story')return '<span class="comment-location">'+esc(story.title)+'</span>';
+  const chapter=story.chapters[e.chapterIndex];if(!chapter)return '';return '<button type="button" class="comment-location" data-comment-id="'+esc(e.id)+'" data-comment-location="'+esc(keyOf(e))+'">'+esc(story.title)+' · '+esc(chapter.title)+(e.scope==='chapter'?'':' · Đoạn '+(e.paragraphIndex+1))+'</button>';
+ }
+ function markup(e,location=''){
+  const key=keyOf(e),list=[...state.entities.values()].filter(row=>row.rootId===e.rootId),p=state.profiles.get(e.replyTo);
+  let html=commentMarkup(e,key,list,location);
+  // Recipient is a user UUID, not a comment ID. Keep its known identity separate.
+  if(e.replyTo&&p)html=html.replace(/<p class="comment-text(?: story-comment-clamp)?">/,match=>'<span class="comment-reply-to" data-reply-user-id="'+esc(e.replyTo)+'">Trả lời '+esc(p.display_name||'Thành viên')+'</span>'+match);
+  if(!e.enriched)html=html.replace(/href="\/user\/[^"]*" data-user-profile="[^"]*"/g,'href="#" data-unresolved-profile="'+esc(e.userId)+'"');
+  return html;
+ }
+ function threadHTML(root,surface){
+  const key=keyOf(root),t=state.threads.get(root.id),expanded=(window.__alexReplyState?.get(key+'::'+root.id)||0)>0;
+  let html=markup(root,surface==='story'?locationHTML(root):'');
+  if(root.descendantTotal&&root.descendantTotal!=='0')html+='<button type="button" class="comment-reply-toggle" data-scoped-thread="'+root.id+'" data-scoped-mode="toggle">'+(expanded?'Ẩn phản hồi':'Xem '+root.descendantTotal+' phản hồi')+'</button>';
+  if(expanded){html+='<div class="comment-replies">'+(t?.ids||[]).map(id=>state.entities.get(id)).filter(Boolean).map(e=>markup(e)).join('');
+   if(t?.error)html+='<p class="muted">'+esc(t.error)+' <button data-scoped-thread="'+root.id+'" data-scoped-mode="retry">Thử lại</button></p>';
+   if(t?.loading)html+='<p class="muted">Đang tải phản hồi…</p>';
+   if(t?.data?.has_more&&t.ready)html+='<button type="button" class="comment-reply-more" data-scoped-thread="'+root.id+'" data-scoped-mode="more">Xem thêm phản hồi</button>';html+='</div>';
+  }
+  html+=replyComposerHTML(key,root,surface);
+  return '<div class="comment-thread" data-comment-key="'+esc(key)+'" data-comment-surface="'+surface+'">'+html+'</div>';
+ }
+ function pageHTML(d){const r=state.rootPages.get(pageKey(d));if(!r)return '<p class="muted">Đang tải bình luận…</p>';
+  let html=r.ids.map(id=>state.entities.get(id)).filter(Boolean).map(e=>d.surface==='paragraph'?threadHTML(e,d.surface):'<div class="comment-group'+(d.surface==='chapter'?' unified-comment-group':'')+'"'+(d.surface==='chapter'&&e.scope!=='chapter'?' data-chapter-comment-jump="'+esc(keyOf(e))+'"':'')+'>'+threadHTML(e,d.surface)+'</div>').join('');
+  if(!html&&r.ready)html='<p class="muted">Chưa có bình luận nào.</p>';
+  if(r.error)html+='<p class="muted" role="status">'+esc(r.error)+' <button data-scoped-page="retry">Thử lại</button></p>';
+  if(r.loading)html+='<p class="muted">Đang tải bình luận…</p>';
+  if(d.surface!=='story'&&r.ready&&r.data.has_more)html+='<button class="comment-reply-more" data-scoped-page="more">Xem thêm bình luận</button>';
+  return html;
+ }
+ function paint(d){
+  const live=descriptor(d.surface,d.surface==='paragraph'?d.story+'_'+d.ci+'_'+d.pi:null);
+  if(!live||pageKey(live)!==pageKey(d))return;
+  if(d.surface==='story'&&document.getElementById('storyIntro').classList.contains('hidden'))return;
+  if(d.surface==='chapter'&&document.getElementById('reader').classList.contains('hidden'))return;
+  if(d.surface==='paragraph'&&(activeCommentKey!==d.story+'_'+d.ci+'_'+d.pi||!document.getElementById('paragraphCommentPanel')?.classList.contains('open')))return;
+  drafts(()=>{
+   const box=document.getElementById(d.surface==='story'?'storyCommentList':d.surface==='chapter'?'chapterCommentsList':'paragraphCommentPanelBody');if(!box)return;
+   box.innerHTML=pageHTML(d)+(d.surface==='paragraph'?commentComposerHTML('bình luận',activeCommentKey):'');
+   if(d.surface==='story'){
+    const r=state.rootPages.get(pageKey(d)),pager=document.getElementById('storyCommentPagination');if(!pager)return;
+    if(!r?.data){pager.innerHTML='';return;}storyCommentPage=r.data.actual_page;state.rootPages.set(pageKey({...d,page:storyCommentPage}),r);const pages=BigInt(r.data.page_count),page=BigInt(r.data.actual_page),numbers=new Set(['1',String(pages)]);
+    if(pages<=200n)for(let n=1n;n<=pages;n++)numbers.add(String(n));
+    for(let n=page-2n;n<=page+2n;n++)if(n>0n&&n<=pages)numbers.add(String(n));
+    pager.innerHTML=pages>1n?[...numbers].sort((a,b)=>BigInt(a)<BigInt(b)?-1:1).map(n=>'<button type="button" class="'+(n===String(page)?'active':'')+'" data-scoped-story-page="'+n+'">'+n+'</button>').join(''):'';
+   }
+  });
+ }
+ async function refresh(d,options={}){const ok=await roots(d,options);paint(d);return ok;}
+ function intentCovers(d){const i=state.intent;return i&&i.story===d.story&&current(i.account)&&(i.dispatching||navigationEpoch===i.nav||navigationEpoch===i.expectedEpoch)&&(i.scope==='story'?d.surface==='story':d.ci===i.ci&&(d.surface==='chapter'||d.surface==='paragraph'&&i.scope!=='chapter'&&d.pi===i.pi));}
+ function ensure(d){if(!d)return;owner();if(intentCovers(d)){paint(d);return;}const r=state.rootPages.get(pageKey(d));paint(d);if(!r||!r.ready&&!r.error&&!r.loading)refresh(d);}
+ function refreshVisible(){
+  if(introStory&&!document.getElementById('storyIntro').classList.contains('hidden'))ensure(descriptor('story'));
+  if(currentStory&&!document.getElementById('reader').classList.contains('hidden'))ensure(descriptor('chapter'));
+  if(activeCommentKey&&document.getElementById('paragraphCommentPanel')?.classList.contains('open'))ensure(descriptor('paragraph',activeCommentKey));
+ }
+ const legacyNormalized=normalizedComments;
+ normalizedComments=function(key){owner();const rows=[...state.entities.values()].filter(e=>keyOf(e)===key&&!state.tombstones.has(e.id));// Only non-database local/demo IDs may use the legacy presentation fallback.
+  return rows.length?rows:legacyNormalized(key).filter(e=>! /^[1-9][0-9]*$/.test(String(e.id)));};
+ renderAllStoryComments=function(){if(!introStory||document.getElementById('storyIntro').classList.contains('hidden'))return;drafts(()=>renderStoryCommentComposer());ensure(descriptor('story'));};
+ renderChapterComments=function(){
+  if(!currentStory||document.getElementById('reader').classList.contains('hidden'))return;drafts(()=>{const composer=document.getElementById('chapterCommentComposer');if(composer)composer.innerHTML=commentComposerHTML('bình luận');});
+  const select=document.getElementById('chapterCommentSort');if(select)select.value=chapterCommentSort;ensure(descriptor('chapter'));
+ };
+ setChapterCommentSort=function(value){chapterCommentSort=value;return refresh(descriptor('chapter'),{force:true});};
+ renderParaComments=function(key){const d=descriptor('paragraph',key);if(d){owner();const r=state.rootPages.get(pageKey(d));if(!intentCovers(d)&&(!r||!r.ready&&!r.loading&&!r.error))refresh(d);}return d?pageHTML(d)+commentComposerHTML('bình luận',key):'';};
+ const legacyRefresh=refreshCommentViews;
+ refreshCommentViews=function(){legacyRefresh();refreshVisible();};
+ // The old local interaction reorder cannot rank authoritative server pages.
+ chapterCommentEntries=function(){return [];};
+ beginCommentReply=async function(key,id,surface){
+  if(!authUser){requestCommentLogin('trả lời bình luận');return;}const account=owner(),nav=navigationEpoch;let e=lookup(id,key);if(!e)return;
+  if(!e.rootId){if(!await path(id,{nav}))return;if(!current(account)||navigationEpoch!==nav)return;e=state.entities.get(decimal(id));e.rootId=state.targetPaths.get(decimal(id)).data.root.id;}
+  activeReply={key:state.entities.has(String(id))?keyOf(e):key,targetId:String(id),rootId:e.rootId,surface};refreshVisible();document.getElementById('replyCommentInput')?.focus({preventScroll:true});
+ };
+  async function visibleRebase(story,{first=false}={}){
+  const tasks=[];
+  if(introStory&&decimal(introStory.id)===story&&!document.getElementById('storyIntro').classList.contains('hidden')){if(first)storyCommentPage=1;tasks.push(refresh(descriptor('story'),{force:true}));}
+  if(currentStory&&decimal(currentStory.id)===story&&!document.getElementById('reader').classList.contains('hidden'))tasks.push(refresh(descriptor('chapter'),{force:true}));
+  if(activeCommentKey&&descriptor('paragraph',activeCommentKey)?.story===story)tasks.push(refresh(descriptor('paragraph',activeCommentKey),{force:true}));
+  return Promise.all(tasks);
+ }
+ async function refreshThreadWindow(rootId){
+  const previous=state.threads.get(rootId),visible=Math.max(6,previous?.ids.length||0),target=previous?.data?.has_before?previous.ids[0]:null,account=owner(),story=state.entities.get(rootId)?.storyId,revision=rev(story);
+  if(!await thread(rootId,{force:true,target}))return false;
+  while(current(account)&&rev(story)===revision){const r=state.threads.get(rootId);if(r.ids.length>=visible||!r.data.has_more)return true;if(!await thread(rootId,{cursor:r.data.next_cursor,append:true}))return false;}
+  return false;
+ }
+ function knownDelete(id){const removed=new Set([id]);let changed=true;while(changed){changed=false;for(const e of state.entities.values())if(e.parentId&&removed.has(e.parentId)&&!removed.has(e.id)){removed.add(e.id);changed=true;}}
+  for(const k of removed){state.tombstones.add(k);state.entities.delete(k);state.threads.delete(k);state.mentions.delete(k);}
+  for(const r of state.rootPages.values())r.ids=r.ids.filter(k=>!removed.has(k));for(const r of state.threads.values())r.ids=r.ids.filter(k=>!removed.has(k));return removed;
+ }
+ async function selectedMentions(commentId,text,ctx,selected,account){
+  const valid=selected.filter(t=>t.id&&text.slice(t.start,t.end)===t.token&&mentionBoundary(text,t.start,t.end)),ids=[...new Set(valid.map(t=>String(t.id)))];if(!ids.length)return;
+  const enabled=await commentNotificationTriggersEnabled();if(!current(account))return;
+  for(const id of ids){const r=await sb.from('comment_mentions').insert({comment_id:commentId,mentioned_user_id:id});if(!current(account))return;if(r.error){console.warn('comment mention',r.error);continue;}
+   if(id!==account.owner&&!enabled){await sb.from('notifications').insert({user_id:id,actor_id:account.owner,type:'mention',story_id:ctx.story_id,comment_id:commentId});if(!current(account))return;}
+  }
+ }
+ function keyContext(key){const parts=key.split('_');if(parts[0]==='story')return {scope:'story',story_id:decimal(parts[1]),chapter_index:null,paragraph_index:null};if(parts[0]==='chapter')return {scope:'chapter',story_id:decimal(parts[1]),chapter_index:Number(parts[2]),paragraph_index:null};return {scope:'paragraph',story_id:decimal(parts[0]),chapter_index:Number(parts[1]),paragraph_index:Number(parts[2])};}
+ const fullSelect='id::text,paragraph_id::text,user_id,content,created_at,edited_at,scope,story_id::text,chapter_index,paragraph_index,parent_id::text,reply_to_user_id';
+ async function refreshCounts(key,owners=[]){
+  const ctx=keyContext(key),tasks=[refreshStoryCommentCounts([ctx.story_id],{force:true})];
+  if(ctx.scope!=='story'){const indices=new Set(ctx.paragraph_index==null?[]:[ctx.paragraph_index]);if(currentStory&&decimal(currentStory.id)===ctx.story_id&&currentChapter===ctx.chapter_index)currentStory.chapters[currentChapter].paras.forEach((_,i)=>indices.add(i));tasks.push(refreshChapterCommentCounts(ctx.story_id,ctx.chapter_index,[...indices],{force:true}));}
+  const visible=[...document.querySelectorAll('[data-profile-comment-count]')].map(el=>el.dataset.profileCommentCount);for(const id of new Set([...owners,...visible].filter(Boolean)))tasks.push(refreshProfileCommentCount(id,{force:true}));return Promise.all(tasks);
+ }
+ insertCloudComment=async function(key,text,extra={}){
+  const account=owner();if(!account.owner)return null;const ctx=keyContext(key),payload={...ctx,user_id:account.owner,content:text,parent_id:extra.parentId?decimal(extra.parentId):null,reply_to_user_id:extra.replyToUserId||null};
+  const r=await sb.from('comments').insert(payload).select(fullSelect).single();if(!current(account))return null;if(r.error){alert('Chưa lưu được bình luận.');return null;}
+  mutate(ctx.story_id);const stamp=++state.sequence,e=entity(r.data);state.entities.set(e.id,{...e,rootId:extra.parentId?decimal(extra.parentId):e.id});state.entityStamps.set(e.id,stamp);
+  await selectedMentions(e.id,text,ctx,extra.mentions||[],account);if(!current(account))return null;
+  await Promise.all([refreshCounts(key,[account.owner]),visibleRebase(ctx.story_id,{first:!extra.parentId}),...(extra.parentId?[refreshThreadWindow(extra.parentId)]:[])]);if(!current(account))return null;
+  window.commentActivity?.changed("create",e);
+  // Activity rebase never blocks scoped mutation success.
+  return r.data;
+ };
+ async function submitInput(input,key,extra={}){if(!input||!authUser)return null;const text=input.value.trim();if(!text||state.writers.get(input.id)?.key===key)return null;
+  const account=owner(),nav=navigationEpoch,write={account,key};state.writers.set(input.id,write);input.disabled=true;
+  const live=()=>current(account)&&navigationEpoch===nav&&state.writers.get(input.id)===write;
+  try{const row=await insertCloudComment(key,text,{...extra,mentions:selectedCommentMentions(input)});const now=document.getElementById(input.id);if(live()&&now&&now.value.trim()===text)finishCommentMentionDraft(now,row);return live()?row:null;}
+  finally{const now=document.getElementById(input.id);if(live()&&now)now.disabled=false;if(state.writers.get(input.id)===write)state.writers.delete(input.id);}
+ }
+ submitStoryComment=async function(event){event.preventDefault();if(introStory)await submitInput(document.getElementById('storyCommentInput'),'story_'+decimal(introStory.id));};
+ addChapterComment=async function(){if(!authUser){requestCommentLogin('bình luận');return;}if(currentStory)await submitInput(document.getElementById('chapterCommentInput'),'chapter_'+decimal(currentStory.id)+'_'+currentChapter);};
+ addParaComment=async function(key){if(!authUser){requestCommentLogin('bình luận');return;}await submitInput(document.getElementById('panelCommentInput'),key);};
+ submitCommentReply=async function(){if(!activeReply||!authUser)return;const captured=activeReply,account=owner(),target=lookup(captured.targetId,captured.key);if(!target)return;
+  const row=await submitInput(document.getElementById('replyCommentInput'),captured.key,{parentId:captured.rootId,replyToUserId:target.userId});if(current(account)&&activeReply===captured&&row){activeReply=null;refreshVisible();}
+ };
+ saveEditComment=async function(key,id,item){
+  const account=owner(),e=lookup(id,key),text=item?.querySelector('.comment-edit-box textarea')?.value.trim();if(!e||!isOwnComment(e)||!text)return;
+  const writerKey='entity:'+decimal(id),write={account};if(state.writers.has(writerKey))return;state.writers.set(writerKey,write);
+  try{const edited=new Date().toISOString(),r=await sb.from('comments').update({content:text,edited_at:edited}).eq('id',decimal(id)).eq('user_id',account.owner);if(!current(account)||state.writers.get(writerKey)!==write)return;if(r.error){alert('Chưa sửa được bình luận.');return;}
+   const story=e.storyId||decimal(keyContext(key).story_id);mutate(story,{invalidate:false});e.text=text;e.editedAt=edited;state.entityStamps.set(decimal(id),++state.sequence);window.commentActivity?.changed("edit",e);refreshVisible();
+  }finally{if(state.writers.get(writerKey)===write)state.writers.delete(writerKey);}
+ };
+ deleteCommentById=async function(key,id){
+  const account=owner(),e=lookup(id,key);if(!e||!canDeleteComment(e)||!confirm('Xóa bình luận này nha?'))return;
+  const writerKey='entity:'+decimal(id),write={account};if(state.writers.has(writerKey))return;state.writers.set(writerKey,write);
+  try{const r=await sb.from('comments').delete().eq('id',decimal(id)).select('id::text');if(!current(account)||state.writers.get(writerKey)!==write)return;if(r.error||!r.data?.length){alert('Chưa xóa được bình luận.');return;}
+   const story=e.storyId||decimal(keyContext(key).story_id),rootId=e.rootId;mutate(story);commentStats.profiles.clear();const removed=knownDelete(decimal(id));window.commentActivity?.changed("delete",e);if(activeReply&&(removed.has(activeReply.rootId)||removed.has(activeReply.targetId)))activeReply=null;refreshVisible();
+   await Promise.all([refreshCounts(key,[e.userId]),visibleRebase(story),...(rootId&&rootId!==String(id)?[refreshThreadWindow(rootId)]:[])]);if(!current(account))return;await loadNotifications();
+  }finally{if(state.writers.get(writerKey)===write)state.writers.delete(writerKey);}
+ };
+ // Keep Step 5B targeted INSERT/DELETE/reconciliation, substituting only scoped lookup.
+ toggleCommentLike=async function(key,id){
+  if(!authUser){requestCommentLogin('thả tim bình luận');return;}const account=owner(),k=decimal(id),e=lookup(k,key);if(!e||commentWritePending(k))return;
+  if(!commentStats.likes.has(k)||!commentStats.membership.has(k)||commentStats.account!==account.account){if(!await refreshCommentLikeEnrichment([k]))return;}
+  if(!current(account)||commentWritePending(k)||!commentStats.likes.has(k)||!commentStats.membership.has(k))return;
+  const liked=commentStats.membership.get(k)===true,write={account:account.account};commentStats.writes.set(k,write);patchCommentHeartUI();let success=false;
+  try{const r=liked?await sb.from('comment_likes').delete().eq('comment_id',k).eq('user_id',account.owner):await sb.from('comment_likes').insert({comment_id:k,user_id:account.owner});if(!current(account)||r.error)return;
+   success=true;commentStats.likes.set(k,Math.max(0,(commentStats.likes.get(k)||0)+(liked?-1:1)));commentStats.membership.set(k,!liked);patchCommentHeartUI();
+  }finally{if(commentStats.writes.get(k)===write)commentStats.writes.delete(k);if(current(account)){patchCommentHeartUI();await refreshCommentLikeEnrichment([k],{force:true});if(success&&e.parentId===null&&chapterCommentSort==='interaction'&&currentStory&&decimal(currentStory.id)===(e.storyId||decimal(keyContext(key).story_id)))await refresh(descriptor('chapter'),{force:true});}}
+ };
+ async function waitForPendingReader(story,ci,account,epoch){
+  return new Promise(resolve=>{
+   let timer;const finish=ok=>{observer.disconnect();clearTimeout(timer);resolve(ok);},check=()=>{
+    if(!current(account)||currentStory!==story||currentChapter!==ci||navigationEpoch>epoch+1){finish(false);return;}
+    if(navigationEpoch===epoch+1&&!document.getElementById('reader').classList.contains('hidden'))finish(true);
+   },observer=new MutationObserver(check);
+   observer.observe(document.body,{attributes:true,attributeFilter:['class'],childList:true,subtree:true});timer=setTimeout(()=>finish(false),15000);check();
+  });
+ }
+ async function navigate(id){
+  const account=owner();let nav=navigationEpoch;id=decimal(id);if(!await path(id,{force:true,nav})||!current(account)||navigationEpoch!==nav)return false;
+  const p=state.targetPaths.get(id).data,root=state.entities.get(p.root.id),story=storyFor(root.storyId);if(!story)return false;
+  const intent={story:root.storyId,scope:root.scope,ci:root.chapterIndex,pi:root.paragraphIndex,account,nav,expectedEpoch:null,dispatching:true};state.intent=intent;let d;try{
+  if(root.scope==='story'){
+   if(introStory!==story||document.getElementById('storyIntro').classList.contains('hidden'))openStory(story.id);
+   nav=navigationEpoch;intent.nav=nav;intent.dispatching=false;showIntroTab('comments',document.querySelectorAll('.intro-tabs button')[3]);d=descriptor('story');
+  }else{
+   if(currentStory===story&&currentChapter===root.chapterIndex&&document.getElementById('reader').classList.contains('hidden')&&location.pathname===chapterPath(story,root.chapterIndex)){
+    intent.dispatching=false;intent.expectedEpoch=nav+1;if(!await waitForPendingReader(story,root.chapterIndex,account,nav))return false;nav=navigationEpoch;
+   }else if(currentStory!==story||currentChapter!==root.chapterIndex||document.getElementById('reader').classList.contains('hidden')){const work=read(story.id,root.chapterIndex),readEpoch=navigationEpoch;intent.dispatching=false;intent.expectedEpoch=readEpoch+1;await work;if(!current(account)||navigationEpoch!==readEpoch+1)return false;nav=navigationEpoch;}
+   intent.nav=nav;intent.expectedEpoch=null;intent.dispatching=false;if(root.scope==='chapter'){d=descriptor('chapter');}else{const key=keyOf(root);jumpToParagraphOnly(key);toggleComments(key,true);d=descriptor('paragraph',key);}
+  }
+  if(!await roots(d,{force:true,target:root.id})||!current(account)||navigationEpoch!==nav)return false;
+  if(d.surface==='story'){const located=state.rootPages.get(pageKey(d));if(!located?.ready||located.data?.target_status!=='found')return false;storyCommentPage=located.data.actual_page;d=descriptor('story');state.rootPages.set(pageKey(d),located);}
+  if(id!==root.id){if(!await thread(root.id,{force:true,target:id})||!current(account)||navigationEpoch!==nav)return false;window.__alexReplyState.set(keyOf(root)+'::'+root.id,6);}
+  paint(d);if(!current(account)||navigationEpoch!==nav||!document.querySelector('.comment-item[data-comment-id="'+CSS.escape(id)+'"]'))return false;focusExactComment(id);return true;
+  }finally{if(state.intent===intent)state.intent=null;}
+ }
+ openCommentLocation=async function(storyId,ci,pi,id=null){
+  if(id)return navigate(id);const account=owner(),story=storyFor(decimal(storyId));if(!story)return false;
+  if(ci==null){openStory(story.id);showIntroTab('comments',document.querySelectorAll('.intro-tabs button')[3]);return refresh(descriptor('story'));}
+  const work=read(story.id,ci),epoch=navigationEpoch;await work;if(!current(account)||navigationEpoch!==epoch+1)return false;
+  if(pi!=null){const key=decimal(storyId)+'_'+ci+'_'+pi;jumpToParagraphOnly(key);toggleComments(key,true);return refresh(descriptor('paragraph',key));}
+  return refresh(descriptor('chapter'));
+ };
+ document.addEventListener('click',async event=>{
+  const unresolved=event.target.closest('[data-unresolved-profile]');if(unresolved){event.preventDefault();return;}
+  const button=event.target.closest('[data-scoped-thread],[data-scoped-page],[data-scoped-story-page]');if(!button)return;event.preventDefault();event.stopPropagation();const account=owner();
+  if(button.dataset.scopedStoryPage){storyCommentPage=decimal(button.dataset.scopedStoryPage);await refresh(descriptor('story'));return;}
+  if(button.dataset.scopedThread){const id=decimal(button.dataset.scopedThread),root=state.entities.get(id);if(!root)return;const key=keyOf(root)+'::'+id,expanded=window.__alexReplyState.get(key)||0,mode=button.dataset.scopedMode;
+   if(mode==='toggle'&&expanded){window.__alexReplyState.set(key,0);refreshVisible();return;}
+   window.__alexReplyState.set(key,6);const t=state.threads.get(id);await thread(id,{force:mode==='retry',cursor:mode==='more'?t?.data?.next_cursor:null,append:mode==='more'});if(current(account))refreshVisible();return;
+  }
+  const surface=button.closest('#paragraphCommentPanel')?'paragraph':button.closest('#storyCommentList')?'story':'chapter',d=descriptor(surface,activeCommentKey),r=state.rootPages.get(pageKey(d));
+  await refresh(d,{force:button.dataset.scopedPage==='retry',cursor:button.dataset.scopedPage==='more'?r?.data?.next_cursor:null,append:button.dataset.scopedPage==='more'});
+ },true);
+ window.scopedComments={state,decimal,counter,entity,context,keyOf,owner,resource,run,merge,enrich,roots,thread,path,validateEdges,descriptor,pageKey,refresh,refreshVisible,navigate,mutate,knownDelete};
+})();
+</script>
+<script id="alex-comment-activity-step5cc">
+// Independent bounded activity pages share canonical B2 entities, never global content readiness.
+(function(){
+ const scoped=window.scopedComments,S=scoped.state,PAGE=50,DRAIN=10;
+ const state={home:newResource(),profile:newResource(),account:null,revision:0,kind:'all',expanded:false};
+ function newResource(){return {ids:[],ready:false,loading:false,error:null,cursor:null,more:false,flight:null,generation:0};}
+ function account(){const captured=scoped.owner();if(!state.account||!commentAccountMatches(state.account)){
+  state.home.flight?.cancel();state.profile.flight?.cancel();state.account=captured;state.home=newResource();state.profile=newResource();state.expanded=false;state.enrichment=null;
+ }return captured;}
+ function valid(a){return commentAccountMatches(a);}
+ function invalidate(r){r.flight?.cancel();++r.generation;r.ready=false;r.flight=null;r.loading=false;}
+ function location(e){return commentLocationHTML(scoped.keyOf(e)).replace('data-comment-location=','data-comment-id="'+esc(e.id)+'" data-comment-location=');}
+ function homeCard(e){const avatar=e.avatar?'<img class="community-avatar" src="'+esc(e.avatar)+'" alt="">':'<div class="community-avatar" style="display:grid;place-items:center;background:var(--soft)">'+esc(Array.from(e.name||'T')[0])+'</div>';
+ return '<article class="community-card home-comment-card activity-card" data-home-comment-key="'+esc(scoped.keyOf(e))+'" data-home-comment-id="'+esc(e.id)+'"><div class="community-head">'+avatar+'<div class="community-meta"><strong>'+esc(e.name||'Thành viên')+(isAdminComment(e)?'<span class="admin-badge admin-badge-home">ADMIN</span>':'')+'</strong><span class="community-sub">'+commentTime(e)+' · '+location(e)+'</span></div></div>'+clampCardHTML(commentTextHTML(e.text,e.mentions),'')+'</article>';}
+ function profileCard(r){const loc=r.type==='comment'?location(r):(()=>{const s=stories.find(s=>String(s.id)===String(r.storyId));return s?'<button type="button" class="comment-location" onclick="event.stopPropagation();openStory('+Number(s.id)+')">'+esc(s.title)+'</button>':'';})();
+ const body=r.type==='review'?(r.html?safeReviewHTML(r.html):esc(r.text).replace(/\n/g,'<br>')):commentTextHTML(r.text,r.mentions);
+ return '<article class="community-card activity-card"'+(r.type==='comment'?' data-activity-comment-id="'+esc(r.id)+'"':'')+'><div class="profile-activity-top"><div class="profile-activity-kindtime">'+(r.type==='review'?'Review':'Bình luận')+(r.createdAt?' · '+commentTime(r):'')+'</div>'+(loc?'<div class="profile-activity-address">'+loc+'</div>':'')+'</div>'+clampCardHTML(body,'')+'</article>';}
+ function rows(r){return r.ids.filter(id=>!S.tombstones.has(id)).map(id=>S.entities.get(id)).filter(Boolean);}
+ function control(box,r,profile=false){if(!r.more&&!r.error)return;const b=document.createElement('button');b.type='button';b.className=profile?'profile-activity-list-more':'home-feed-list-more';if(profile)b.id='profileActivityListMore';
+ b.textContent=r.loading?'Đang tải…':r.error?'Thử lại':profile&&state.expanded?'Tiếp tục tải':'Xem thêm';b.disabled=r.loading;b.onclick=()=>profile?drain():load('home',{append:r.ready,force:!!r.error,retry:!!r.error});box.appendChild(b);}
+ function paintHome(){const feed=document.querySelector('#commentsPanel .community-feed');if(!feed)return;const r=state.home;document.querySelector('#commentsPanel .demo-label')?.classList.add('hidden');const list=rows(r);
+ feed.innerHTML=list.length?list.map(homeCard).join(''):'<p class="muted panel-empty">'+(r.error?'Chưa tải được bình luận.':r.loading||!r.ready?'Đang tải bình luận…':'Chưa có bình luận nào.')+'</p>';control(feed,r);setupActivityClamps(feed);}
+ function profileActive(){return authUser&&document.getElementById('profilePage')?.dataset.profileOwner===authUser.id&&!document.getElementById('profilePage').classList.contains('hidden')&&document.querySelector('[data-profile-tab].active')?.dataset.profileTab==='activity';}
+ function paintProfile(){if(!profileActive()||state.kind==='reviews')return;const c=document.getElementById('profileContent'),r=state.profile;let list=state.kind==='reviews'?[]:rows(r).map(e=>({...e,type:'comment'}));
+ if(state.kind!=='comments')for(const [storyId,revs] of Object.entries(reviews||{}))for(const row of revs||[])if(row.userId===authUser.id)list.push({...row,storyId,type:'review'});
+ // Comment-only order is server authoritative. Mixing existing review activity uses numeric time only.
+ if(state.kind==='all'){const time=x=>x==='infinity'?Infinity:x==='-infinity'?-Infinity:Date.parse(x)||0;list.sort((a,b)=>{const x=time(a.createdAt),y=time(b.createdAt);if(a.type==='comment'&&b.type==='comment')return r.ids.indexOf(a.id)-r.ids.indexOf(b.id);if(x!==y)return x<y?1:-1;return 0;});}
+ const shown=state.expanded?list:list.slice(0,6),label=state.kind==='comments'?'Bình luận':state.kind==='reviews'?'Review':'Hoạt động';c.innerHTML='<h3>'+label+'</h3>'+(shown.length?'<div id="profileActivityList">'+shown.map(profileCard).join('')+'</div>':'<p class="muted">'+(state.kind!=='reviews'&&(r.loading||!r.ready)?'Đang tải hoạt động…':'Chưa có hoạt động nào.')+'</p>');
+ if(state.kind!=='reviews')control(c,r,true);if(list.length>shown.length&&!c.querySelector('#profileActivityListMore')){const b=document.createElement('button');b.id='profileActivityListMore';b.className='profile-activity-list-more';b.textContent='Xem thêm';b.onclick=drain;c.appendChild(b);}setupActivityClamps(c);}
+ async function enrichActivity(ids,job){
+  const previous=state.enrichment,entry={job};entry.promise=(async()=>{if(previous?.job.covered())await Promise.race([previous.promise.catch(()=>{}),previous.job.cancelled]);if(!job.covered())return false;return scoped.enrich(ids,job);})();
+  state.enrichment=entry;try{return await entry.promise;}finally{if(state.enrichment===entry)state.enrichment=null;}
+ }
+ async function load(kind,{append=false,force=false,limit=null,retry=false}={}){
+  const a=account();if(kind==='profile'&&!a.owner)return false;const r=state[kind],generation=r.generation,revision=state.revision;
+  if(retry&&r.retry){append=r.retry.append;limit=r.retry.limit;}
+  const cursor=append?r.cursor:null,size=limit||6,signature=JSON.stringify([append,cursor,size]);
+  if(!force&&r.flight?.covered()&&r.flight.signature===signature)return r.flight.promise;
+  const stamp=++S.sequence,job={stamp,signature,current:()=>valid(a)&&state[kind]===r&&r.generation===generation&&state.revision===revision,covered:()=>job.current()&&r.flight===job};
+  job.cancelled=new Promise(resolve=>{job.cancel=resolve;});r.flight?.cancel();r.flight=job;r.loading=true;r.error=null;
+  job.promise=(async()=>{try{
+   const response=await sb.rpc('nca_comment_activity_page',{p_user_id:kind==='profile'?a.owner:null,p_cursor:cursor,p_limit:size});if(!job.covered())return false;if(response.error)throw response.error;const data=response.data;
+   if(data?.status!=='ok'||!Array.isArray(data.rows)||data.rows.length>size||typeof data.has_more!=='boolean')throw Error('Invalid activity page');
+   const ids=data.rows.map(row=>{const e=scoped.entity(row);if(kind==='profile'&&e.userId!==a.owner)throw Error('Wrong activity owner');return e.id;});if(new Set(ids).size!==ids.length)throw Error('Duplicate activity page');
+   if(data.rows.length&&!data.next_cursor||data.has_more&&!data.rows.length)throw Error('Invalid activity continuation');
+   if(data.next_cursor&&(data.next_cursor.v!==1||data.next_cursor.user_id!==(kind==='profile'?a.owner:null)||typeof data.next_cursor.created_at!=='string'||scoped.decimal(data.next_cursor.id)!==ids.at(-1)))throw Error('Invalid activity cursor');
+   scoped.merge(data.rows,job);if(!await enrichActivity(ids,job)||!job.covered())throw Error('Incomplete activity enrichment');
+   Object.assign(r,{ids:append?[...new Set([...r.ids,...ids])]:ids,cursor:data.next_cursor,more:data.has_more,ready:true,retry:null});return true;
+  }catch(e){if(job.covered()){r.error=e.message||String(e);r.retry={append,limit:size};}return false;}finally{if(r.flight===job){r.flight=null;r.loading=false;}if(job.current()){if(kind==='home')paintHome();else paintProfile();}}})();
+  if(kind==='home')paintHome();else paintProfile();return job.promise;
+ }
+ async function drain(){const a=account(),r=state.profile;state.expanded=true;if(state.kind==='reviews'){paintProfile();return;}const gen=r.generation;
+  for(let n=0;n<DRAIN&&valid(a)&&state.profile===r&&r.generation===gen;n++){if(r.ready&&!r.more)break;if(!await load('profile',{append:r.ready,force:!!r.error,retry:!!r.error,limit:PAGE}))break;}if(valid(a))paintProfile();}
+ window.renderHomeComments=function(){account();paintHome();const r=state.home;if(!r.ready&&!r.error&&!r.loading)load('home');};
+ const reviewRenderer=window.renderProfileActivity;
+ window.renderProfileActivity=function(kind='all'){account();state.kind=kind;if(kind==='reviews')return reviewRenderer(kind);paintProfile();const r=state.profile;if(authUser&&!r.ready&&!r.error&&!r.loading)load('profile');};
+ function changed(type,e){account();++state.revision;state.home.flight?.cancel();state.profile.flight?.cancel();
+  if(type==='edit'){paintHome();paintProfile();if(!state.home.ready){invalidate(state.home);void load('home',{force:true});}if(!state.profile.ready){invalidate(state.profile);if(profileActive())void load('profile',{force:true});}return;}
+  const profileRelevant=type==='delete'||e?.userId===state.account.owner;invalidate(state.home);if(profileRelevant)invalidate(state.profile);
+  paintHome();paintProfile();void load('home',{force:true});if(profileRelevant&&profileActive())void load('profile',{force:true});
+ }
+ const oldUI=updateAuthUI;updateAuthUI=function(){account();oldUI();paintHome();if(!authUser&&document.querySelector('#profileActivityList'))document.getElementById('profileContent').innerHTML='';};
+ window.commentActivity={state,load,drain,changed,rows,PAGE,DRAIN,account,paintHome,paintProfile};
 })();
 </script>

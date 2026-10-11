@@ -72,9 +72,10 @@ for(const target of ['home','intro','reader-completed','reader-pending','profile
   // Any hydration-driven navigation/view recording must fail the test immediately.
   for(const name of ['openStory','setRoute','routeFromLocation'])window[name]=()=>{throw Error('Hydration called '+name)};
  },target);
+ if(target==='profile'){await page.evaluate(async()=>{const id=document.querySelector('[data-profile-comment-count]').dataset.profileCommentCount;await refreshProfileCommentCount(id);beforeHydration.profile=document.getElementById('profileContent').innerHTML;});}
  const beforeViews=requests.filter(([p,m])=>p.endsWith('/story_views')&&m==='POST').length;
  await page.evaluate(()=>releaseHydration());await page.waitForFunction(()=>hydrationCompletions===1);
- const state=await page.evaluate(()=>({path:location.pathname,historyLength:history.length,epoch:navigationEpoch,sameStory:currentStory===beforeHydration.story,story:currentStory?.id||null,author:document.getElementById('introAuthor').textContent,summary:document.getElementById('introSummary').textContent,genre:document.getElementById('introGenre').textContent,status:document.getElementById('introStatus').textContent,tags:document.getElementById('introSubtags').textContent,card:document.querySelector('.story-card').textContent,page:pageIds.find(id=>!document.getElementById(id).classList.contains('hidden')),profileUnchanged:document.getElementById('profileContent').innerHTML===beforeHydration.profile,before:{path:beforeHydration.path,historyLength:beforeHydration.historyLength,epoch:beforeHydration.epoch}}));
+ const state=await page.evaluate(()=>({path:location.pathname,historyLength:history.length,epoch:navigationEpoch,sameStory:currentStory===beforeHydration.story,story:currentStory?.id||null,author:document.getElementById('introAuthor').textContent,summary:document.getElementById('introSummary').textContent,genre:document.getElementById('introGenre').textContent,status:document.getElementById('introStatus').textContent,tags:document.getElementById('introSecondaryTags').textContent,card:document.querySelector('.story-card').textContent,page:pageIds.find(id=>!document.getElementById(id).classList.contains('hidden')),profileUnchanged:document.getElementById('profileContent').innerHTML===beforeHydration.profile,before:{path:beforeHydration.path,historyLength:beforeHydration.historyLength,epoch:beforeHydration.epoch}}));
  assert.equal(state.path,state.before.path);assert.equal(state.historyLength,state.before.historyLength);assert.equal(state.epoch,state.before.epoch);assert.equal(state.sameStory,true);
  assert.equal(requests.filter(([p,m])=>p.endsWith('/story_views')&&m==='POST').length,beforeViews);
  if(target==='home'){assert.equal(state.page,'home');assert.match(state.card,/Hydrated author/)}
@@ -101,12 +102,12 @@ for(const panel of ['reviewsPanel','storiesPanel','commentsPanel'])test(`authent
  await page.evaluate(async({panel,newCover})=>{
   const from=sb.from.bind(sb);sb.from=table=>table==='stories'?{select(){return this},range(){return this},order(){return this},then(resolve){window.releaseHomeMetadata=()=>resolve({data:[{id:1,title:'Truyện thử nghiệm',author:'Hydrated author',cover_url:newCover,published:true}],error:null})}}:from(table);
   sb.auth.getSession=async()=>({data:{session:{user:{id:'reader-user',user_metadata:{full_name:'Bạn đọc'}}}}});sb.auth.onAuthStateChange=()=>({});syncProfile=async()=>{};loadCloudStories=async()=>true;
-  const commentsLoad=loadCloudComments,reviewsLoad=loadCloudReviews;loadCloudComments=async()=>{await commentsLoad();window.homeCommentsReady=true};loadCloudReviews=async()=>{await reviewsLoad();window.homeReviewsReady=true};
+  const reviewsLoad=loadCloudReviews;loadCloudReviews=async()=>{await reviewsLoad();window.homeReviewsReady=true};
   const refresh=refreshHydratedVisibleView;window.homeRefreshDone=false;window.reviewRenders=0;
   const reviewRender=renderHomeReviews;renderHomeReviews=()=>{window.reviewRenders++;return reviewRender()};
   refreshHydratedVisibleView=()=>{refresh();window.homeRefreshDone=true};
   await initAuth();
-  while(!window.homeCommentsReady||!window.homeReviewsReady||!window.releaseHomeMetadata)await new Promise(r=>setTimeout(r,10));
+  while(!window.homeReviewsReady||!window.releaseHomeMetadata)await new Promise(r=>setTimeout(r,10));
   switchHomeTab(panel,document.querySelector(`[data-home-tab="${panel}"]`));
  },{panel,newCover});
  await page.waitForLoadState('networkidle');

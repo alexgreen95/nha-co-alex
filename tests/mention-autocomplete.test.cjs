@@ -1,5 +1,6 @@
 const {test,before,after}=require('node:test'),assert=require('node:assert/strict');
-const {startBrowser,stopBrowser,feedPage}=require('./helpers/public-feed-browser.cjs');
+const {startBrowser,stopBrowser,feedPage:legacyFeedPage}=require('./helpers/public-feed-browser.cjs');
+const feedPage=(n,options={})=>legacyFeedPage(n,{canonicalComments:true,...options});
 before(startBrowser);after(stopBrowser);
 const people=[{id:'user-alex',display_name:'Alex',avatar_url:'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'},{id:'user-alexa',display_name:'Alexa'},{id:'user-accent',display_name:'Álex'},{id:'user-alice',display_name:'Alice'},{id:'reader-user',display_name:'Bạn đọc'}];
 const headers={'access-control-allow-origin':'*','access-control-allow-headers':'*','access-control-allow-methods':'*'};
@@ -9,12 +10,13 @@ async function setup(){
   const url=new URL(route.request().url());reads.push(url);let rows=people;
   const filter=url.searchParams.get('display_name');
   if(filter){assert(filter.startsWith('imatch.'));const re=new RegExp(filter.slice(7).replaceAll('[:alnum:]','\\p{L}\\p{N}'),'iu');rows=rows.filter(p=>re.test(p.display_name));}
+  const id=url.searchParams.get('id');if(id?.startsWith('in.(')){const ids=id.slice(4,-1).split(',');rows=rows.filter(p=>ids.includes(p.id));}else if(id?.startsWith('eq.'))rows=rows.filter(p=>'eq.'+p.id===id);
   if(url.searchParams.has('limit'))rows=rows.slice(0,Number(url.searchParams.get('limit')));
   return route.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify(rows)});
  });
  await page.route('**/rest/v1/rpc/nca_comment_notifications_enabled',r=>r.fulfill({status:200,headers,contentType:'application/json',body:'true'}));
  await page.route('**/rest/v1/comment_mentions**',r=>{if(r.request().method()==='POST')writes.push(r.request().postDataJSON());return r.fulfill({status:200,headers,contentType:'application/json',body:'[]'})});
- await page.evaluate(()=>{authUser={id:'reader-user'};memberProfile={id:'reader-user',display_name:'Bạn đọc',role:'reader'};openStory(1);showIntroTab('comments');});
+ await page.evaluate(async()=>{authUser={id:'reader-user'};memberProfile={id:'reader-user',display_name:'Bạn đọc',role:'reader'};openStory(1);showIntroTab('comments');await scopedComments.roots({surface:'story',story:'1',page:'1'},{force:true});renderAllStoryComments();});
  return {page,reads,writes};
 }
 const input=page=>page.locator('#storyCommentInput'),popup=page=>page.locator('#commentMentionSuggestions');
@@ -56,17 +58,19 @@ test('multiple selected IDs survive rerender; removed/edited tokens and manually
 test('story/chapter/paragraph/reply submit explicit selected user IDs and preserve direct/nested reply IDs',async()=>{
  const {page,writes}=await setup(),posts=[];try{
   await page.route('**/rest/v1/comments**',route=>{
-   if(route.request().method()==='POST'){const row=route.request().postDataJSON();posts.push(row);return route.fulfill({status:201,headers,contentType:'application/json',body:JSON.stringify({...row,id:1000+posts.length})})}
-   return route.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify(Array.from({length:7},(_,i)=>({id:'comment-'+i,user_id:'reader-user',content:'Text',scope:'story',story_id:1,created_at:'2026-10-09T10:00:00Z'})))});
+   if(route.request().method()==='POST'){const row=route.request().postDataJSON();posts.push(row);const saved={...row,id:String(1000+posts.length),created_at:new Date().toISOString()};page.mockFixtures.comments.push(saved);return route.fulfill({status:201,headers,contentType:'application/json',body:JSON.stringify(saved)})}
+   return route.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify(Array.from({length:7},(_,i)=>({id:String(i+1),user_id:'reader-user',content:'Text',scope:'story',story_id:1,created_at:'2026-10-09T10:00:00Z'})))});
   });
   await input(page).fill('@al');await page.waitForFunction(()=>mentionActive?.rows.length===4);await choose(page,'user-accent');await page.evaluate(async()=>submitStoryComment({preventDefault(){}}));
   assert.equal(writes[0].mentioned_user_id,'user-accent');assert.equal(posts[0].scope,'story');
   await page.evaluate(async()=>{await read(1,0);});await page.locator('#chapterCommentInput').waitFor({state:'visible'});
   await page.locator('#chapterCommentInput').fill('@ali');await page.waitForFunction(()=>mentionActive?.rows.length===1);await page.locator('#chapterCommentInput').press('Enter');assert.equal(posts.length,1);await page.evaluate(async()=>addChapterComment());assert.equal(posts[1].scope,'chapter');assert.equal(writes[1].mentioned_user_id,'user-alice');
   await page.evaluate(()=>toggleComments('1_0_0',true));await page.locator('#panelCommentInput').fill('@al');await page.waitForFunction(()=>mentionActive?.rows.length===4);await choose(page,'user-alexa');await page.evaluate(async()=>addParaComment('1_0_0'));assert.equal(posts[2].scope,'paragraph');assert.equal(writes[2].mentioned_user_id,'user-alexa');
-  await page.evaluate(()=>{closeParagraphComments();openStory(1);showIntroTab('comments');comments.story_1.push({id:'root',userId:'user-alex',name:'Alex',username:'alex',text:'Root',createdAt:'2026-10-09T15:00:00Z'},{id:'nested',parentId:'root',userId:'user-accent',name:'Álex',username:'alex',text:'Nested',createdAt:'2026-10-09T16:00:00Z'});beginCommentReply('story_1','nested','story');});
-  await page.locator('#replyCommentInput').scrollIntoViewIfNeeded();await page.locator('#replyCommentInput').fill('@al');await page.waitForFunction(()=>mentionActive?.rows.length===4);await choose(page,'user-accent');await page.evaluate(async()=>submitCommentReply());assert.equal(posts[3].parent_id,'root');assert.equal(posts[3].reply_to_user_id,'user-accent');assert.equal(writes[3].mentioned_user_id,'user-accent');
-  await page.evaluate(()=>{comments.story_1.push({id:'direct',userId:'user-alex',name:'Alex',text:'Direct',createdAt:'2026-10-09T15:00:00Z'});beginCommentReply('story_1','direct','story');});await page.locator('#replyCommentInput').fill('No selected mention');await page.evaluate(async()=>submitCommentReply());assert.equal(posts[4].reply_to_user_id,'user-alex');assert.equal(writes.length,4);
+  page.mockFixtures.comments.push({id:'201',user_id:'user-alex',content:'Root',scope:'story',story_id:1,created_at:'2026-10-09T15:00:00Z'},{id:'202',parent_id:'201',user_id:'user-accent',content:'Nested',scope:'story',story_id:1,created_at:'2026-10-09T16:00:00Z'});
+  await page.evaluate(async()=>{closeParagraphComments();openStory(1);showIntroTab('comments');await scopedComments.roots({surface:'story',story:'1',page:'1'},{force:true});await scopedComments.thread('201',{force:true});beginCommentReply('story_1','202','story');});
+  await page.locator('#replyCommentInput').scrollIntoViewIfNeeded();await page.locator('#replyCommentInput').fill('@al');await page.waitForFunction(()=>mentionActive?.rows.length===4);await choose(page,'user-accent');await page.evaluate(async()=>submitCommentReply());assert.equal(posts[3].parent_id,'201');assert.equal(posts[3].reply_to_user_id,'user-accent');assert.equal(writes[3].mentioned_user_id,'user-accent');
+  page.mockFixtures.comments.push({id:'203',user_id:'user-alex',content:'Direct',scope:'story',story_id:1,created_at:'2026-10-09T15:00:00Z'});
+  await page.evaluate(async()=>{await scopedComments.roots({surface:'story',story:'1',page:'1'},{force:true});renderAllStoryComments();beginCommentReply('story_1','203','story');});await page.locator('#replyCommentInput').fill('No selected mention');await page.evaluate(async()=>submitCommentReply());assert.equal(posts[4].reply_to_user_id,'user-alex');assert.equal(writes.length,4);
   assert.deepEqual(page.errors,[]);
  }finally{await page.close();}
 });
@@ -82,11 +86,11 @@ test('mobile popup remains inside viewport and outside input; self mention store
 });
 test('saved mention rendering uses stored recipient IDs and leaves unselected username text alone',async()=>{
  const {page,reads}=await setup();try{
-  await page.route('**/rest/v1/comment_mentions**',r=>r.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify([{comment_id:'comment-0',mentioned_user_id:'user-accent'}])}));
-  await page.route('**/rest/v1/comments**',r=>r.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify(Array.from({length:7},(_,i)=>({id:'comment-'+i,user_id:'reader-user',content:i===0?'Saved @alex':i===1?'Typed @alexa':'Text',scope:'story',story_id:1,created_at:'2026-10-09T10:00:00Z'})))}));
-  await page.evaluate(async()=>{await loadCloudComments()});
-  assert.equal(await page.locator('#storyCommentList [data-comment-id="comment-0"] .comment-mention').textContent(),'Álex');
-  assert.equal(await page.locator('#storyCommentList [data-comment-id="comment-1"] .comment-mention').count(),0);
+  await page.route('**/rest/v1/comment_mentions**',r=>r.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify([{comment_id:'1',mentioned_user_id:'user-accent'}])}));
+  page.mockFixtures.comments.forEach((c,i)=>c.content=i===0?'Saved @alex':i===1?'Typed @alexa':'Text');
+  await page.evaluate(async()=>{await scopedComments.roots({surface:'story',story:'1',page:'1'},{force:true});renderAllStoryComments()});
+  assert.equal(await page.locator('#storyCommentList [data-comment-id="1"] .comment-mention').textContent(),'Álex');
+  assert.equal(await page.locator('#storyCommentList [data-comment-id="2"] .comment-mention').count(),0);
   assert(reads.some(u=>u.searchParams.get('id')?.includes('user-accent')));
   assert.deepEqual(page.errors,[]);
  }finally{await page.close();}

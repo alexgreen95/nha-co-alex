@@ -1880,6 +1880,7 @@ if(location.pathname==='/' || location.pathname===''){const b=document.getElemen
 <div id="drawerBackdrop" class="drawer-backdrop" onclick="toggleToc(false)"></div>
 <aside id="toc" class="toc"><div class="toc-head"><h3>Mục lục</h3><button class="btn" style="width:auto;border:1px solid var(--line);padding:6px 10px" onclick="toggleToc(false)">Đóng</button></div><div id="tocList"></div></aside>
 
+<script src="/assets/push-lifecycle.js"></script>
 <script>
 const seed=[];
 
@@ -2994,6 +2995,7 @@ const SUPABASE_URL='https://cwwulyrutdvuekydydew.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY='sb_publishable_27AFeFGdbV8aQwGrekgziA_J8vy5lFd';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
 let authUser=null, notifFilter='all', accountCloseTimer=null, themeCloseTimer=null;
+const pushLifecycle=window.NcaPushLifecycle?.create({sb,getAccount:()=>authUser?.id||null});
 
 async function signInGoogle(){
  const m=document.getElementById('authMessage');
@@ -3006,6 +3008,7 @@ async function signInGoogle(){
 }
 async function signOut(){
  const state=authAccount;
+ try{await pushLifecycle?.prepareLogout()}catch{} // Cleanup cannot prevent normal Supabase sign-out.
  const {error}=await sb.auth.signOut();
  if(error){console.warn('sign out',error);return;}
  if(authAccount!==state&&authAccount?.owner)return;
@@ -3046,6 +3049,7 @@ function applyAuthUser(user){
  const owner=user?.id||null,changed=!authAccount||authAccount.owner!==owner;
  authUser=user||null;
  const state=changed?resetAuthAccount(owner):authAccount;
+ if(changed){pushLifecycle?.authChanged(owner);setTimeout(()=>{void pushLifecycle?.initialize()},0);}
  updateAuthUI();
  if(changed){
    loadNotifications().catch(error=>console.warn('auth notifications',error));

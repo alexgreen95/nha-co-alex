@@ -7,6 +7,10 @@ async function startBrowser() {
   sdk = execFileSync('curl', ['--fail', '--silent', '--show-error', '--max-time', '20', 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2']);
   server = http.createServer((req, res) => {
     const pathname=new URL(req.url,'http://localhost').pathname;
+    if(pathname==='/assets/push-lifecycle.js'){
+      res.setHeader('Content-Type','application/javascript');
+      res.end(fs.readFileSync(path.join(root,'assets/push-lifecycle.js')));return;
+    }
     if(/^\/assets\/image-[a-f0-9]{12}\.png$/.test(pathname)){
       res.setHeader('Content-Type','image/png');
       res.end(fs.readFileSync(path.join(root,pathname)));return;

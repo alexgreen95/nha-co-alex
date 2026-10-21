@@ -35,7 +35,7 @@ test('all seven themes: matching Home frame, gray outline/filled accent, icon-on
  }finally{await page.close()}
 });
 
-test('comment/reply hearts keep count, text size and layout; only icon scales across surfaces/themes',async()=>{
+test('comment/reply hearts keep counts and shared SVG geometry stable across states/surfaces/themes',async()=>{
  const page=await feedPage(0);try{
   const root=page.mockFixtures.comments[0];page.mockFixtures.comments.push({id:'101',user_id:'reader-user',story_id:1,scope:'story',parent_id:root.id,content:'Reply',created_at:'2026-10-10T12:00:00Z'});
   page.mockFixtures.comment_likes=[...Array.from({length:123},(_,i)=>({comment_id:root.id,user_id:'liker-'+i})),...Array.from({length:4},(_,i)=>({comment_id:'101',user_id:'reply-liker-'+i}))];
@@ -43,12 +43,12 @@ test('comment/reply hearts keep count, text size and layout; only icon scales ac
   for(const theme of ['light','smoky','dustyrose','mistblue','pastel','night','purplenight']){
    await page.evaluate(theme=>setTheme(theme),theme);
    for(const selector of ['#introComments .comment-item[data-comment-id="1"] [data-comment-action="like"]','#introComments .comment-replies [data-comment-action="like"]']){
-    const button=page.locator(selector).first();assert.equal(await button.locator('i.comment-heart-icon').count(),1);assert.equal(await button.locator('i').getAttribute('aria-hidden'),'true');assert.equal(await button.locator('span').count(),1);
-    const geometry=await button.evaluate(el=>{const icon=el.querySelector('i'),count=el.querySelector('span'),c=getComputedStyle(count),b=el.getBoundingClientRect(),r=count.getBoundingClientRect(),i=icon.getBoundingClientRect();icon.style.transform='none';const old=el.getBoundingClientRect(),oldCount=count.getBoundingClientRect(),oldIcon=icon.getBoundingClientRect();icon.style.removeProperty('transform');return {countFont:c.fontSize,b:[b.width,b.height],old:[old.width,old.height],count:[r.x,r.y,r.width,r.height],oldCount:[oldCount.x,oldCount.y,oldCount.width,oldCount.height],iconScale:i.width/oldIcon.width}});
-    assert.equal(geometry.countFont,'12px');assert.deepEqual(geometry.b,geometry.old);assert.deepEqual(geometry.count,geometry.oldCount);assert(Math.abs(geometry.iconScale-1.25)<.02);
+    const button=page.locator(selector).first();assert.equal(await button.locator('.comment-heart-icon svg').count(),1);assert.equal(await button.locator('.comment-heart-icon').getAttribute('aria-hidden'),'true');
+    const geometry=await button.evaluate(el=>{const count=el.querySelector(':scope>span:last-child'),icon=el.querySelector('.comment-heart-icon'),measure=()=>{const b=el.getBoundingClientRect(),r=count.getBoundingClientRect(),i=icon.getBoundingClientRect();return {box:[b.width,b.height],count:[r.x,r.y,r.width,r.height],icon:[i.width,i.height]}};const before=measure();el.setAttribute('aria-pressed','true');const liked=measure();el.setAttribute('aria-pressed','false');return {before,liked,countFont:getComputedStyle(count).fontSize,path:icon.querySelector('path').getAttribute('d')};});
+    assert.equal(geometry.countFont,'12px');assert.deepEqual(geometry.before,geometry.liked);assert.deepEqual(geometry.before.icon,[18,18]);assert.equal(geometry.path,await page.evaluate(()=>{const t=document.createElement('div');t.innerHTML=icon('heart');return t.querySelector('path').getAttribute('d')}));
    }
   }
-  assert.equal((await page.locator('#introComments .comment-item[data-comment-id="1"] [data-comment-action="like"]').first().locator('span').textContent()).trim(),'123');
+  assert.equal((await page.locator('#introComments .comment-item[data-comment-id="1"] [data-comment-action="like"]').first().locator(':scope>span:last-child').textContent()).trim(),'123');
   assert.deepEqual(page.errors,[]);
  }finally{await page.close()}
 });

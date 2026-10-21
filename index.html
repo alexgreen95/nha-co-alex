@@ -1591,6 +1591,30 @@ body.night .status-done,body.purplenight .status-done{color:#a3d8bf!important}bo
 body.pastel .notif-filters button:nth-child(2){--chip:#9c89c7}body.pastel .notif-filters button:nth-child(3){--chip:#73b5a4}body.pastel .notif-filters button:nth-child(4){--chip:#d9b861}body.pastel .notif-filters button:nth-child(5){--chip:#79a9cf}
 .notif-filters button.active{border-color:var(--chip)!important;box-shadow:inset 0 -2px 0 var(--chip)!important}
 .notif-item{display:flex;align-items:flex-start;gap:9px}.notif-copy{flex:1;min-width:0;overflow-wrap:anywhere}.notif-actor-avatar{width:28px;height:28px;flex:0 0 28px;object-fit:cover;border-radius:50%}.notif-avatar-fallback{display:grid;place-items:center;background:var(--soft);color:var(--fg);font-weight:700}.notif-story-cover{width:30px;height:44px;object-fit:cover;flex:0 0 30px;border-radius:5px}
+
+/* Bounded reading/account polish: ordinary actions share metrics; specialized controls stay separate. */
+:is(.btn,.auth-login,.profile-edit-top,.avatar-pick,.chapter-end-nav>button){box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;border-width:1px;border-style:solid;border-radius:10px!important;font-family:inherit;line-height:1.35!important;vertical-align:middle;text-align:center;transition:background-color .15s,color .15s,border-color .15s,box-shadow .15s}
+.sort-wrap{width:280px;max-width:100%}.sort-main{width:100%;min-width:0;min-height:42px;justify-content:space-between;box-sizing:border-box}.sort-main #sortLabel{min-width:0;white-space:normal;text-align:left}.sort-main svg{flex-shrink:0}.sort-menu{width:100%;box-sizing:border-box}
+#storyIntro .intro-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0!important}
+#storyIntro .intro-tabs button{width:100%;text-align:center;justify-content:center}
+.account-menu :is(button,.feedback-link){border-bottom:0!important;text-decoration:none!important}
+.account-menu .feedback-link{box-shadow:none!important}
+.account-menu :is(button,.feedback-link):focus-visible{outline:2px solid var(--accent)!important;outline-offset:-3px!important}
+.profile-story-metadata{display:flex;align-items:center;flex-wrap:wrap;gap:4px 6px;margin-top:5px;min-width:0}
+.profile-story-metadata :is(.profile-story-genre,.profile-story-status){margin:0;font-size:11px;line-height:1.4;max-width:100%;overflow-wrap:anywhere}
+.profile-story-metadata .profile-story-status{color:var(--muted)}
+.comment-meta [data-comment-action="like"]{display:inline-flex;align-items:center;gap:4px;min-height:28px}
+.comment-meta .comment-heart-icon{display:inline-flex;width:18px;height:18px;flex:0 0 18px;transform:none;align-items:center;justify-content:center}
+.comment-meta .comment-heart-icon .ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;transform:none}
+.comment-meta [aria-pressed="true"] .comment-heart-icon .ico{fill:currentColor}
+#reader #chapter .para-wrap .comment-btn span{font-size:13px!important;line-height:1.2;font-variant-numeric:tabular-nums}
+@media(max-width:700px){
+ header .brand-house,header .brand-house .brand-icon{width:40px;height:40px}
+ .account-menu :is(button,.feedback-link){font-size:15px!important;line-height:1.4!important;min-height:44px;padding:11px 14px!important}
+ .profile-card{align-items:center;flex-wrap:wrap;gap:12px}.profile-card-main{flex:1 1 180px}.profile-edit-top{min-height:40px;padding:9px 12px;font-size:13px;margin-left:auto;flex:0 0 auto}
+ .sort-wrap{width:280px;max-width:100%}
+ #storyIntro .intro-tabs button{font-size:13px;white-space:normal;line-height:1.35;overflow-wrap:normal}
+}
 </style>
 </head>
 <body class="gate-locked gate-checking">
@@ -1710,7 +1734,7 @@ if(location.pathname==='/' || location.pathname===''){const b=document.getElemen
         <div class="sort-row"><button onclick="toggleSortSub(event,this)">Thời gian <span>›</span></button><div class="sort-submenu"><button class="sort-choice" data-sort="updated_desc" onclick="chooseSort(event,'time','updated_desc','Mới cập nhật nhất')">Mới cập nhật nhất</button><button class="sort-choice" data-sort="updated_asc" onclick="chooseSort(event,'time','updated_asc','Cũ nhất')">Cũ nhất</button></div></div>
         <div class="sort-row"><button onclick="toggleSortSub(event,this)">Tình trạng <span>›</span></button><div class="sort-submenu"><button onclick="chooseSort(event,'status','','Tất cả tình trạng')">Tất cả</button><button onclick="chooseSort(event,'status','ongoing','Đang làm')">Đang làm</button><button onclick="chooseSort(event,'status','completed','Đã hoàn thành')">Đã hoàn thành</button></div></div>
         <div class="sort-row"><button onclick="toggleSortSub(event,this)">Lượt đọc <span>›</span></button><div class="sort-submenu"><button onclick="chooseSort(event,'views','views_desc','Lượt đọc nhiều nhất')">Nhiều nhất → ít nhất</button><button onclick="chooseSort(event,'views','views_asc','Lượt đọc ít nhất')">Ít nhất → nhiều nhất</button></div></div>
-        <div class="sort-row"><button onclick="toggleSortSub(event,this)">Thể loại <span>›</span></button><div class="sort-submenu"><button onclick="chooseSort(event,'genre','','Tất cả thể loại')">Tất cả</button><button onclick="chooseSort(event,'genre','Hiện đại','Hiện đại')">Hiện đại</button><button onclick="chooseSort(event,'genre','Cổ đại','Cổ đại')">Cổ đại</button><button onclick="chooseSort(event,'genre','Tương lai','Tương lai')">Tương lai</button><button onclick="chooseSort(event,'genre','Huyền ảo','Huyền ảo')">Huyền ảo</button><button onclick="chooseSort(event,'genre','Tây huyễn','Tây huyễn')">Tây huyễn</button><button onclick="chooseSort(event,'genre','Tu tiên','Tu tiên')">Tu tiên</button><button onclick="chooseSort(event,'genre','Tận thế','Tận thế')">Tận thế</button></div></div>
+        <div class="sort-row"><button class="sort-choice" data-sort="read_recent" onclick="chooseSort(event,'views','read_recent','Đã đọc gần nhất')">Đã đọc gần nhất</button></div>
       </div>
     </div>
   </div>
@@ -1730,11 +1754,11 @@ if(location.pathname==='/' || location.pathname===''){const b=document.getElemen
 
 <main id="reader" class="container hidden">
 <div class="reader">
-<div class="reader-head"><h1 id="rtitle"></h1><div class="muted" id="rauthor"></div><div class="meta-row" style="justify-content:center"><span class="meta-pill" id="rstatus"></span></div></div>
+<div class="reader-head"><h1 id="rtitle"></h1><div class="muted" id="rauthor"></div></div>
 <h2 class="chapter-title" id="chapterTitle"></h2>
 <article id="chapter" class="chapter"></article>
 <div id="toBeContinued" class="to-be-continued hidden">Còn tiếp…</div>
-<div class="chapter-end-nav"><button id="prevChapter" onclick="moveChapter(-1)">← Chương trước</button><div class="chapter-center-actions"><button class="chapter-home-btn" type="button" onclick="backToCurrentStory()" title="Về trang truyện" aria-label="Về trang truyện"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11.5 12 4l8.5 7.5"/><path d="M6.5 10v9.5h11V10"/></svg></button><div id="chapterHeartRow" class="chapter-heart-row"></div></div><button id="nextChapter" onclick="moveChapter(1)">Chương sau →</button></div>
+<div class="chapter-end-nav"><button id="prevChapter" onclick="moveChapter(-1)">← Chương trước</button><div class="chapter-center-actions"><button class="chapter-home-btn" type="button" onclick="backToCurrentStory()" title="Về trang truyện" aria-label="Về trang truyện"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" stroke="none" d="M12 3 2 11.5l1.6 1.9L5 12.2V21h5v-6h4v6h5v-8.8l1.4 1.2 1.6-1.9Z"/></svg></button><div id="chapterHeartRow" class="chapter-heart-row"></div></div><button id="nextChapter" onclick="moveChapter(1)">Chương sau →</button></div>
 <section class="chapter-comments"><div class="chapter-comments-head"><h3>Bình luận</h3><label class="comment-sort-label">Sắp xếp <select id="chapterCommentSort" onchange="setChapterCommentSort(this.value)"><option value="newest">Mới nhất</option><option value="interaction">Tương tác nhiều nhất</option><option value="all">Tất cả bình luận</option></select></label></div><div id="chapterCommentsList"></div><div id="chapterCommentComposer"></div></section>
 </div>
 </main>
@@ -2148,6 +2172,7 @@ function render(){
  if(storyFilter.time==='updated_asc')arr=[...arr].reverse();
  if(storyFilter.views==='views_desc')arr=[...arr].sort((a,b)=>(b.views||0)-(a.views||0));
  if(storyFilter.views==='views_asc')arr=[...arr].sort((a,b)=>(a.views||0)-(b.views||0));
+ if(storyFilter.views==='read_recent')arr=[...arr].sort(compareRecentReading);
  document.getElementById('stories').innerHTML=arr.map(card).join('');
  applyStoryLimit();
  renderHomeComments();
@@ -2156,7 +2181,7 @@ function render(){
 let storyFilter={time:'updated_desc',status:'',genre:'',views:''};
 function toggleSortMenu(e){e?.stopPropagation();document.getElementById('sortMenu')?.classList.toggle('open')}
 function toggleSortSub(e,btn){e.stopPropagation();let row=btn.closest('.sort-row');document.querySelectorAll('.sort-row').forEach(x=>{if(x!==row)x.classList.remove('open')});row.classList.toggle('open')}
-function chooseSort(e,type,value,label){e.stopPropagation();storyFilter[type]=value;document.getElementById('sortLabel').textContent='Sắp xếp theo: '+label;document.getElementById('sortMenu').classList.remove('open');document.querySelectorAll('.sort-row').forEach(x=>x.classList.remove('open'));render()}
+function chooseSort(e,type,value,label){e.stopPropagation();storyFilter[type]=value;if(type==='time')storyFilter.views='';document.getElementById('sortLabel').textContent='Sắp xếp theo: '+label;document.getElementById('sortMenu').classList.remove('open');document.querySelectorAll('.sort-row').forEach(x=>x.classList.remove('open'));render()}
 document.addEventListener('click',e=>{if(!e.target.closest('.sort-wrap'))document.getElementById('sortMenu')?.classList.remove('open')});
 let introStory=null;
 function storySummaryMarkup(text){return String(text).split('\n').map(line=>{const m=line.match(/^([^:]{1,80}:)(.*)$/);return m&&!m[2].startsWith('//')?'<strong>'+esc(m[1])+'</strong>'+esc(m[2]):esc(line)}).join('\n')}
@@ -2375,7 +2400,6 @@ function renderChapter(restoreScroll=0){
  displayPage('reader');
  document.getElementById('rtitle').textContent=s.title;
  document.getElementById('rauthor').textContent='Tác giả: '+s.author;
- document.getElementById('rstatus').textContent=s.status==='completed'?'✓ Đã hoàn thành':'◷ Đang làm';
  document.getElementById('chapterTitle').textContent=ch.title;
  document.getElementById('chapter').innerHTML=ch.paras.map((p,i)=>{
   let key=`${s.id}_${currentChapter}_${i}`,c={length:paragraphCommentTotal(s,currentChapter,i)};
@@ -2395,7 +2419,7 @@ function renderChapter(restoreScroll=0){
  const ongoing=s.status!=='completed';
  tbc.classList.toggle('hidden',!(isLast&&ongoing));
  renderToc();
- setReadingProgress(s.id,currentChapter,restoreScroll||0);
+ setReadingProgress(s.id,currentChapter,restoreScroll||0,true);
  requestAnimationFrame(()=>window.scrollTo(0,restoreScroll||0));
 }
 async function moveChapter(n){
@@ -2652,7 +2676,7 @@ function commentMarkup(comment,key,list,headerExtra=''){
   <a class="comment-avatar" href="${profileLink}" data-user-profile="${username}" aria-label="Hồ sơ ${esc(comment.name||'Thành viên')}">${avatar}</a>
   <div class="comment-main"><div class="comment-author-line"><a class="comment-author" href="${profileLink}" data-user-profile="${username}">${esc(comment.name||'Thành viên')}</a>${isAdminComment(comment)?'<span class="admin-badge">ADMIN</span>':''}${headerExtra}${commentOwnerMenu(comment)}</div>
    <div class="comment-bubble">${target?`<span class="comment-reply-to">Trả lời ${esc(target.name)}</span>`:''}<p class="comment-text">${commentTextHTML(comment.text,comment.mentions)}</p></div>
-   <div class="comment-meta"><button type="button" data-comment-action="like" data-comment-id="${esc(comment.id)}" aria-pressed="${liked}" ${heart.disabled?'disabled':''} aria-label="Thả tim bình luận của ${esc(comment.name)}"><i class="comment-heart-icon" aria-hidden="true">${liked?'♥':'♡'}</i> <span>${heart.count}</span></button><button type="button" data-comment-action="reply" data-comment-id="${esc(comment.id)}">Trả lời</button>${commentTime(comment)}${comment.editedAt?'<span class="comment-edited">· Đã chỉnh sửa</span>':''}</div>
+   <div class="comment-meta"><button type="button" data-comment-action="like" data-comment-id="${esc(comment.id)}" aria-pressed="${liked}" ${heart.disabled?'disabled':''} aria-label="Thả tim bình luận của ${esc(comment.name)}"><i class="comment-heart-icon" aria-hidden="true">${icon('heart')}</i> <span>${heart.count}</span></button><button type="button" data-comment-action="reply" data-comment-id="${esc(comment.id)}">Trả lời</button>${commentTime(comment)}${comment.editedAt?'<span class="comment-edited">· Đã chỉnh sửa</span>':''}</div>
   </div></article>`;
 }
 function beginEditComment(key,id){
@@ -2815,7 +2839,7 @@ document.addEventListener('click',event=>{
 document.addEventListener('submit',event=>{if(event.target.matches('[data-reply-form]')){event.preventDefault();submitCommentReply()}});
 
 let activeCommentKey=null;
-function ensureCommentPanel(){let p=document.getElementById('paragraphCommentPanel');if(p)return p;p=document.createElement('aside');p.id='paragraphCommentPanel';p.className='paragraph-comment-panel';p.innerHTML='<div class="comment-panel-head"><strong>Bình luận đoạn này</strong><button class="comment-panel-close" onclick="closeParagraphComments()" aria-label="Đóng">×</button></div><div id="paragraphCommentPanelBody"></div>';document.body.appendChild(p);return p}
+function ensureCommentPanel(){let p=document.getElementById('paragraphCommentPanel');if(p)return p;p=document.createElement('aside');p.id='paragraphCommentPanel';p.className='paragraph-comment-panel';p.innerHTML='<div class="comment-panel-head"><strong>Bình luận</strong><button class="comment-panel-close" onclick="closeParagraphComments()" aria-label="Đóng">×</button></div><div id="paragraphCommentPanelBody"></div>';document.body.appendChild(p);return p}
 function positionParagraphPanel(k){let p=document.getElementById('paragraphCommentPanel'),w=document.getElementById('para_'+k);if(!p||!w||window.innerWidth<=700)return;let r=w.getBoundingClientRect(),ph=p.offsetHeight||260,margin=14;let top=Math.max(margin,Math.min(r.top,window.innerHeight-ph-margin));p.style.top=top+'px'}
 function setActiveParagraph(k){document.querySelectorAll('.para-wrap.comment-active').forEach(x=>x.classList.remove('comment-active'));document.getElementById('para_'+k)?.classList.add('comment-active')}
 function toggleComments(k,forceOpen=false){let p=ensureCommentPanel();if(!forceOpen&&p.classList.contains('open')&&activeCommentKey===k){closeParagraphComments();return}activeCommentKey=k;setActiveParagraph(k);let c=comments[k]||[];document.getElementById('paragraphCommentPanelBody').innerHTML=renderParaComments(k,c);p.classList.add('open');requestAnimationFrame(()=>positionParagraphPanel(k));setTimeout(()=>document.getElementById('panelCommentInput')?.focus(),20)}
@@ -3738,6 +3762,12 @@ async function openUserProfile(username,updateRoute=true,section='profile'){
   content.innerHTML='<h3>Hồ sơ</h3><p class="muted">Chưa tải được hồ sơ. Vui lòng thử lại sau.</p>';
  }
 }
+// Existing account-owned reading_progress.updated_at; missing/invalid times rank last.
+function recentReadingTime(story){
+ if(!authUser||memberSyncOwner!==authUser.id)return 0;
+ const time=Date.parse(progress[story.id]?.updatedAt||'');return Number.isFinite(time)?time:0;
+}
+function compareRecentReading(a,b){return recentReadingTime(b)-recentReadingTime(a)||Number(a.id)-Number(b.id)}
 function profileReadingPercent(story){
  const pr=progress[story.id];if(!pr)return 0;
  const total=Math.max(1,(story.chapters||[]).length),chapter=Math.max(0,Math.min(total-1,Number(pr.chapter)||0));
@@ -3754,8 +3784,7 @@ function profileShelfCard(story,withProgress=false){
   <div class="profile-story-body">
    <h4 title="${esc(story.title)}">${esc(story.title)}</h4>
    <div class="profile-story-author">${esc(story.author||'')}</div>
-   <div class="profile-story-genre ${primaryGenreClass(story.mainGenre||story.genre)}">${esc(story.mainGenre||story.genre||'')}</div>
-   <div class="profile-story-status ${story.status==='completed'?'done':'ongoing'}">${story.status==='completed'?'✓ Đã hoàn thành':'◷ Đang làm'}</div>
+   <div class="profile-story-metadata"><span class="profile-story-genre ${primaryGenreClass(story.mainGenre||story.genre)}">${esc(story.mainGenre||story.genre||'')}</span><span class="profile-story-status ${story.status==='completed'?'done':'ongoing'}">${story.status==='completed'?'✓ Đã hoàn thành':'◷ Đang làm'}</span></div>
    <div class="profile-story-stats"><span>${icon('eye')} ${formatStoryStat(story.views)}</span><span>${icon('heart')} ${formatStoryStat(storyLikeTotal(story))}</span><span>${icon('comment')} <bdi data-story-comment-count="${story.id}">${storyCommentCount(story)}</bdi></span></div>
   </div>
  </article>`;
@@ -3764,7 +3793,7 @@ function renderProfileStoryShelf(kind){
  const c=document.getElementById('profileContent');if(!c)return;
  const isReading=kind==='reading';
  const rows=isReading
-  ? stories.filter(story=>Object.prototype.hasOwnProperty.call(progress,String(story.id))||Object.prototype.hasOwnProperty.call(progress,story.id))
+  ? stories.filter(story=>Object.prototype.hasOwnProperty.call(progress,String(story.id))||Object.prototype.hasOwnProperty.call(progress,story.id)).sort(compareRecentReading)
   : stories.filter(story=>saved.map(Number).includes(Number(story.id)));
  c.innerHTML=`<div class="profile-shelf-head"><h3>${isReading?'Đang đọc':'Truyện đã lưu'}</h3>${isReading?'<p class="muted">Tiến độ đọc được lưu theo tài khoản của bạn.</p>':'<p class="muted">Những truyện bạn đã lưu.</p>'}</div>${rows.length?`<div class="profile-story-grid${isReading?' profile-reading-grid':''}">${rows.map(story=>profileShelfCard(story,isReading)).join('')}</div>`:`<div class="profile-shelf-empty">${isReading?'Chưa có truyện đang đọc.':'Chưa lưu truyện nào.'}</div>`}`;
 }
@@ -4042,7 +4071,7 @@ function patchCommentHeartUI(){
   const liked=!!authUser&&commentStats.account===authAccount&&commentStats.membership.get(id)===true;
   const count=commentStats.likes.get(id)??'…';el.setAttribute('aria-pressed',String(liked));
   el.disabled=commentWritePending(id)||!!authUser&&(!commentStats.likes.has(id)||!commentStats.membership.has(id)||commentStats.account!==authAccount);
-  const icon=el.querySelector('.comment-heart-icon'),number=el.querySelector('span');if(icon)icon.textContent=liked?'♥':'♡';if(number)number.textContent=count;
+  const number=el.querySelector(':scope > span');if(number)number.textContent=count;
  }
  for(const list of Object.values(comments))for(const c of list){const id=String(c.id);if(commentStats.likes.has(id))c.likes=commentStats.likes.get(id);c.likedBy=authUser&&commentStats.account===authAccount&&commentStats.membership.get(id)===true?[authUser.id]:[]}
  if(currentStory&&chapterCommentSort==='interaction'){
@@ -4116,13 +4145,15 @@ function activateMemberSync(){
 }
 function memberSyncCurrent(state,epoch){return !!state&&authUser?.id===state.owner&&memberSyncOwner===state.owner&&state.epoch===epoch}
 function sameReadingPosition(a,b){return !!a&&!!b&&a.chapter===b.chapter&&Math.round(a.scroll)===Math.round(b.scroll)}
-function setReadingProgress(storyId,chapter,scroll){
+function setReadingProgress(storyId,chapter,scroll,opened=false){
  const state=activateMemberSync(),sid=Number(storyId),value={chapter:Math.max(0,Number(chapter)||0),scroll:Math.max(0,Number(scroll)||0)};
+ const previous=state?(state.dirty.get(sid)||state.base.get(sid)):progress[sid];
+ // Real opens count even when resuming at the identical position; ordinary no-op saves do not.
+ value.updatedAt=opened||!sameReadingPosition(previous,value)?new Date().toISOString():previous?.updatedAt;
  progress[sid]=value;
  if(!state)return;
- const previous=state.dirty.get(sid)||state.base.get(sid);
- if(sameReadingPosition(previous,value))return;
- if(!state.sending.has(sid)&&sameReadingPosition(state.base.get(sid),value))state.dirty.delete(sid);
+ if(!opened&&sameReadingPosition(previous,value))return;
+ if(!opened&&!state.sending.has(sid)&&sameReadingPosition(state.base.get(sid),value))state.dirty.delete(sid);
  else state.dirty.set(sid,{...value,generation:++state.generation});
  queueCloudMemberState();
 }
@@ -4192,12 +4223,12 @@ async function loadCloudMemberState(metadataRetries=1){
       const key=reverse[String(r.chapter_id)]||'';
       const actual=stories.find(s=>s.id===sid)?.chapters.findIndex(c=>String(c.id)===String(r.chapter_id));
       const ci=actual>=0?actual:(key?Number(key.split('_').pop()):0);
-      next[sid]={chapter:Number.isFinite(ci)?ci:0,scroll:Number(r.scroll_position)||0};
+      next[sid]={chapter:Number.isFinite(ci)?ci:0,scroll:Number(r.scroll_position)||0,updatedAt:r.updated_at||null};
     }
     // A load started before a write must not replace a newer local position.
     for(const [id,value] of state.base)if(value.generation>startGeneration||protectProgress.has(id))next[id]=value;
     state.base=new Map(Object.entries(next).map(([id,value])=>[Number(id),value]));
-    for(const [id,value] of state.dirty)next[id]={chapter:value.chapter,scroll:value.scroll};
+    for(const [id,value] of state.dirty)next[id]={chapter:value.chapter,scroll:value.scroll,updatedAt:value.updatedAt};
     progress=next;
     state.progressReady=true;
   }
@@ -4214,7 +4245,7 @@ function saveCloudMemberState(state=activateMemberSync()){
    const batch=[...state.dirty.entries()].slice(0,100),rows=[];
    for(const [id,value] of batch){
     const chapter_id=stories.find(s=>s.id===id)?.chapters[value.chapter]?.id||cloudChapterMap[`${id}_${value.chapter}`];
-    if(chapter_id)rows.push({story_id:id,user_id:state.owner,chapter_id:Number(chapter_id),scroll_position:Math.round(value.scroll),updated_at:new Date().toISOString()});
+    if(chapter_id)rows.push({story_id:id,user_id:state.owner,chapter_id:Number(chapter_id),scroll_position:Math.round(value.scroll),updated_at:value.updatedAt});
    }
    if(!rows.length)break; // Retain unknown chapter IDs; a later load/change retries.
    state.sending=new Set(rows.map(r=>r.story_id));
@@ -4222,7 +4253,7 @@ function saveCloudMemberState(state=activateMemberSync()){
    if(!memberSyncCurrent(state,epoch))return;
    if(error){console.warn('reading progress save',error);break;}
    for(const row of rows){
-    const value=batch.find(([id])=>id===row.story_id)[1];state.base.set(row.story_id,{chapter:value.chapter,scroll:value.scroll,generation:value.generation});
+    const value=batch.find(([id])=>id===row.story_id)[1];state.base.set(row.story_id,{chapter:value.chapter,scroll:value.scroll,updatedAt:row.updated_at,generation:value.generation});
     if(state.dirty.get(row.story_id)?.generation===value.generation)state.dirty.delete(row.story_id);
    }
    state.sending.clear();

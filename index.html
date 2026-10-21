@@ -1601,9 +1601,9 @@ body.pastel .notif-filters button:nth-child(2){--chip:#9c89c7}body.pastel .notif
 #storyIntro .intro-tab-track{display:contents}
 #storyIntro .intro-tabs button{width:100%;text-align:center;justify-content:center}
 @media(max-width:700px){
- #storyIntro .intro-tabs{display:flex;grid-template-columns:none;align-items:center;justify-content:space-between;padding-inline:11px!important}
+ #storyIntro .intro-tabs{display:flex;grid-template-columns:none;align-items:center;justify-content:space-between;padding-inline:12px!important}
  #storyIntro .intro-tab-track{display:contents}
- #storyIntro .intro-tabs button{position:relative;box-sizing:border-box;flex:none;width:max-content;max-width:none;min-width:44px;padding-left:6px!important;padding-right:6px!important;font-weight:700;white-space:nowrap}
+ #storyIntro .intro-tabs button{position:relative;box-sizing:border-box;flex:none;width:max-content;max-width:none;min-width:44px;padding-left:clamp(0px,calc((100vw - 321px)/6),12px)!important;padding-right:clamp(0px,calc((100vw - 321px)/6),12px)!important;font-weight:700;white-space:nowrap}
  #storyIntro .intro-tabs button.active::after{left:0;right:0}
 }
 .profile-tabs button,.notif-filters button{padding:var(--action-padding);font-size:13px;font-weight:600;white-space:nowrap}

@@ -1,5 +1,25 @@
 'use strict';
 
+// One explicitly supplied trust anchor. No filesystem/startup environment fallback.
+function decodeSenderCA(value) {
+  try {
+    if (typeof value !== 'string' || !value.length || value.length > 16384 ||
+      !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(value)) throw Error();
+    const bytes = Buffer.from(value, 'base64');
+    if (bytes.toString('base64') !== value) throw Error();
+    const pem = new TextDecoder('utf-8', {fatal: true, ignoreBOM: true}).decode(bytes);
+    if (!/^[\x20-\x7e\r\n]+$/.test(pem)) throw Error();
+    const match = /^-----BEGIN CERTIFICATE-----\r?\n([A-Za-z0-9+/=]+(?:\r?\n[A-Za-z0-9+/=]+)*)\r?\n-----END CERTIFICATE-----(?:\r?\n)?$/.exec(pem);
+    if (!match || match[0] !== pem) throw Error();
+    const derText = match[1].replace(/\r?\n/g, '');
+    const der = Buffer.from(derText, 'base64');
+    if (!der.length || der.toString('base64') !== derText) throw Error();
+    const certificate = new (require('node:crypto').X509Certificate)(der);
+    if (!certificate.ca || !certificate.raw.equals(der)) throw Error();
+    return pem;
+  } catch { throw Error('INVALID_SENDER_CA_CERT'); }
+}
+
 // Pinned pg JS client: emit only protocol essentials, never inherited PGOPTIONS
 // or pooler-dependent startup GUCs. Session settings are established below.
 class SessionPoolerClient extends require('pg/lib/client') {
@@ -25,7 +45,7 @@ function databaseConfig(env) {
   return {
     host: u.hostname, port: 5432, user: u.username,
     password, database: 'postgres', Client: SessionPoolerClient,
-    ssl: {rejectUnauthorized: true}, max: 1, connectionTimeoutMillis: 2000,
+    ssl: {rejectUnauthorized: true, ca: decodeSenderCA(env.NCA_PUSH_SENDER_CA_CERT_B64)}, max: 1, connectionTimeoutMillis: 2000,
     idleTimeoutMillis: 1000, query_timeout: 7000, client_encoding: 'UTF8'
   };
 }
@@ -65,4 +85,4 @@ function createDatabase(config, Pool = require('pg').Pool) {
   };
 }
 
-module.exports = {databaseConfig, createDatabase};
+module.exports = {databaseConfig, createDatabase, decodeSenderCA};

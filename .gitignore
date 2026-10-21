@@ -1,0 +1,8 @@
+node_modules/
+.env
+.env.*
+!.env.personal-push.example
+!.env.push-subscriptions.example
+.vercel/
+personal-push-sender-secrets.json
+personal-push-sender-secrets-with-ca.json

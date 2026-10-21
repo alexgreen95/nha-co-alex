@@ -1,24 +1,28 @@
 'use strict';
 const {test,before,after}=require('node:test');
-const assert=require('node:assert/strict'),fs=require('node:fs');
+const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
+const {execFileSync}=require('node:child_process');
 const {startBrowser,stopBrowser,feedPage}=require('./helpers/public-feed-browser.cjs');
 before(startBrowser);after(stopBrowser);
 const A='00000000-0000-0000-0000-000000000001',B='00000000-0000-0000-0000-000000000002';
+const cover='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="180" height="300"><rect width="180" height="300" fill="#e0d8f1"/><rect width="180" height="12" fill="#809b90"/><rect y="288" width="180" height="12" fill="#b78ca3"/></svg>');
 const themes=['light','smoky','dustyrose','mistblue','pastel','night','purplenight'];
-async function fixture(){return feedPage(0,{canonicalComments:true,fixtures:{stories:[1,2,3,4].map(id=>({id,title:'Một câu chuyện dài '+id,author:'Alex',published:true,status:id===1?'completed':'ongoing',genre:id===1?'Tây huyễn':'Hiện đại'})),chapters:[1,2,3,4].map(id=>({id:100+id,story_id:id,chapter_number:1,title:'Chương 1',published:true})),paragraphs:[{paragraph_number:1,content:'Đoạn văn thử nghiệm'}]}})}
+async function fixture(){return feedPage(0,{canonicalComments:true,fixtures:{stories:[1,2,3,4].map(id=>({id,title:'Một câu chuyện dài '+id,author:'Alex',published:true,status:id===1?'completed':'ongoing',genre:id===1?'Tây huyễn':'Hiện đại',cover_url:cover})),chapters:[1,2,3,4].map(id=>({id:100+id,story_id:id,chapter_number:1,title:'Chương 1',published:true})),paragraphs:[{paragraph_number:1,content:'Đoạn văn thử nghiệm'}]}})}
 for(const width of [375,390,430,1280])test('bounded UI geometry and controls '+width+'px across seven themes',async()=>{
  const page=await fixture();try{await page.setViewportSize({width,height:950});
  for(const theme of themes){await page.evaluate(({theme,A})=>{setTheme(theme);authUser={id:A};activateMemberSync();progress={1:{chapter:0,scroll:120},2:{chapter:0,scroll:130}};openProfile('reading');}, {theme,A});
  const shelf=await page.locator('.profile-story-grid').evaluate(el=>({columns:getComputedStyle(el).gridTemplateColumns.split(' ').length,overflow:document.documentElement.scrollWidth>innerWidth,cards:[...el.children].map(c=>{const r=c.getBoundingClientRect();return {w:r.width,scroll:c.scrollWidth,client:c.clientWidth}}),buttons:el.querySelectorAll('.profile-continue').length,cover:el.querySelector('.profile-resume-cover')?.getAttribute('onclick')}));
  assert.equal(shelf.columns,width<=720?2:4);assert(!shelf.overflow);assert.equal(shelf.buttons,0);assert(shelf.cover.includes('read('));for(const c of shelf.cards)assert(c.scroll<=c.client+1);
- const metadata=await page.locator('.profile-story-metadata').first().evaluate(el=>{const [a,b]=el.children;return {same:Math.abs(a.getBoundingClientRect().top-b.getBoundingClientRect().top)<2,overflow:el.scrollWidth>el.clientWidth}});if(width>=390)assert(metadata.same);assert(!metadata.overflow);
+ const metadata=await page.locator('.profile-story-metadata').first().evaluate(el=>{const [a,b]=el.children;return {fits:a.offsetWidth+b.offsetWidth+parseFloat(getComputedStyle(el).columnGap)<=el.clientWidth,same:Math.abs(a.getBoundingClientRect().top-b.getBoundingClientRect().top)<2,overflow:el.scrollWidth>el.clientWidth}});if(metadata.fits)assert(metadata.same);assert(!metadata.overflow);
  await page.evaluate(()=>{openProfile('profile');document.getElementById('loginBtn').style.display='none';document.getElementById('memberArea').style.display='flex';openAccountMenu()});
- const menu=await page.locator('#accountMenu').evaluate(el=>[...el.querySelectorAll('button,a')].map(b=>({label:b.textContent,font:parseFloat(getComputedStyle(b).fontSize),height:b.getBoundingClientRect().height,border:getComputedStyle(b).borderBottomWidth,decoration:getComputedStyle(b).textDecorationLine,overflow:b.scrollWidth>b.clientWidth})));
- for(const item of menu){assert.equal(item.border,'0px');assert.equal(item.decoration,'none');if(width<=700&&!item.label.includes('Quản lý')){assert(item.font>=15);assert(item.height>=44);}assert(!item.overflow);}
+ const menu=await page.locator('#accountMenu').evaluate(el=>[...el.querySelectorAll('button,a')].map(b=>({label:b.textContent,font:parseFloat(getComputedStyle(b).fontSize),height:b.getBoundingClientRect().height,top:getComputedStyle(b).borderTopWidth,shadow:getComputedStyle(b).boxShadow,before:getComputedStyle(b,'::before').content,after:getComputedStyle(b,'::after').content,border:getComputedStyle(b).borderBottomWidth,decoration:getComputedStyle(b).textDecorationLine,overflow:b.scrollWidth>b.clientWidth})));
+ for(const item of menu){assert.equal(item.border,'0px');assert.equal(item.shadow,'none');if(!item.label.includes('Đăng xuất')){assert.equal(item.top,'0px');assert.equal(item.before,'none');assert.equal(item.after,'none');}else assert.equal(item.top,'1px');assert.equal(item.decoration,'none');if(width<=700&&!item.label.includes('Quản lý')){assert(item.font>=15);assert(item.height>=44);}assert(!item.overflow);}
+ assert.equal(await page.locator('#accountMenu').evaluate(el=>getComputedStyle(el).borderTopWidth),'1px');
  assert.equal(await page.locator('#accountMenu .feedback-link').getAttribute('href'),'https://forms.gle/2DDU2T5HSJDryGSq7');
  await page.evaluate(()=>{document.getElementById('accountMenu').classList.remove('open');goHome();render()});
  const sort=page.locator('#sortMain'),before=(await sort.boundingBox()).width;await sort.click();assert.equal(await page.locator('#sortMenu').getByText('Thể loại',{exact:true}).count(),0);await page.locator('[data-sort="read_recent"]').click();assert.equal((await sort.boundingBox()).width,before);assert.equal(await page.locator('#sortLabel').textContent(),'Sắp xếp theo: Đã đọc gần nhất');
  await page.evaluate(()=>openStory(1));await page.waitForLoadState('networkidle');
+ assert.equal(await page.locator('#storyIntro .intro-tabs button').first().evaluate(el=>getComputedStyle(el).fontSize),width<=700?'14px':'17px');assert.equal(await page.locator('#introReadBtn').evaluate(el=>getComputedStyle(el).fontSize),width<=700?'14px':'17px');
  const tabs=await page.locator('#storyIntro .intro-tabs button').evaluateAll(es=>es.map(e=>({width:e.getBoundingClientRect().width,scroll:e.scrollWidth,client:e.clientWidth})));assert.equal(tabs.length,3);assert(Math.max(...tabs.map(t=>t.width))-Math.min(...tabs.map(t=>t.width))<1);for(const t of tabs)assert(t.scroll<=t.client+1);assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
  for(const [i,pane] of [[0,'introAbout'],[1,'introReviews'],[2,'introChapters']]){await page.locator('#storyIntro .intro-tabs button').nth(i).click();assert(await page.locator('#'+pane).isVisible());assert.equal(await page.locator('.intro-tabs .active').count(),1);}
  const controls=await page.locator('#introReadBtn,#introSaveBtn,.profile-edit-top').evaluateAll(es=>es.map(e=>{const s=getComputedStyle(e);return {radius:s.borderRadius,border:s.borderTopWidth,line:s.lineHeight}}));assert(controls.every(c=>c.radius==='10px'&&c.border==='1px'));
@@ -52,4 +56,27 @@ test('reader presentation preserves home destination and paragraph context; shar
 });
 test('UI source contains no legacy paragraph label and keeps the three tabs and profile resume handler',()=>{
  const s=fs.readFileSync('index.html','utf8');assert(!s.includes('Bình luận đoạn này'));assert.match(s,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);assert(s.includes("read('+story.id+')"));assert(s.includes("updated_at:value.updatedAt"));
+});
+
+test('profile library full-cover containment and larger gutters at mobile/tablet/desktop widths',async()=>{
+ const page=await fixture();try{for(const width of [375,390,430,768,1280]){await page.setViewportSize({width,height:950});for(const section of ['reading','saved']){
+ await page.evaluate(({A,section})=>{authUser={id:A};activateMemberSync();progress={1:{chapter:0,scroll:120},2:{chapter:0,scroll:130}};saved=[1,2];openProfile(section)}, {A,section});
+ await page.locator('.profile-story-cover img').first().evaluate(img=>img.decode());
+ const x=await page.locator('.profile-story-grid').evaluate(grid=>{const g=getComputedStyle(grid),cover=grid.querySelector('.profile-story-cover'),tile=cover.closest('.profile-story-tile'),img=cover.querySelector('img'),r=cover.getBoundingClientRect(),i=img.getBoundingClientRect(),scale=Math.min(img.clientWidth/img.naturalWidth,img.clientHeight/img.naturalHeight);return {columns:g.gridTemplateColumns.split(' ').length,gutter:parseFloat(g.columnGap),rows:parseFloat(g.rowGap),padding:parseFloat(g.paddingLeft),width:r.width,tile:tile.clientWidth,fit:getComputedStyle(img).objectFit,natural:[img.naturalWidth,img.naturalHeight],contained:img.naturalWidth*scale<=img.clientWidth+.1&&img.naturalHeight*scale<=img.clientHeight+.1,imageInside:i.left>=r.left&&i.right<=r.right&&i.top>=r.top&&i.bottom<=r.bottom,overflow:document.documentElement.scrollWidth>innerWidth};});
+ assert.equal(x.fit,'contain');assert.deepEqual(x.natural,[180,300]);assert(x.contained&&x.imageInside);assert(!x.overflow);if(width<=720){assert.equal(x.columns,2);assert(x.gutter>=22);assert(x.rows>=28);assert(x.padding>=8);assert(x.width<=124.1);assert(x.width<x.tile-10);assert(x.width>=90);}else assert.equal(x.columns,4);
+ }}assert.deepEqual(page.errors,[]);}finally{await page.close()}
+});
+
+test('profile/filter tab metrics stay fixed while all seven theme palettes match the deployed baseline',async()=>{
+ const directory=fs.mkdtempSync(path.join(os.tmpdir(),'nca-ui-palette-')),baselinePath=path.join(directory,'baseline.html');let baseline,page;const savedHTML=process.env.HOME_FEED_HTML;
+ try{
+ fs.writeFileSync(baselinePath,execFileSync('git',['show','72d03a7310cfbbe9946138a66de1094585ddabdd:index.html']));
+ process.env.HOME_FEED_HTML=baselinePath;baseline=await fixture();await baseline.waitForLoadState('networkidle');if(savedHTML===undefined)delete process.env.HOME_FEED_HTML;else process.env.HOME_FEED_HTML=savedHTML;page=await fixture();
+ // Compare settled palette values, independent of inherited theme transition timing.
+ for(const p of [baseline,page])await p.addStyleTag({content:'*,*::before,*::after{transition:none!important;animation:none!important}'});
+ async function snapshot(p,theme,active){await p.evaluate(({theme,active})=>{setTheme(theme);displayPage('profilePage');document.getElementById('memberArea').style.display='flex';document.getElementById('notifPanel').classList.add('open');document.querySelectorAll('.profile-tabs button,.notif-filters button').forEach(b=>b.classList.toggle('active',active));},{theme,active});await p.evaluate(()=>{for(const animation of document.getAnimations())if(animation.effect?.getTiming().iterations!==Infinity)animation.finish()});return p.locator('.profile-tabs button,.notif-filters button').evaluateAll(es=>es.map(e=>{const s=getComputedStyle(e),r=e.getBoundingClientRect();return {palette:[s.color,s.backgroundColor,s.borderTopColor,s.boxShadow],width:r.width,height:r.height,radius:s.borderRadius,border:s.borderTopWidth,font:s.fontSize,padding:s.padding,line:s.lineHeight,overflow:e.scrollWidth>e.clientWidth}}));}
+ for(const width of [375,1280]){await page.setViewportSize({width,height:950});await baseline.setViewportSize({width,height:950});for(const theme of themes){let inactive;
+ for(const active of [false,true]){const expected=await snapshot(baseline,theme,active),actual=await snapshot(page,theme,active);assert.deepEqual(actual.map(x=>x.palette),expected.map(x=>x.palette),JSON.stringify({width,theme,active}));assert.equal(actual.length,9);for(const x of actual){assert.equal(x.radius,'10px');assert.equal(x.border,'1px');assert.equal(x.height,40);assert.equal(x.font,'13px');assert.equal(x.padding,'8px 12px');assert(!x.overflow);}if(!active)inactive=actual;else assert.deepEqual(actual.map(x=>[x.width,x.height]),inactive.map(x=>[x.width,x.height]));assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}
+ }}
+ }finally{if(savedHTML===undefined)delete process.env.HOME_FEED_HTML;else process.env.HOME_FEED_HTML=savedHTML;await baseline?.close();await page?.close();fs.rmSync(directory,{recursive:true,force:true});}
 });

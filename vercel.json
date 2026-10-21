@@ -1,5 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/personal-push-worker.js": {
+      "maxDuration": 60
+    }
+  },
   "routes": [
     {
       "src": "/assets/image-[a-f0-9]{12}\\.png",

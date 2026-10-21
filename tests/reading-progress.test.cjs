@@ -157,3 +157,26 @@ test('fast chapter switches coalesce to final chapter; delayed account hydration
   assert.equal(await page.evaluate(()=>progress[1].scroll),555);assert.equal(await page.evaluate(()=>progress[1].chapter),0);assert.deepEqual(page.errors,[]);
  }finally{for(const release of releases)release();await page.close()}
 });
+
+for(const navigation of ['next','toc'])test('slow chapter transition '+navigation+' commits one genuine-open progress update',async()=>{
+ const {page,mock}=await setup();let release;
+ try{
+  await page.evaluate(async()=>{await read(1,0);await saveCloudMemberState()});mock.calls.length=0;
+  await page.route('**/rest/v1/paragraphs?**',async route=>{
+   const chapter=new URL(route.request().url()).searchParams.get('chapter_id');
+   const finish=()=>route.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify([{paragraph_number:1,content:'Next chapter content'}])});
+   if(chapter==='eq.201')await new Promise(resolve=>{release=async()=>{await finish();resolve()}});else await finish();
+  });
+  await page.evaluate(navigation=>{window.pendingChapterOpen=navigation==='next'?moveChapter(1):goChapter(1)},navigation);
+  while(!release)await new Promise(r=>setTimeout(r,10));
+  // A pending load can outlive the normal save timer; flush that checkpoint explicitly.
+  await page.evaluate(()=>saveCloudMemberState());
+  await release();release=null;await page.evaluate(async()=>{await window.pendingChapterOpen;await saveCloudMemberState()});
+  assert.equal(writes(mock).length,1,'one navigation must not upsert both before and after the content await');
+  assert.equal(writes(mock)[0].body[0].chapter_id,201);assert.equal(writes(mock)[0].body[0].scroll_position,0);
+  assert(Number.isFinite(Date.parse(writes(mock)[0].body[0].updated_at)));
+  assert.equal(await page.evaluate(()=>currentChapter),1);assert.equal(await page.evaluate(()=>progress[1].chapter),1);
+  await page.evaluate(async()=>{setReadingProgress(1,1,0);await saveCloudMemberState()});assert.equal(writes(mock).length,1);
+  assert.deepEqual(page.errors,[]);
+ }finally{await release?.();await page.close()}
+});

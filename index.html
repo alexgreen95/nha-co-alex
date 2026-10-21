@@ -1348,7 +1348,7 @@ body.purplenight .account-menu,body.purplenight .notif-panel{
 .profile-shelf-head{margin-bottom:18px}.profile-shelf-head h3{margin:0 0 5px}.profile-shelf-head p{margin:0;font-size:13px}
 .profile-story-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px 18px;align-items:start}
 .profile-story-tile{min-width:0;cursor:pointer}.profile-story-cover{position:relative;aspect-ratio:3/4;border-radius:9px;overflow:visible;background:transparent;border:0;display:grid;place-items:center;text-align:center;font-size:12px;line-height:1.4;box-shadow:none}
-.profile-story-cover img{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:contain}.profile-story-tile:hover .profile-story-cover{transform:translateY(-2px);box-shadow:none}.profile-story-cover{transition:.16s ease}
+.profile-story-cover img{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:contain;border-radius:10px}.profile-story-tile:hover .profile-story-cover{transform:translateY(-2px);box-shadow:none}.profile-story-cover{transition:.16s ease}
 .reading-progress{height:5px;background:color-mix(in srgb,var(--line) 78%,transparent);overflow:hidden;margin-top:7px;border-radius:999px}.reading-progress span{height:100%;display:block;background:var(--accent);border-radius:inherit;transition:width .25s ease}
 .profile-resume-cover{width:100%;padding:0;color:inherit;font-family:inherit;cursor:pointer}
 .profile-resume-cover:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
@@ -1565,7 +1565,7 @@ body.night .status-done,body.purplenight .status-done{color:#a3d8bf!important}bo
 /* One active indicator: pseudo-element only; tab borders stay transparent. */
 #storyIntro .intro-tabs button{border-bottom:3px solid transparent!important;box-shadow:none!important}
 #storyIntro .intro-tabs button::before,#storyIntro .intro-tabs button::after{content:none!important;display:none!important}
-#storyIntro .intro-tabs button.active::after{content:""!important;display:block!important;position:absolute;left:4px;right:4px;bottom:-3px;height:3px;border-radius:3px;background:var(--accent)}
+#storyIntro .intro-tabs button.active::after{content:""!important;display:block!important;position:absolute;left:0;right:0;bottom:-3px;height:3px;border-radius:3px;background:var(--accent)}
 .intro-tabs{border-bottom:1px solid var(--line)!important;padding-bottom:0!important}
 #introComments .intro-community-toolbar>strong{display:inline-block;padding:7px 13px;border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line));border-radius:10px;background:color-mix(in srgb,var(--accent) 12%,var(--card));color:var(--fg)}
 @media(max-width:700px){
@@ -1596,8 +1596,9 @@ body.pastel .notif-filters button:nth-child(2){--chip:#9c89c7}body.pastel .notif
 :root{--action-radius:10px;--action-height:40px;--action-line-height:1.35;--action-padding:8px 12px}
 :is(.btn,.auth-login,.profile-edit-top,.avatar-pick,.chapter-end-nav>button,.profile-tabs button,.notif-filters button){box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:var(--action-height);border-width:1px;border-style:solid;border-radius:var(--action-radius)!important;font-family:inherit;line-height:var(--action-line-height)!important;vertical-align:middle;text-align:center;transition:background-color .15s,color .15s,border-color .15s,box-shadow .15s}
 .sort-wrap{width:280px;max-width:100%}.sort-main{width:100%;min-width:0;min-height:42px;justify-content:space-between;box-sizing:border-box}.sort-main #sortLabel{min-width:0;white-space:normal;text-align:left}.sort-main svg{flex-shrink:0}.sort-menu{width:100%;box-sizing:border-box}
+/* Equal positioning tracks; intrinsic buttons retain their own padded width. */
 #storyIntro .intro-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));justify-items:center;gap:0!important}
-#storyIntro .intro-tabs button{width:max-content;max-width:100%;min-width:44px;text-align:center;justify-content:center;font-size:17px}
+#storyIntro .intro-tabs button{width:max-content;max-width:none;min-width:44px;text-align:center;justify-content:center;font-size:17px;font-weight:700;white-space:nowrap}
 .profile-tabs button,.notif-filters button{padding:var(--action-padding);font-size:13px;font-weight:600;white-space:nowrap}
 .profile-tabs button.active,.notif-filters button.active{font-weight:600}
 #stories .story-actions .btn{font-size:14px!important}
@@ -1622,7 +1623,7 @@ body.pastel .notif-filters button:nth-child(2){--chip:#9c89c7}body.pastel .notif
  .sort-wrap{width:280px;max-width:100%}
  #stories .story-actions .btn{font-size:13px!important}
  .intro-actions .btn{font-size:14px}
- #storyIntro .intro-tabs button{font-size:14px;white-space:normal;line-height:1.35;overflow-wrap:normal}
+ #storyIntro .intro-tabs button{font-size:14px;white-space:nowrap;line-height:1.35;overflow-wrap:normal}
 }
 </style>
 </head>
@@ -2437,7 +2438,7 @@ async function moveChapter(n){
  if(next<0||next>=currentStory.chapters.length)return;
  currentChapter=next;
  setRoute(chapterPath(currentStory,currentChapter));
- setReadingProgress(currentStory.id,currentChapter,0);
+ // Progress/recency is recorded once by renderChapter after the content is ready.
  // V21.17: chương được tải lazy từ Supabase, nên phải đợi nội dung cloud trước khi render.
  await ensureChapterContent(currentStory,currentChapter);
  await recordStoryView(currentStory.id);
@@ -2451,7 +2452,7 @@ async function goChapter(i){
  if(!currentStory||i<0||i>=currentStory.chapters.length)return;
  currentChapter=i;
  setRoute(chapterPath(currentStory,i));
- setReadingProgress(currentStory.id,i,0);
+ // Progress/recency is recorded once by renderChapter after the content is ready.
  toggleToc(false);
  // V21.17: chọn chương từ mục lục cũng phải tải paragraph từ Supabase trước.
  await ensureChapterContent(currentStory,i);

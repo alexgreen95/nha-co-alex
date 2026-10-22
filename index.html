@@ -1639,8 +1639,9 @@ body.pastel .notif-filters button:nth-child(2){--chip:#9c89c7}body.pastel .notif
 }
 .push-settings{box-sizing:border-box;width:min(420px,calc(100% - 32px));max-height:calc(100dvh - 32px);padding:20px;border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--fg);box-shadow:0 14px 36px rgba(0,0,0,.18);overflow:auto}
 .push-settings::backdrop{background:rgba(0,0,0,.35)}
+.push-settings:focus{outline:none}
 .push-settings-head{display:flex;align-items:center;gap:12px}.push-settings-head h2{flex:1;min-width:0;margin:0;font-size:20px}
-.push-settings-close{appearance:none;display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;padding:0;border:0;border-radius:0;background:transparent;color:var(--fg);box-shadow:none;font:inherit;font-size:26px;line-height:1;cursor:pointer}
+.push-settings-close{appearance:none;display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;padding:0;border:0;outline:0;border-radius:0;background:transparent;color:var(--fg);box-shadow:none;font:inherit;font-size:26px;line-height:1;cursor:pointer}
 .push-settings p{line-height:1.55;overflow-wrap:anywhere}.push-settings-note{color:var(--muted);font-size:13px}
 .push-settings-warning{padding:12px;border:2px solid var(--accent);border-radius:10px;background:color-mix(in srgb,var(--accent) 12%,var(--card));color:var(--fg)}
 .push-settings-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}.push-settings-actions .btn{min-height:44px;max-width:100%;padding:10px 14px;white-space:normal}
@@ -1754,7 +1755,7 @@ document.body.classList.add('gate-locked','gate-checking');
   </div>
 </div>
 </nav></header>
-<dialog id="pushSettingsDialog" class="push-settings" aria-labelledby="pushSettingsTitle" aria-describedby="pushSettingsMessage">
+<dialog id="pushSettingsDialog" class="push-settings" tabindex="-1" autofocus aria-labelledby="pushSettingsTitle" aria-describedby="pushSettingsMessage">
   <div class="push-settings-head"><h2 id="pushSettingsTitle">Cài đặt thông báo</h2><button id="pushSettingsClose" class="push-settings-close" type="button" aria-label="Đóng cài đặt thông báo">×</button></div>
   <p id="pushSettingsMessage" role="status" aria-live="polite" aria-atomic="true">Đang kiểm tra trạng thái thông báo…</p>
   <p id="pushSettingsWarning" class="push-settings-warning" role="alert" aria-atomic="true" hidden></p>

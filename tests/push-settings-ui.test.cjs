@@ -40,6 +40,28 @@ async function open(page,waitCategories=true){await menu(page);await page.locato
 async function state(page,status,risk=false){await page.evaluate(({status,risk})=>{pushUIFixture.state={status,risk,permission:'default'};pushUIFixture.calls=[]},{status,risk});}
 const mutations=page=>page.evaluate(()=>pushUIFixture.calls.filter(x=>['enable','repair','disable'].includes(x.op)));
 
+test('opening focuses the dialog without a transient close-button ring in mobile/desktop themes',async()=>{const {page}=await fixture();try{
+ await page.evaluate(()=>{window.settingsFocusTargets=[];document.addEventListener('focusin',event=>settingsFocusTargets.push(event.target.id))});
+ for(const width of [375,1280]){await page.setViewportSize({width,height:800});for(const theme of ['light','smoky','dustyrose','mistblue','pastel','night','purplenight']){
+  await page.evaluate(theme=>{setTheme(theme);settingsFocusTargets=[]},theme);await open(page);
+  const focus=await page.evaluate(()=>{
+   const dialog=document.getElementById('pushSettingsDialog'),close=document.getElementById('pushSettingsClose'),d=getComputedStyle(dialog),c=getComputedStyle(close),r=close.getBoundingClientRect();
+   return {active:document.activeElement.id,targets:settingsFocusTargets,tabindex:dialog.getAttribute('tabindex'),autofocus:dialog.hasAttribute('autofocus'),dialogOutline:d.outlineStyle,closeOutline:c.outlineWidth,border:c.borderTopWidth,bg:c.backgroundColor,shadow:c.boxShadow,width:r.width,height:r.height};
+  });
+  assert.equal(focus.active,'pushSettingsDialog');assert.equal(focus.tabindex,'-1');assert(focus.autofocus);assert(!focus.targets.includes('pushSettingsClose'),JSON.stringify({width,theme,targets:focus.targets}));
+  assert.equal(focus.dialogOutline,'none');assert.equal(focus.closeOutline,'0px');assert.equal(focus.border,'0px');assert.equal(focus.bg,'rgba(0, 0, 0, 0)');assert.equal(focus.shadow,'none');assert(focus.width>=44&&focus.height>=44);
+  await page.locator('#pushSettingsClose').click();
+ }}assert.deepEqual(page.errors,[]);
+ }finally{await page.close()}});
+
+test('keyboard Tab reaches close with visible focus indication and Escape restores opener focus',async()=>{const {page}=await fixture();try{
+ await page.setViewportSize({width:1280,height:800});await open(page);
+ assert.equal(await page.evaluate(()=>document.activeElement.id),'pushSettingsDialog');await page.keyboard.press('Tab');
+ const focus=await page.locator('#pushSettingsClose').evaluate(e=>{const s=getComputedStyle(e);return {active:e===document.activeElement,visible:e.matches(':focus-visible'),tabindex:e.tabIndex,outline:s.outlineStyle,width:s.outlineWidth,color:s.outlineColor,accent:getComputedStyle(e.closest('dialog')).getPropertyValue('--accent').trim()}});
+ assert(focus.active&&focus.visible);assert.equal(focus.tabindex,0);assert.equal(focus.outline,'solid');assert.equal(focus.width,'2px');assert.notEqual(focus.color,'rgba(0, 0, 0, 0)');
+ await page.keyboard.press('Escape');assert(!(await page.locator('#pushSettingsDialog').evaluate(e=>e.open)));await page.waitForFunction(()=>document.activeElement?.matches('.account-trigger'));assert.deepEqual(page.errors,[]);
+ }finally{await page.close()}});
+
 test('signed-in menu exposes settings; startup/login/account rendering never prompts or mutates',async()=>{const {page,requests}=await fixture();try{
  assert.equal(await page.locator('#pushSettingsMenuBtn').getAttribute('aria-controls'),'pushSettingsDialog');await open(page);
  assert.equal(await page.locator('#pushSettingsAction').textContent(),'Bật thông báo');

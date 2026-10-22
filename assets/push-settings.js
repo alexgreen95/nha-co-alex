@@ -219,7 +219,12 @@
       opener=trigger||doc.activeElement;
       owner=getAccount();++revision;override=pending?{status:'CHECKING'}:null;
       resetCategories(owner);
-      if(!dialog.open){try{dialog.showModal()}catch{return;}}
+      if(!dialog.open){
+        const closeControl=doc.getElementById('pushSettingsClose'),wasDisabled=closeControl.disabled;
+        closeControl.disabled=true; // Exclude × from the browser's native initial focus selection.
+        try{dialog.showModal();dialog.focus({preventScroll:true});}catch{return;}
+        finally{closeControl.disabled=wasDisabled;}
+      }
       render();
       if(owner)void loadCategories();
       if(owner&&!pending)run('initialize');

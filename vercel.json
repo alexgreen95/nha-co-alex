@@ -4,6 +4,9 @@
     "api/personal-push-worker.js": {
       "maxDuration": 60
     },
+    "api/content-push-worker.js": {
+      "maxDuration": 60
+    },
     "api/push-subscriptions.js": {
       "maxDuration": 30
     }

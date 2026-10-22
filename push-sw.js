@@ -16,11 +16,22 @@
     // Click navigation intentionally uses the app root, not any payload URL/record.
     return {title:payload.title, options:{body:payload.body, tag:payload.tag, data:{notification_id:d.notification_id}}};
   }
+  function content(payload) {
+    if (!exact(payload, ['version','type','title','body','tag','data']) || payload.version !== 1 || payload.type !== 'content' ||
+      !text(payload.title, 100) || !text(payload.body, 240) || !text(payload.tag, 80) ||
+      !exact(payload.data, ['content_event_id','publication_id','category','story_id','chapter_id'])) return null;
+    const d = payload.data;
+    if (!decimal(d.content_event_id) || !decimal(d.publication_id) || !decimal(d.story_id) ||
+      payload.tag !== 'nca-content-' + d.content_event_id || !['new_story','new_chapter'].includes(d.category) ||
+      (d.category === 'new_story' ? d.chapter_id !== null : !decimal(d.chapter_id))) return null;
+    return {title:payload.title, options:{body:payload.body, tag:payload.tag, data:{content_event_id:d.content_event_id}}};
+  }
   scope.addEventListener('push', event => {
     event.waitUntil((async () => {
       try {
         if (!event.data || event.data.text().length > 4096) return;
-        const value = personal(event.data.json());
+        const payload = event.data.json();
+        const value = personal(payload) || content(payload);
         if (value) await scope.registration.showNotification(value.title, value.options);
       } catch { /* Malformed data/OS rejection must not produce an unhandled error. */ }
     })());

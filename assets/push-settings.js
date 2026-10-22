@@ -37,6 +37,18 @@
     const dialog=doc.getElementById('pushSettingsDialog');
     const message=doc.getElementById('pushSettingsMessage'),warning=doc.getElementById('pushSettingsWarning');
     const primary=doc.getElementById('pushSettingsAction'),refresh=doc.getElementById('pushSettingsRefresh');
+    const categories=doc.getElementById('pushCategorySettings');
+    function resetCategories(account) {
+      // Transport/revision contract is unavailable. Unknown is NOT false/default.
+      // No preference reader, setter, draft save or lifecycle call is fabricated.
+      categories.hidden=!account;
+      categories.dataset.state='unknown';
+      for(const input of categories.querySelectorAll('[data-push-category]')){
+        input.checked=false;input.indeterminate=true;input.disabled=true;
+      }
+      doc.getElementById('pushCategorySave').disabled=true;
+    }
+    resetCategories(null);
     let owner=null,revision=0,pending=null,override=null,opener=null,observation=null;
     const isOpen=()=>dialog.open;
     const read=()=>{try{return lifecycle?.getState()||{status:'UNSUPPORTED'}}catch{return {status:'UNAVAILABLE'}}};
@@ -100,12 +112,14 @@
     }
     function close() {
       stopObservation();
+      resetCategories(null);
       ++revision;owner=null;override=null;
       if(dialog.open)dialog.close();
     }
     function open(trigger) {
       opener=trigger||doc.activeElement;
       owner=getAccount();++revision;override=pending?{status:'CHECKING'}:null;
+      resetCategories(owner);
       if(!dialog.open){try{dialog.showModal()}catch{return;}}
       render();
       if(owner&&!pending)run('initialize');
@@ -118,6 +132,7 @@
     dialog.addEventListener('close',()=>{
       if(dialog.open)return; // Ignore an older queued close event after reopening.
       stopObservation();
+      resetCategories(null);
       ++revision;owner=null;override=null;
       const target=getAccount()?doc.querySelector('.account-trigger'):doc.getElementById('loginBtn');
       if(target?.isConnected)target.focus();else if(opener?.isConnected)opener.focus();

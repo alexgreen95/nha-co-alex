@@ -1640,12 +1640,20 @@ body.pastel .notif-filters button:nth-child(2){--chip:#9c89c7}body.pastel .notif
 .push-settings{box-sizing:border-box;width:min(420px,calc(100% - 32px));max-height:calc(100dvh - 32px);padding:20px;border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--fg);box-shadow:0 14px 36px rgba(0,0,0,.18);overflow:auto}
 .push-settings::backdrop{background:rgba(0,0,0,.35)}
 .push-settings-head{display:flex;align-items:center;gap:12px}.push-settings-head h2{flex:1;min-width:0;margin:0;font-size:20px}
-.push-settings-head .btn{min-width:44px;min-height:44px;padding:8px}
+.push-settings-close{appearance:none;display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;padding:0;border:0;border-radius:0;background:transparent;color:var(--fg);box-shadow:none;font:inherit;font-size:26px;line-height:1;cursor:pointer}
 .push-settings p{line-height:1.55;overflow-wrap:anywhere}.push-settings-note{color:var(--muted);font-size:13px}
 .push-settings-warning{padding:12px;border:2px solid var(--accent);border-radius:10px;background:color-mix(in srgb,var(--accent) 12%,var(--card));color:var(--fg)}
 .push-settings-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}.push-settings-actions .btn{min-height:44px;max-width:100%;padding:10px 14px;white-space:normal}
 .push-settings [hidden]{display:none!important}.push-settings button:disabled{opacity:.6;cursor:default}
 .push-settings button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.push-category-settings{margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}
+.push-category-settings h3{margin:0;font-size:17px}.push-category-settings p{font-size:13px;color:var(--muted)}
+.push-category-fields{min-width:0;margin:12px 0 0;padding:0;border:0}
+.push-category-row{display:flex;align-items:center;gap:12px;min-height:52px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px;line-height:1.4}
+.push-category-row span{flex:1;min-width:0;overflow-wrap:anywhere}
+.push-category-toggle{appearance:none;position:relative;flex:0 0 42px;width:42px;height:24px;margin:0;border:1px solid var(--line);border-radius:999px;background:var(--soft);cursor:not-allowed}
+.push-category-toggle:indeterminate::after{content:"";position:absolute;left:14px;top:9px;width:12px;height:3px;border-radius:2px;background:var(--muted)}
+.push-category-footer{margin-top:14px}.push-category-footer .btn{min-height:44px;max-width:100%;padding:10px 14px;white-space:normal}
 </style>
 </head>
 <body class="gate-locked gate-checking">
@@ -1741,11 +1749,25 @@ document.body.classList.add('gate-locked','gate-checking');
 </div>
 </nav></header>
 <dialog id="pushSettingsDialog" class="push-settings" aria-labelledby="pushSettingsTitle" aria-describedby="pushSettingsMessage">
-  <div class="push-settings-head"><h2 id="pushSettingsTitle">Cài đặt thông báo</h2><button id="pushSettingsClose" class="btn" type="button" aria-label="Đóng cài đặt thông báo">×</button></div>
+  <div class="push-settings-head"><h2 id="pushSettingsTitle">Cài đặt thông báo</h2><button id="pushSettingsClose" class="push-settings-close" type="button" aria-label="Đóng cài đặt thông báo">×</button></div>
   <p id="pushSettingsMessage" role="status" aria-live="polite" aria-atomic="true">Đang kiểm tra trạng thái thông báo…</p>
   <p id="pushSettingsWarning" class="push-settings-warning" role="alert" aria-atomic="true" hidden></p>
   <p class="push-settings-note">Chỉ áp dụng trên thiết bị này. Thông báo đã hiển thị hoặc đang gửi có thể chưa được thu hồi.</p>
   <div class="push-settings-actions"><button id="pushSettingsAction" class="btn" type="button" hidden></button><button id="pushSettingsRefresh" class="btn" type="button">Kiểm tra trạng thái</button></div>
+  <section id="pushCategorySettings" class="push-category-settings" aria-labelledby="pushCategoryTitle" hidden>
+    <h3 id="pushCategoryTitle">Loại thông báo muốn nhận</h3>
+    <p>Các lựa chọn dùng chung cho tài khoản trên mọi thiết bị.</p>
+    <p id="pushCategoryStatus" role="status">Lựa chọn hiện chưa khả dụng tại đây. Chưa tải hoặc thay đổi cài đặt tài khoản.</p>
+    <fieldset class="push-category-fields" aria-labelledby="pushCategoryTitle" aria-describedby="pushCategoryStatus" disabled>
+      <label class="push-category-row"><span>Bình luận về truyện/chương của bạn</span><input class="push-category-toggle" type="checkbox" data-push-category="comment" disabled></label>
+      <label class="push-category-row"><span>Trả lời bình luận của bạn</span><input class="push-category-toggle" type="checkbox" data-push-category="reply" disabled></label>
+      <label class="push-category-row"><span>Nhắc đến bạn</span><input class="push-category-toggle" type="checkbox" data-push-category="mention" disabled></label>
+      <label class="push-category-row"><span>Tim bình luận của bạn</span><input class="push-category-toggle" type="checkbox" data-push-category="comment_like" disabled></label>
+      <label class="push-category-row"><span>Truyện mới</span><input class="push-category-toggle" type="checkbox" data-push-category="new_story" disabled></label>
+      <label class="push-category-row"><span>Chương mới</span><input class="push-category-toggle" type="checkbox" data-push-category="new_chapter" disabled></label>
+    </fieldset>
+    <div class="push-category-footer"><button id="pushCategorySave" class="btn" type="button" aria-describedby="pushCategoryStatus" disabled>Lưu lựa chọn</button></div>
+  </section>
 </dialog>
 <script>
 /* V21.28: hide Trang chủ immediately on the homepage; displayPage() handles later SPA views. */

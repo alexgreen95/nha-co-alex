@@ -1637,6 +1637,15 @@ body.pastel .notif-filters button:nth-child(2){--chip:#9c89c7}body.pastel .notif
  .intro-actions .btn{font-size:14px}
  #storyIntro .intro-tabs button{font-size:14px;white-space:nowrap;line-height:1.35;overflow-wrap:normal}
 }
+.push-settings{box-sizing:border-box;width:min(420px,calc(100% - 32px));max-height:calc(100dvh - 32px);padding:20px;border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--fg);box-shadow:0 14px 36px rgba(0,0,0,.18);overflow:auto}
+.push-settings::backdrop{background:rgba(0,0,0,.35)}
+.push-settings-head{display:flex;align-items:center;gap:12px}.push-settings-head h2{flex:1;min-width:0;margin:0;font-size:20px}
+.push-settings-head .btn{min-width:44px;min-height:44px;padding:8px}
+.push-settings p{line-height:1.55;overflow-wrap:anywhere}.push-settings-note{color:var(--muted);font-size:13px}
+.push-settings-warning{padding:12px;border:2px solid var(--accent);border-radius:10px;background:color-mix(in srgb,var(--accent) 12%,var(--card));color:var(--fg)}
+.push-settings-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}.push-settings-actions .btn{min-height:44px;max-width:100%;padding:10px 14px;white-space:normal}
+.push-settings [hidden]{display:none!important}.push-settings button:disabled{opacity:.6;cursor:default}
+.push-settings button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 </style>
 </head>
 <body class="gate-locked gate-checking">
@@ -1722,6 +1731,7 @@ document.body.classList.add('gate-locked','gate-checking');
         <button onclick="openProfile('activity')">Hoạt động</button>
         <button onclick="openProfile('saved')">Truyện đã lưu</button>
         <button onclick="openProfile('reading')">Đang đọc</button>
+        <button id="pushSettingsMenuBtn" type="button" aria-haspopup="dialog" aria-controls="pushSettingsDialog" onclick="openPushNotificationSettings(this)">Cài đặt thông báo</button>
         <button id="adminLibraryMenuBtn" style="display:none" onclick="openAdminLibrary()">Quản lý thư viện</button>
         <a class="feedback-link" href="https://forms.gle/2DDU2T5HSJDryGSq7" target="_blank" rel="noopener noreferrer" title="Báo lỗi &amp; góp ý">Báo lỗi &amp; góp ý</a>
         <button class="logout" onclick="signOut()">Đăng xuất</button>
@@ -1730,6 +1740,13 @@ document.body.classList.add('gate-locked','gate-checking');
   </div>
 </div>
 </nav></header>
+<dialog id="pushSettingsDialog" class="push-settings" aria-labelledby="pushSettingsTitle" aria-describedby="pushSettingsMessage">
+  <div class="push-settings-head"><h2 id="pushSettingsTitle">Cài đặt thông báo</h2><button id="pushSettingsClose" class="btn" type="button" aria-label="Đóng cài đặt thông báo">×</button></div>
+  <p id="pushSettingsMessage" role="status" aria-live="polite" aria-atomic="true">Đang kiểm tra trạng thái thông báo…</p>
+  <p id="pushSettingsWarning" class="push-settings-warning" role="alert" aria-atomic="true" hidden></p>
+  <p class="push-settings-note">Chỉ áp dụng trên thiết bị này. Thông báo đã hiển thị hoặc đang gửi có thể chưa được thu hồi.</p>
+  <div class="push-settings-actions"><button id="pushSettingsAction" class="btn" type="button" hidden></button><button id="pushSettingsRefresh" class="btn" type="button">Kiểm tra trạng thái</button></div>
+</dialog>
 <script>
 /* V21.28: hide Trang chủ immediately on the homepage; displayPage() handles later SPA views. */
 if(location.pathname==='/' || location.pathname===''){const b=document.getElementById('homeNavBtn');if(b)b.style.display='none';}
@@ -1881,6 +1898,7 @@ if(location.pathname==='/' || location.pathname===''){const b=document.getElemen
 <aside id="toc" class="toc"><div class="toc-head"><h3>Mục lục</h3><button class="btn" style="width:auto;border:1px solid var(--line);padding:6px 10px" onclick="toggleToc(false)">Đóng</button></div><div id="tocList"></div></aside>
 
 <script src="/assets/push-lifecycle.js"></script>
+<script src="/assets/push-settings.js"></script>
 <script>
 const seed=[];
 
@@ -2996,6 +3014,8 @@ const SUPABASE_PUBLISHABLE_KEY='sb_publishable_27AFeFGdbV8aQwGrekgziA_J8vy5lFd';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
 let authUser=null, notifFilter='all', accountCloseTimer=null, themeCloseTimer=null;
 const pushLifecycle=window.NcaPushLifecycle?.create({sb,getAccount:()=>authUser?.id||null});
+const pushNotificationSettings=window.NcaPushSettings?.create({lifecycle:pushLifecycle,getAccount:()=>authUser?.id||null});
+function openPushNotificationSettings(trigger){cancelAccountClose();document.getElementById('accountMenu').classList.remove('open');pushNotificationSettings?.open(trigger);}
 
 async function signInGoogle(){
  const m=document.getElementById('authMessage');
@@ -3130,6 +3150,7 @@ function handleAuthState(event,session){
 }
 
 function updateAuthUI(){
+ pushNotificationSettings?.accountChanged();
  activateMemberSync();
  activateChapterLikeAccount();
  renderChapterHeart();

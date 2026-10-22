@@ -11,6 +11,10 @@ async function startBrowser() {
       res.setHeader('Content-Type','application/javascript');
       res.end(fs.readFileSync(path.join(root,'assets/push-lifecycle.js')));return;
     }
+    if(pathname==='/assets/push-settings.js'){
+      res.setHeader('Content-Type','application/javascript');
+      res.end(fs.readFileSync(path.join(root,'assets/push-settings.js')));return;
+    }
     if(/^\/assets\/image-[a-f0-9]{12}\.png$/.test(pathname)){
       res.setHeader('Content-Type','image/png');
       res.end(fs.readFileSync(path.join(root,pathname)));return;

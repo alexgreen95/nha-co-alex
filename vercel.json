@@ -11,6 +11,11 @@
       "maxDuration": 30
     }
   },
+  "git": {
+    "deploymentEnabled": {
+      "content-push-pg17-ci": false
+    }
+  },
   "routes": [
     {
       "src": "/assets/image-[a-f0-9]{12}\\.png",

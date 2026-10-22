@@ -4,8 +4,13 @@ const sql=fs.readFileSync('database/migrations/20261022_content_push_delivery.sq
 const baseline=fs.readFileSync('tests/helpers/personal-push-sender-baseline.sql','utf8');
 const fn=name=>sql.match(new RegExp('CREATE FUNCTION public\\.'+name+'[\\s\\S]*?AS \\$fn\\$([\\s\\S]*?)\\$fn\\$;'))?.[1];
 const required=JSON.parse(sql.match(/DECLARE required pg_catalog\.jsonb := '([^']+)'/)[1]);
+const requiredFKDelete=JSON.parse(sql.match(/required_fk_delete pg_catalog\.jsonb := '([^']+)'/)[1]);
 const checkManifestMatches=actual=>required.checks.every(expected=>actual.some(row=>JSON.stringify(row)===JSON.stringify(expected)))&&
  required.check_alternatives.every(([table,,scope,hashes])=>actual.some(row=>row[0]===table&&row[1]===scope&&hashes.includes(row[2])));
+const fkDeleteManifestMatches=actual=>requiredFKDelete.every(expected=>{
+ const sameTarget=actual.filter(row=>JSON.stringify(row.slice(0,5))===JSON.stringify(expected.slice(0,5)));
+ return sameTarget.length===1&&JSON.stringify(sameTarget[0])===JSON.stringify(expected);
+});
 test('one new transaction, context/drift/collision guards precede creation, no replaced consumed functions',()=>{
  assert.match(sql,/BEGIN;[\s\S]*COMMIT;\s*$/);assert(sql.indexOf('NCA_CONTENT_FOUNDATION_')<sql.indexOf('CREATE FUNCTION'));
  assert(sql.includes("pg_catalog.current_setting('server_version_num')<>'170011'"));assert(sql.includes('NCA_CONTENT_ROLE_AUTHORITY'));assert(sql.includes('NCA_CONTENT_PERSONAL_BOUNDARY'));assert(sql.includes('NCA_CONTENT_COLLISION'));
@@ -20,6 +25,35 @@ test('structural requirements are explicit columns/checks/keys/indexes, not samp
  assert(sql.includes('k.convalidated AND NOT k.condeferrable'));assert(sql.includes('i.indisvalid AND i.indisready AND i.indislive'));
  assert(sql.includes('WHERE observed.value=item'));assert.doesNotMatch(sql,/@>/);
  assert.match(sql,/r\.relname IN \('stories','chapters'\) AND a\.attname='id' AND a\.attidentity='d' THEN '' ELSE a\.attidentity/);
+});
+test('reviewed FK delete actions stay bound to their ordered relation/column targets',()=>{
+ assert.deepEqual(requiredFKDelete,[
+  ['push_subscriptions',['user_id'],'auth','users',['id'],'c'],
+  ['push_preferences',['user_id'],'auth','users',['id'],'c'],
+  ['push_deliveries',['personal_notification_id'],'public','push_personal_events',['notification_id'],'c']
+ ]);
+ assert.match(sql,/k\.confdeltype::pg_catalog\.text/);
+ assert.match(sql,/WHERE k\.contype='f' AND k\.convalidated AND NOT k\.condeferrable AND NOT k\.condeferred/);
+ assert.match(sql,/jsonb_array_elements\(required_fk_delete\)/);
+ assert.match(sql,/observed\.value=item/);
+ assert.match(sql,/observed\.value->4=item->4\)<>1/);
+ const reviewed=requiredFKDelete.map(row=>[...row.slice(0,2),row[2],row[3],[...row[4]],row[5]]);
+ assert(fkDeleteManifestMatches(reviewed),'exact reviewed cascade contracts pass');
+ const changedAction=reviewed.map(row=>[...row]);changedAction[0][5]='a';
+ assert(!fkDeleteManifestMatches(changedAction),'ON DELETE NO ACTION fails');
+ const duplicateConflict=reviewed.concat([[...reviewed[0].slice(0,5),'a']]);
+ assert(!fkDeleteManifestMatches(duplicateConflict),'a conflicting duplicate FK action fails');
+ const swapped=reviewed.map(row=>[...row]);
+ for(const index of [2,3,4]) [swapped[0][index],swapped[2][index]]=[swapped[2][index],swapped[0][index]];
+ assert(!fkDeleteManifestMatches(swapped),'swapping FK metadata between local relations fails');
+ assert(!fkDeleteManifestMatches(reviewed.slice(1)),'missing required FK fails');
+ const wrongTarget=reviewed.map(row=>[...row]);wrongTarget[2][4]=['id'];
+ assert(!fkDeleteManifestMatches(wrongTarget),'referenced-column mismatch fails');
+ const wrongRelation=reviewed.map(row=>[...row]);wrongRelation[2][3]='push_events';
+ assert(!fkDeleteManifestMatches(wrongRelation),'referenced-relation mismatch fails');
+ // Approved evidence in the audit note records delete action only; do not guess
+ // ON UPDATE or MATCH behavior from defaults or from a collector field name.
+ assert.doesNotMatch(sql,/k\.confupdtype|k\.confmatchtype/);
 });
 test('reviewed CHECK alternatives stay bound to their table and logical invariant',()=>{
  const alternatives=required.check_alternatives;

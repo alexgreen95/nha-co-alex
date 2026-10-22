@@ -161,11 +161,24 @@ of this task's catalog contract, with raw attribute references normalized to
 column names; it is NOT an approved production snapshot or lost-source recovery.
 Each required positional record must equal one whole observed record; unordered
 JSON array containment is not used to compare constraints/keys/indexes.
-CHECK trees that differ even when logically equivalent fail closed. Additional
-unneeded constraints/columns are allowed. Full current production CHECK expression
-trees were not supplied here, so exact production acceptance is NOT verified.
-Review that compatibility before any installation; do not weaken/bypass a failed
-guard. Keep privileged role/routine DDL excluded throughout installation.
+Operator-reviewed production catalog evidence includes the raw CHECK trees and
+the exact candidate-to-production hash mapping. The guard accepts only each
+candidate hash or its reviewed production equivalent, bound to that table and
+logical invariant; the publication metadata mapping is
+`4d244c0394485df884ebf8c4c2a84867` to
+`32b9db3725b3931d958ed6dc285b2d40`. The distinct
+`9c603e8249311c5b9a1557f53b8e6819` origin CHECK remains an exact requirement.
+This records reviewed catalog compatibility, not recovered historical DDL or
+permission to install. Do not weaken or bypass a failed guard.
+
+The guard also requires `ON DELETE CASCADE` for the three reviewed external
+foreign keys: subscription user, preference user, and personal notification.
+The saved evidence does not record their exact `ON UPDATE` actions or MATCH
+types, so those properties are not asserted. The collector can capture them;
+obtain and review those values before adding further requirements. The isolated
+PostgreSQL 17.11 witness is still pending. Installation remains blocked until
+all review and runtime prerequisites are cleared; keep privileged role/routine
+DDL excluded throughout any later installation window.
 
 Targeted tests use fake HTTP/pg boundaries plus the already-running network-none
 PostgreSQL 17.11 scratch container and one pinned Unix socket, explicit database/

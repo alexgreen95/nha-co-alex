@@ -155,3 +155,21 @@ Focused static tests cover candidate and production alternatives, cross-rule
 swaps, arbitrary and missing fingerprints, and the publication-origin boundary.
 The isolated PostgreSQL 17 witness runtime is still unprovisioned and remains
 `PG17_RUNTIME = UNVERIFIED`.
+
+## FK guard and operator-doc follow-up (2026-10-23)
+
+The migration guard now additionally binds `ON DELETE CASCADE` (`confdeltype =
+'c'`) to the exact ordered relation/column mapping for:
+
+- `push_subscriptions.user_id` -> `auth.users(id)`
+- `push_preferences.user_id` -> `auth.users(id)`
+- `push_deliveries.personal_notification_id` ->
+  `public.push_personal_events(notification_id)`
+
+The existing key guard still requires validated, nondeferrable constraints.
+The reviewed evidence saved here does not include exact `ON UPDATE` action or
+MATCH type values. The collector records `confupdtype` and `confmatchtype`, but
+the migration does not assert those fields pending reviewed values; no defaults
+were inferred. `docs/content-push.md` was updated to reflect the reviewed CHECK
+hash mappings, this FK guard scope, and the still-pending PG17.11 witness. No
+production execution or installation occurred.

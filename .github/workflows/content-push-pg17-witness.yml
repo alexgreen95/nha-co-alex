@@ -1,7 +1,9 @@
 name: Content Push PG17 witness
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - content-push-pg17-ci
 
 permissions:
   contents: read

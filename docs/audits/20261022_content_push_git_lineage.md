@@ -118,4 +118,40 @@ validated, and nondeferrable.
 
 CHECK lineage remains unresolved: the supplied current production definitions
 do not establish authoritative historical source DDL. No CHECK guard was
-changed or weakened by the evidence-backed follow-up.
+changed at the time of this production-evidence addendum. The separately
+reviewed alternatives below are based on the later semantic reconciliation.
+
+## Reviewed CHECK fingerprint alternatives (2026-10-23)
+
+Operator-reviewed semantic reconciliation classified the event lifetime rule
+and ten legacy `push_preferences` rules as `SEMANTICALLY_EQUIVALENT`, and the
+`content_publications` metadata rule as `PRODUCTION_STRICTER_COMPATIBLE`. The
+publication metadata mapping is candidate
+`4d244c0394485df884ebf8c4c2a84867` to production
+`32b9db3725b3931d958ed6dc285b2d40`; `9c603e8249311c5b9a1557f53b8e6819`
+remains the already-matching `content_publications_origin_check` fingerprint.
+
+The migration guard now accepts each original candidate fingerprint or its
+exact reviewed production equivalent, bound separately to its table and
+logical invariant. All other CHECK fingerprints remain exact and fail closed:
+
+| Table / logical invariant | Candidate | Reviewed production |
+| --- | --- | --- |
+| `push_content_events` lifetime | `b634c31b56e460e7d876fa6eae0ef65b` | `c02f8882fb8853364686e10079d5ec53` |
+| `content_publications` metadata | `4d244c0394485df884ebf8c4c2a84867` | `32b9db3725b3931d958ed6dc285b2d40` |
+| `push_preferences_revision_check` | `9eb5e5f3646758249a81e65d92c9aaa1` | `b50e163164a3859b3f2a0c3345d5579c` |
+| `push_preferences_check` | `19908229a458f34817950aa89b5b9d9b` | `aebb952c5401e6d98f92f30943a8f6b7` |
+| `push_preferences_check1` | `6a447d43ba2b15dc3659a34342986844` | `307cf9012e7d4c50a425cb87f62c876f` |
+| `push_preferences_check2` | `d0dfde05cef009db0bf559637f77f3b5` | `ae213bc509a9e8e3ef286c60081d4135` |
+| `push_preferences_check3` | `9afece9bffae87f05886c81cef27700a` | `c5868e8bcaa542be512a9535c932e7e4` |
+| `push_preferences_updated_at_check` | `c78bf73b84a0cb0e17e1c45d403c0156` | `a3892e64ec447e7556413e1b993401e8` |
+| `push_preferences_comment_enabled_since_check` | `bfcbcd18113c90a819dd7067ce34e903` | `f81e4ee892464ef60a3926f1bba53d26` |
+| `push_preferences_reply_enabled_since_check` | `2fe580d86d0a208af86581024afd0ba4` | `a620d58ab205e334cea2f28972610dbd` |
+| `push_preferences_mention_enabled_since_check` | `294cca3b1f1ba605c08bc0761327767b` | `c2665edfeacecd93bec27d5bb3be6ce2` |
+| `push_preferences_comment_like_enabled_since_check` | `7d312628af98bbd807ae536fe95284e1` | `a229c200a1e813678f7e817133ec9d55` |
+
+The origin CHECK and new-story/new-chapter preference CHECKs remain unchanged.
+Focused static tests cover candidate and production alternatives, cross-rule
+swaps, arbitrary and missing fingerprints, and the publication-origin boundary.
+The isolated PostgreSQL 17 witness runtime is still unprovisioned and remains
+`PG17_RUNTIME = UNVERIFIED`.

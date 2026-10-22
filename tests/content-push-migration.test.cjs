@@ -3,6 +3,9 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),fs=requir
 const sql=fs.readFileSync('database/migrations/20261022_content_push_delivery.sql','utf8');
 const baseline=fs.readFileSync('tests/helpers/personal-push-sender-baseline.sql','utf8');
 const fn=name=>sql.match(new RegExp('CREATE FUNCTION public\\.'+name+'[\\s\\S]*?AS \\$fn\\$([\\s\\S]*?)\\$fn\\$;'))?.[1];
+const required=JSON.parse(sql.match(/DECLARE required pg_catalog\.jsonb := '([^']+)'/)[1]);
+const checkManifestMatches=actual=>required.checks.every(expected=>actual.some(row=>JSON.stringify(row)===JSON.stringify(expected)))&&
+ required.check_alternatives.every(([table,,scope,hashes])=>actual.some(row=>row[0]===table&&row[1]===scope&&hashes.includes(row[2])));
 test('one new transaction, context/drift/collision guards precede creation, no replaced consumed functions',()=>{
  assert.match(sql,/BEGIN;[\s\S]*COMMIT;\s*$/);assert(sql.indexOf('NCA_CONTENT_FOUNDATION_')<sql.indexOf('CREATE FUNCTION'));
  assert(sql.includes("pg_catalog.current_setting('server_version_num')<>'170011'"));assert(sql.includes('NCA_CONTENT_ROLE_AUTHORITY'));assert(sql.includes('NCA_CONTENT_PERSONAL_BOUNDARY'));assert(sql.includes('NCA_CONTENT_COLLISION'));
@@ -17,6 +20,59 @@ test('structural requirements are explicit columns/checks/keys/indexes, not samp
  assert(sql.includes('k.convalidated AND NOT k.condeferrable'));assert(sql.includes('i.indisvalid AND i.indisready AND i.indislive'));
  assert(sql.includes('WHERE observed.value=item'));assert.doesNotMatch(sql,/@>/);
  assert.match(sql,/r\.relname IN \('stories','chapters'\) AND a\.attname='id' AND a\.attidentity='d' THEN '' ELSE a\.attidentity/);
+});
+test('reviewed CHECK alternatives stay bound to their table and logical invariant',()=>{
+ const alternatives=required.check_alternatives;
+ assert.deepEqual(alternatives,[
+  ['push_content_events','push_content_events_lifetime','check',['b634c31b56e460e7d876fa6eae0ef65b','c02f8882fb8853364686e10079d5ec53']],
+  ['content_publications','content_publications_genuine_legacy_metadata','check',['4d244c0394485df884ebf8c4c2a84867','32b9db3725b3931d958ed6dc285b2d40']],
+  ['push_preferences','push_preferences_revision_check','check',['9eb5e5f3646758249a81e65d92c9aaa1','b50e163164a3859b3f2a0c3345d5579c']],
+  ['push_preferences','push_preferences_check','check',['19908229a458f34817950aa89b5b9d9b','aebb952c5401e6d98f92f30943a8f6b7']],
+  ['push_preferences','push_preferences_check1','check',['6a447d43ba2b15dc3659a34342986844','307cf9012e7d4c50a425cb87f62c876f']],
+  ['push_preferences','push_preferences_check2','check',['d0dfde05cef009db0bf559637f77f3b5','ae213bc509a9e8e3ef286c60081d4135']],
+  ['push_preferences','push_preferences_check3','check',['9afece9bffae87f05886c81cef27700a','c5868e8bcaa542be512a9535c932e7e4']],
+  ['push_preferences','push_preferences_updated_at_check','check',['c78bf73b84a0cb0e17e1c45d403c0156','a3892e64ec447e7556413e1b993401e8']],
+  ['push_preferences','push_preferences_comment_enabled_since_check','check',['bfcbcd18113c90a819dd7067ce34e903','f81e4ee892464ef60a3926f1bba53d26']],
+  ['push_preferences','push_preferences_reply_enabled_since_check','check',['2fe580d86d0a208af86581024afd0ba4','a620d58ab205e334cea2f28972610dbd']],
+  ['push_preferences','push_preferences_mention_enabled_since_check','check',['294cca3b1f1ba605c08bc0761327767b','c2665edfeacecd93bec27d5bb3be6ce2']],
+  ['push_preferences','push_preferences_comment_like_enabled_since_check','check',['7d312628af98bbd807ae536fe95284e1','a229c200a1e813678f7e817133ec9d55']]
+ ]);
+ assert.equal(new Set(alternatives.map(row=>row[1])).size,12);
+ assert(alternatives.every(row=>row.length===4&&row[2]==='check'&&row[3].length===2&&new Set(row[3]).size===2));
+ assert.match(sql,/jsonb_each\(required\) WHERE key<>'check_alternatives'/);
+ assert.match(sql,/observed\.value->>0=item->>0 AND observed\.value->>1=item->>2/);
+ assert.match(sql,/jsonb_array_elements_text\(item->3\)/);
+ assert.match(sql,/allowed\.hash=observed\.value->>2/);
+ const candidate=required.checks.concat(alternatives.map(([table,,scope,hashes])=>[table,scope,hashes[0]]));
+ assert(checkManifestMatches(candidate),'all candidate fingerprints pass');
+ const production=required.checks.concat(alternatives.map(([table,,scope,hashes])=>[table,scope,hashes[1]]));
+ assert(checkManifestMatches(production),'all exact reviewed production fingerprints pass');
+ const arbitrary=production.map(row=>[...row]);
+ const [first]=alternatives;const changed=arbitrary.find(row=>row[0]===first[0]&&row[1]===first[2]&&row[2]===first[3][1]);changed[2]='ffffffffffffffffffffffffffffffff';
+ assert(!checkManifestMatches(arbitrary),'unreviewed replacement fingerprint fails');
+ const swapped=required.checks.concat(alternatives.map(([table,,scope,hashes])=>[table,scope,hashes[1]]));
+ const event=alternatives[0],publication=alternatives[1];
+ swapped.find(row=>row[0]===event[0]&&row[1]===event[2]&&row[2]===event[3][1])[2]=publication[3][1];
+ swapped.find(row=>row[0]===publication[0]&&row[1]===publication[2]&&row[2]===publication[3][1])[2]=event[3][1];
+ assert(!checkManifestMatches(swapped),'swapping approved fingerprints between invariants fails');
+ assert(!checkManifestMatches(candidate.filter(row=>!(row[0]==='push_content_events'&&row[1]==='check'&&row[2]===alternatives[0][3][0]))),'missing required invariant fails');
+});
+test('publication metadata alternative is isolated from origin and other CHECK guards',()=>{
+ const publication=required.check_alternatives.find(row=>row[0]==='content_publications');
+ assert.deepEqual(publication,['content_publications','content_publications_genuine_legacy_metadata','check',['4d244c0394485df884ebf8c4c2a84867','32b9db3725b3931d958ed6dc285b2d40']]);
+ const origin=['content_publications','check','9c603e8249311c5b9a1557f53b8e6819'];
+ assert(required.checks.some(row=>JSON.stringify(row)===JSON.stringify(origin)),'origin hash stays exact and separate');
+ assert(!required.check_alternatives.some(([, , ,hashes])=>hashes.includes(origin[2])));
+ const production=required.checks.concat(required.check_alternatives.map(([table,,scope,hashes])=>[table,scope,hashes[1]]));
+ assert(checkManifestMatches(production),'production metadata fingerprint passes its own invariant');
+ const wrongOrigin=production.map(row=>[...row]);
+ const originRow=wrongOrigin.find(row=>row[0]===origin[0]&&row[1]===origin[1]&&row[2]===origin[2]);originRow[2]=publication[3][1];
+ assert(!checkManifestMatches(wrongOrigin),'metadata fingerprint cannot satisfy the origin invariant');
+ for(const hash of ['9867e2a437a1bd976ced8693f99a1511','61df2a5a6be1124c31951ccf4539747a'])
+  assert(required.checks.some(row=>row[0]==='push_preferences'&&row[2]===hash),'new-story/new-chapter CHECK remains exact');
+ const unrelated=required.checks.map(row=>[...row]).concat(required.check_alternatives.map(([table,,scope,hashes])=>[table,scope,hashes[0]]));
+ const subscription=unrelated.find(row=>row[0]==='push_subscriptions');subscription[2]='ffffffffffffffffffffffffffffffff';
+ assert(!checkManifestMatches(unrelated),'unrelated CHECK change remains fail-closed');
 });
 test('all six routines are definer/empty-path/hardened and have checked exact new source hashes',()=>{
  const hashes=JSON.parse(sql.match(/expected pg_catalog.jsonb:='([^']+)'/)[1]);assert.equal(Object.keys(hashes).length,6);

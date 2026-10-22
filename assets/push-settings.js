@@ -1,4 +1,4 @@
-/* Notification settings presentation only; lifecycle authority stays in pushLifecycle. */
+/* Device lifecycle controls and separate authenticated account preferences. */
 (function (root) {
   'use strict';
   const views = {
@@ -33,23 +33,122 @@
     const [message,action,warning]=views[code];
     return {message,action:action||null,warning:warning===true};
   }
-  function create({lifecycle,getAccount,document:doc=root.document}={}) {
+  const categoryKeys=['comment','reply','mention','comment_like','new_story','new_chapter'];
+  const maxRevision=9223372036854775807n;
+  function validTimestamp(value) {
+    if(value===null)return true;
+    if(typeof value!=='string')return false;
+    const m=/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,6})?(?:Z|([+-])(\d{2}):(\d{2}))$/.exec(value);
+    if(!m)return false;
+    const [,y,mo,d,h,mi,se,,zh='0',zm='0']=m;
+    const year=Number(y),month=Number(mo),day=Number(d);
+    const days=[31,year%4===0&&(year%100!==0||year%400===0)?29:28,31,30,31,30,31,31,30,31,30,31];
+    return year>0&&month>=1&&month<=12&&day>=1&&day<=days[month-1]&&Number(h)<24&&Number(mi)<60&&Number(se)<60&&Number(zh)<=15&&Number(zm)<60&&Number.isFinite(Date.parse(value));
+  }
+  function parsePreferences(value) {
+    const fields=['revision',...categoryKeys.flatMap(k=>[k+'_enabled',k+'_enabled_since'])];
+    if(!value||Object.getPrototypeOf(value)!==Object.prototype||Object.keys(value).length!==fields.length||fields.some(k=>!Object.hasOwn(value,k))||
+      typeof value.revision!=='string'||value.revision.length>19||!/^(0|[1-9][0-9]*)$/.test(value.revision)||BigInt(value.revision)>maxRevision)throw Error('INVALID_PREFERENCES');
+    for(const key of categoryKeys)if(typeof value[key+'_enabled']!=='boolean'||!validTimestamp(value[key+'_enabled_since']))throw Error('INVALID_PREFERENCES');
+    return Object.freeze(Object.fromEntries(fields.map(k=>[k,value[k]])));
+  }
+  function create({lifecycle,sb,getAccount,document:doc=root.document}={}) {
     const dialog=doc.getElementById('pushSettingsDialog');
     const message=doc.getElementById('pushSettingsMessage'),warning=doc.getElementById('pushSettingsWarning');
     const primary=doc.getElementById('pushSettingsAction'),refresh=doc.getElementById('pushSettingsRefresh');
-    const categories=doc.getElementById('pushCategorySettings');
-    function resetCategories(account) {
-      // Transport/revision contract is unavailable. Unknown is NOT false/default.
-      // No preference reader, setter, draft save or lifecycle call is fabricated.
-      categories.hidden=!account;
-      categories.dataset.state='unknown';
-      for(const input of categories.querySelectorAll('[data-push-category]')){
-        input.checked=false;input.indeterminate=true;input.disabled=true;
+    const categories=doc.getElementById('pushCategorySettings'),categoryStatus=doc.getElementById('pushCategoryStatus');
+    const categorySave=doc.getElementById('pushCategorySave'),categoryFields=categories.querySelector('fieldset');
+    const categoryInputs=[...categories.querySelectorAll('[data-push-category]')];
+    let owner=null,revision=0,pending=null,override=null,opener=null,observation=null;
+    let categoryEpoch=0,categorySnapshot=null,categoryBusy=false,categoryWrite=null;
+    function projectCategories(snapshot) {
+      for(const input of categoryInputs){
+        input.checked=snapshot?snapshot[input.dataset.pushCategory+'_enabled']:false;
+        input.indeterminate=!snapshot;
       }
-      doc.getElementById('pushCategorySave').disabled=true;
+    }
+    function resetCategories(account) {
+      ++categoryEpoch;categorySnapshot=null;categoryBusy=false;
+      categories.hidden=!account;categories.dataset.state='unknown';
+      projectCategories(null);categoryFields.disabled=true;
+      for(const input of categoryInputs)input.disabled=true;
+      categorySave.disabled=true;
+      categoryStatus.textContent=account?'Đang tải lựa chọn thông báo…':'Vui lòng đăng nhập để chọn loại thông báo.';
+    }
+    function categoryLive(job) {
+      return isOpen()&&!!job.account&&owner===job.account&&getAccount()===job.account&&categoryEpoch===job.epoch;
+    }
+    function renderCategories() {
+      const locked=!owner||owner!==getAccount()||!categorySnapshot||categoryBusy||!!categoryWrite;
+      categoryFields.disabled=locked;
+      for(const input of categoryInputs)input.disabled=locked;
+      categorySave.disabled=locked||!categoryInputs.some(input=>input.checked!==categorySnapshot[input.dataset.pushCategory+'_enabled']);
+      categories.setAttribute('aria-busy',String(categoryBusy||!!categoryWrite));
+    }
+    async function preferenceRpc(job,name,args) {
+      if(!categoryLive(job)||!sb?.auth?.getSession||!sb.rpc)throw Error('PREFERENCES_UNAVAILABLE');
+      const session=await sb.auth.getSession();
+      if(!categoryLive(job)||session?.error||session?.data?.session?.user?.id!==job.account||typeof session.data.session.access_token!=='string'||!session.data.session.access_token)throw Error('PREFERENCES_UNAVAILABLE');
+      // Pin the captured existing session: an SDK auth change during its async
+      // fetch must never send this account's draft under another account's token.
+      const request=args?sb.rpc(name,args):sb.rpc(name);
+      if(typeof request?.setHeader!=='function')throw Error('PREFERENCES_UNAVAILABLE');
+      return await request.setHeader('Authorization','Bearer '+session.data.session.access_token);
+    }
+    async function loadCategories(afterMessage,afterState='ready') {
+      if(!isOpen()||!owner||owner!==getAccount())return;
+      const job={account:owner,epoch:++categoryEpoch};
+      categorySnapshot=null;categoryBusy=true;projectCategories(null);
+      categories.dataset.state='loading';categoryStatus.textContent='Đang tải lựa chọn thông báo…';renderCategories();
+      try {
+        const result=await preferenceRpc(job,'nca_get_push_preferences');
+        if(!categoryLive(job))return;
+        if(result?.error)throw Error('PREFERENCES_UNAVAILABLE');
+        categorySnapshot=parsePreferences(result?.data);projectCategories(categorySnapshot);
+        categories.dataset.state=afterState;
+        categoryStatus.textContent=categoryWrite?'Đang chờ kết quả lần lưu trước. Không tự động thử lại.':afterMessage||'Chọn loại thông báo rồi nhấn Lưu lựa chọn.';
+      } catch {
+        if(!categoryLive(job))return;
+        categorySnapshot=null;projectCategories(null);categories.dataset.state='error';
+        categoryStatus.textContent=afterMessage?'Chưa xác nhận kết quả lưu và chưa tải được lựa chọn hiện tại. Hãy đóng rồi mở lại cài đặt; không tự động thử lưu lại.':'Chưa tải được lựa chọn. Hãy đóng rồi mở lại cài đặt để kiểm tra.';
+      } finally {
+        if(categoryLive(job)){categoryBusy=false;renderCategories();}
+      }
+    }
+    async function saveCategories() {
+      if(!isOpen()||!owner||owner!==getAccount()||categoryBusy||categoryWrite||!categorySnapshot||categorySave.disabled)return;
+      const job={account:owner,epoch:categoryEpoch};
+      const args={p_expected_revision:categorySnapshot.revision};
+      for(const input of categoryInputs)args['p_'+input.dataset.pushCategory+'_enabled']=input.checked;
+      categoryWrite=job;categoryBusy=true;categories.dataset.state='saving';
+      categoryStatus.textContent='Đang lưu lựa chọn…';renderCategories();
+      let reconciled=false,conflict=false;
+      try {
+        const result=await preferenceRpc(job,'nca_set_push_preferences',args);
+        if(!categoryLive(job))return;
+        conflict=result?.error?.code==='PT409';
+        if(result?.error)throw Error('PREFERENCES_UNCONFIRMED');
+        const snapshot=parsePreferences(result?.data);
+        if(BigInt(snapshot.revision)!==BigInt(args.p_expected_revision)+1n||categoryKeys.some(k=>snapshot[k+'_enabled']!==args['p_'+k+'_enabled']))throw Error('PREFERENCES_UNCONFIRMED');
+        categorySnapshot=snapshot;projectCategories(snapshot);categories.dataset.state='success';
+        categoryStatus.textContent='Đã lưu lựa chọn thông báo.';
+      } catch {
+        if(categoryLive(job)){
+          categoryWrite=null;reconciled=true;
+          await loadCategories(conflict?'Lựa chọn đã thay đổi ở nơi khác. Hãy xem lại và lưu lại nếu cần.':'Chưa xác nhận đã lưu. Đã tải lựa chọn hiện tại; hãy xem lại trước khi lưu lần nữa.',conflict?'conflict':'unknown');
+        }
+      } finally {
+        if(categoryWrite===job)categoryWrite=null;
+        if(categoryLive(job)){categoryBusy=false;renderCategories();}
+        else if(isOpen()&&owner&&owner===getAccount()){
+          // Never apply an old response after close/reopen or an account switch.
+          // A reopened same account gets one fresh read after the old write ends.
+          if(!reconciled&&owner===job.account)void loadCategories('Đã tải lựa chọn hiện tại. Hãy xem lại trước khi lưu.');
+          else renderCategories();
+        }
+      }
     }
     resetCategories(null);
-    let owner=null,revision=0,pending=null,override=null,opener=null,observation=null;
     const isOpen=()=>dialog.open;
     const read=()=>{try{return lifecycle?.getState()||{status:'UNSUPPORTED'}}catch{return {status:'UNAVAILABLE'}}};
     function visibleState() {
@@ -122,9 +221,12 @@
       resetCategories(owner);
       if(!dialog.open){try{dialog.showModal()}catch{return;}}
       render();
+      if(owner)void loadCategories();
       if(owner&&!pending)run('initialize');
       else observePending();
     }
+    categorySave.addEventListener('click',()=>{void saveCategories();});
+    for(const input of categoryInputs)input.addEventListener('change',renderCategories);
     primary.addEventListener('click',()=>run(view(visibleState()).action));
     refresh.addEventListener('click',()=>run('initialize'));
     doc.getElementById('pushSettingsClose').addEventListener('click',close);
@@ -139,6 +241,6 @@
     });
     return Object.freeze({open,accountChanged(){if(isOpen()&&owner!==getAccount())close();}});
   }
-  if(typeof module==='object'&&module.exports)module.exports={create,view};
+  if(typeof module==='object'&&module.exports)module.exports={create,view,parsePreferences};
   else root.NcaPushSettings=Object.freeze({create});
 })(typeof window==='object'?window:globalThis);

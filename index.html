@@ -1651,7 +1651,13 @@ body.pastel .notif-filters button:nth-child(2){--chip:#9c89c7}body.pastel .notif
 .push-category-fields{min-width:0;margin:12px 0 0;padding:0;border:0}
 .push-category-row{display:flex;align-items:center;gap:12px;min-height:52px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px;line-height:1.4}
 .push-category-row span{flex:1;min-width:0;overflow-wrap:anywhere}
-.push-category-toggle{appearance:none;position:relative;flex:0 0 42px;width:42px;height:24px;margin:0;border:1px solid var(--line);border-radius:999px;background:var(--soft);cursor:not-allowed}
+.push-category-toggle{appearance:none;position:relative;flex:0 0 42px;width:42px;height:24px;margin:0;border:1px solid var(--line);border-radius:999px;background:var(--soft);cursor:pointer}
+.push-category-toggle::before{content:"";position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:var(--muted)}
+.push-category-toggle:checked{background:var(--accent);border-color:var(--accent)}
+.push-category-toggle:checked::before{left:21px;background:var(--card)}
+.push-category-toggle:indeterminate::before{display:none}
+.push-category-toggle:disabled{cursor:default;opacity:.65}
+.push-category-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 .push-category-toggle:indeterminate::after{content:"";position:absolute;left:14px;top:9px;width:12px;height:3px;border-radius:2px;background:var(--muted)}
 .push-category-footer{margin-top:14px}.push-category-footer .btn{min-height:44px;max-width:100%;padding:10px 14px;white-space:normal}
 </style>
@@ -1757,12 +1763,12 @@ document.body.classList.add('gate-locked','gate-checking');
   <section id="pushCategorySettings" class="push-category-settings" aria-labelledby="pushCategoryTitle" hidden>
     <h3 id="pushCategoryTitle">Loại thông báo muốn nhận</h3>
     <p>Các lựa chọn dùng chung cho tài khoản trên mọi thiết bị.</p>
-    <p id="pushCategoryStatus" role="status">Lựa chọn hiện chưa khả dụng tại đây. Chưa tải hoặc thay đổi cài đặt tài khoản.</p>
+    <p id="pushCategoryStatus" role="status">Đang tải lựa chọn thông báo…</p>
     <fieldset class="push-category-fields" aria-labelledby="pushCategoryTitle" aria-describedby="pushCategoryStatus" disabled>
-      <label class="push-category-row"><span>Bình luận về truyện/chương của bạn</span><input class="push-category-toggle" type="checkbox" data-push-category="comment" disabled></label>
-      <label class="push-category-row"><span>Trả lời bình luận của bạn</span><input class="push-category-toggle" type="checkbox" data-push-category="reply" disabled></label>
+      <label class="push-category-row"><span>Bình luận</span><input class="push-category-toggle" type="checkbox" data-push-category="comment" disabled></label>
+      <label class="push-category-row"><span>Trả lời</span><input class="push-category-toggle" type="checkbox" data-push-category="reply" disabled></label>
       <label class="push-category-row"><span>Nhắc đến bạn</span><input class="push-category-toggle" type="checkbox" data-push-category="mention" disabled></label>
-      <label class="push-category-row"><span>Tim bình luận của bạn</span><input class="push-category-toggle" type="checkbox" data-push-category="comment_like" disabled></label>
+      <label class="push-category-row"><span>Tim bình luận</span><input class="push-category-toggle" type="checkbox" data-push-category="comment_like" disabled></label>
       <label class="push-category-row"><span>Truyện mới</span><input class="push-category-toggle" type="checkbox" data-push-category="new_story" disabled></label>
       <label class="push-category-row"><span>Chương mới</span><input class="push-category-toggle" type="checkbox" data-push-category="new_chapter" disabled></label>
     </fieldset>
@@ -3036,7 +3042,7 @@ const SUPABASE_PUBLISHABLE_KEY='sb_publishable_27AFeFGdbV8aQwGrekgziA_J8vy5lFd';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
 let authUser=null, notifFilter='all', accountCloseTimer=null, themeCloseTimer=null;
 const pushLifecycle=window.NcaPushLifecycle?.create({sb,getAccount:()=>authUser?.id||null});
-const pushNotificationSettings=window.NcaPushSettings?.create({lifecycle:pushLifecycle,getAccount:()=>authUser?.id||null});
+const pushNotificationSettings=window.NcaPushSettings?.create({lifecycle:pushLifecycle,sb,getAccount:()=>authUser?.id||null});
 function openPushNotificationSettings(trigger){cancelAccountClose();document.getElementById('accountMenu').classList.remove('open');pushNotificationSettings?.open(trigger);}
 
 async function signInGoogle(){

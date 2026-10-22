@@ -19,7 +19,7 @@ SET LOCAL transaction_timeout = '30s';
 WITH RECURSIVE
 limits AS (
  SELECT 128 AS routines,512 AS columns,256 AS constraints,256 AS indexes,
-  256 AS triggers,128 AS policies,256 AS roles,1024 AS memberships,
+  512 AS triggers,128 AS policies,256 AS roles,1024 AS memberships,
   4096 AS dependencies,2048 AS shared_dependencies,1024 AS types,
   4096 AS acl_entries,256 AS default_acls,128 AS rewrites,
   256 AS descriptors,65536 AS source_bytes,16384 AS config_bytes,4194304 AS output_bytes

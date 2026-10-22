@@ -1,0 +1,80 @@
+name: Content Push PG17 witness
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pg17-witness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Provision isolated PostgreSQL 17.11 witness
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          root=/tmp/nca-pg17-guard-witness-62kuw392
+          socket="$root/socket"
+          client="$root/bin/psql"
+          test ! -e "$root"
+          mkdir -p "$socket" "$root/bin"
+          chmod 0777 "$socket"
+
+          cat > "$client" <<'ADAPTER'
+          #!/usr/bin/env bash
+          set -Eeuo pipefail
+          exec docker --host=unix:///var/run/docker.sock exec -i nca-pg17-guard-witness env -i \
+            PATH=/usr/local/bin:/usr/bin:/bin LANG=C LC_ALL=C TZ=UTC \
+            HOME=/nonexistent-nca-content-test PGPASSFILE=/dev/null \
+            PGSERVICEFILE=/dev/null PGSYSCONFDIR=/nonexistent-nca-content-test \
+            PGCONNECT_TIMEOUT=3 PGAPPNAME=nca_content_local \
+            psql "$@"
+          ADAPTER
+          chmod 0755 "$client"
+
+          docker run --detach \
+            --name nca-pg17-guard-witness \
+            --network none \
+            --mount "type=bind,src=$socket,dst=$socket" \
+            --env POSTGRES_DB=nca_guard_witness \
+            --env POSTGRES_USER=nca_guard_witness_admin \
+            --env POSTGRES_HOST_AUTH_METHOD=trust \
+            postgres:17.11-bookworm \
+            postgres -c "unix_socket_directories=$socket"
+
+          ready=0
+          for _ in $(seq 1 60); do
+            if docker exec nca-pg17-guard-witness pg_isready \
+              --host="$socket" --port=5432 \
+              --username=nca_guard_witness_admin --dbname=nca_guard_witness; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          test "$ready" -eq 1
+          docker inspect --format '{{.HostConfig.NetworkMode}}' nca-pg17-guard-witness | grep -Fx none
+
+      - name: Run isolated Content Push PG17 regression
+        run: node --test tests/content-push-pg17.test.cjs
+
+      - name: Remove local witness artifacts
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          docker rm --force nca-pg17-guard-witness 2>/dev/null || true
+          rm -rf /tmp/nca-pg17-guard-witness-62kuw392

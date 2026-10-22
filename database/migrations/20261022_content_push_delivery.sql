@@ -67,7 +67,12 @@ BEGIN
  ), norm AS (
   SELECT x.* FROM nodes x JOIN attrs a ON a.attrelid=x.relid WHERE x.step>pg_catalog.cardinality(a.nums)
  ), columns AS (
-  SELECT pg_catalog.jsonb_build_array(r.relname,a.attname,a.atttypid,a.atttypmod,a.attnotnull,a.attidentity,a.attgenerated) AS j
+  -- Existing story/chapter IDs may be BY DEFAULT identity; this lane only
+  -- references them. Normalize that one harmless catalog difference while
+  -- retaining exact identity checks for every other column.
+  SELECT pg_catalog.jsonb_build_array(r.relname,a.attname,a.atttypid,a.atttypmod,a.attnotnull,
+   CASE WHEN r.relname IN ('stories','chapters') AND a.attname='id' AND a.attidentity='d' THEN '' ELSE a.attidentity END,
+   a.attgenerated) AS j
   FROM rels r JOIN pg_catalog.pg_attribute a ON a.attrelid=r.oid WHERE a.attnum>0 AND NOT a.attisdropped
  ), checks AS (
   SELECT pg_catalog.jsonb_build_array(r.relname,x.scope,pg_catalog.md5(x.node)) AS j FROM norm x JOIN rels r ON r.oid=x.relid

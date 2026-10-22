@@ -16,6 +16,7 @@ test('structural requirements are explicit columns/checks/keys/indexes, not samp
  assert(sql.includes('canonical REQUIRED shapes'));assert(sql.includes("':varattno '||a.names[x.step]"));
  assert(sql.includes('k.convalidated AND NOT k.condeferrable'));assert(sql.includes('i.indisvalid AND i.indisready AND i.indislive'));
  assert(sql.includes('WHERE observed.value=item'));assert.doesNotMatch(sql,/@>/);
+ assert.match(sql,/r\.relname IN \('stories','chapters'\) AND a\.attname='id' AND a\.attidentity='d' THEN '' ELSE a\.attidentity/);
 });
 test('all six routines are definer/empty-path/hardened and have checked exact new source hashes',()=>{
  const hashes=JSON.parse(sql.match(/expected pg_catalog.jsonb:='([^']+)'/)[1]);assert.equal(Object.keys(hashes).length,6);

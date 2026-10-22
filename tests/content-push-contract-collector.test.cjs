@@ -101,11 +101,11 @@ describe('content push raw catalog collector: static safety and evidence contrac
    assert.ok(source.includes(`'${field}'`),field);
   assert.ok(source.includes('d.adbin::pg_catalog.text'));assert.ok(source.includes('r.relpartbound::pg_catalog.text'));
  });
- it('limits preference column recollection to audience identity and four content preference fields',()=>{
+ it('collects all preference columns and does not inspect preference RPC definitions',()=>{
   const columns=source.slice(source.indexOf('columns_all AS'),source.indexOf('constraints_all AS'));
-  for(const field of ['user_id','new_story_enabled','new_story_enabled_since','new_chapter_enabled','new_chapter_enabled_since'])assert.ok(columns.includes(`'${field}'`));
-  assert.ok(columns.includes("r.relname<>'push_preferences' OR"));
-  assert.doesNotMatch(source,/nca_(get|set)_push_preferences|comment_enabled|reply_enabled|mention_enabled/);
+  assert.match(columns,/WHERE a\.attnum>0/);
+  assert.doesNotMatch(columns,/push_preferences|attname IN/);
+  assert.doesNotMatch(source,/nca_(get|set)_push_preferences/);
  });
  it('captures PK/unique/FK/check semantics, raw expressions and index descriptors',()=>{
   for(const field of ['contype','conrelid','conkey','confrelid','confkey','condeferrable','condeferred','convalidated',
@@ -115,6 +115,8 @@ describe('content push raw catalog collector: static safety and evidence contrac
   for(const value of ['k.conbin::pg_catalog.text','i.indexprs::pg_catalog.text','i.indpred::pg_catalog.text',
    'pg_catalog.pg_opclass','pg_catalog.pg_collation','c.colllocale','c.collicurules'])assert.ok(source.includes(value));
   assert.doesNotMatch(source,/colliculocale|conenforced/); // Not PostgreSQL 17 fields.
+  for(const field of ['conf_schema','conf_relation','conf_columns'])assert.ok(source.includes(`'${field}'`),field);
+  assert.ok(source.includes('pg_catalog.unnest(k.confkey) WITH ORDINALITY'));
  });
  it('uses dependency AND source-token discovery before any routine cap, not guessed names alone',()=>{
   const discovery=source.slice(source.indexOf('candidate_all AS'),source.indexOf('candidates AS'));

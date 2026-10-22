@@ -52,15 +52,11 @@ relations_all AS MATERIALIZED (
  JOIN pg_catalog.pg_namespace n ON n.nspname=q.schema_name
  JOIN pg_catalog.pg_class c ON c.relnamespace=n.oid AND c.relname=q.relation_name
 ),
--- Preferences: only the content switches/timestamps plus audience join identity.
--- The already-closed preference RPC contract is not recollected.
 columns_all AS MATERIALIZED (
  SELECT a.*,d.oid AS attrdef_oid,d.adbin::pg_catalog.text AS adbin
  FROM pg_catalog.pg_attribute a JOIN relations_all r ON r.oid=a.attrelid
  LEFT JOIN pg_catalog.pg_attrdef d ON d.adrelid=a.attrelid AND d.adnum=a.attnum
- WHERE a.attnum>0 AND (r.relname<>'push_preferences' OR
-  a.attname IN ('user_id','new_story_enabled','new_story_enabled_since',
-   'new_chapter_enabled','new_chapter_enabled_since'))
+ WHERE a.attnum>0
 ),
 constraints_all AS MATERIALIZED (
  SELECT k.* FROM pg_catalog.pg_constraint k WHERE k.conrelid IN (SELECT oid FROM relations_all)
@@ -247,11 +243,17 @@ columns_out AS (
 constraints_out AS (
  SELECT k.oid,pg_catalog.jsonb_build_object('oid',k.oid,'conname',k.conname,'connamespace',k.connamespace,
   'contype',k.contype,'conrelid',k.conrelid,'contypid',k.contypid,'conkey',k.conkey,'confrelid',k.confrelid,'confkey',k.confkey,
+  'conf_schema',ref_ns.nspname,'conf_relation',ref.relname,
+  'conf_columns',(SELECT pg_catalog.jsonb_agg(a.attname ORDER BY v.ord)
+   FROM pg_catalog.unnest(k.confkey) WITH ORDINALITY v(num,ord)
+   JOIN pg_catalog.pg_attribute a ON a.attrelid=k.confrelid AND a.attnum=v.num),
   'condeferrable',k.condeferrable,'condeferred',k.condeferred,'convalidated',k.convalidated,'connoinherit',k.connoinherit,
   'conindid',k.conindid,'conparentid',k.conparentid,'confupdtype',k.confupdtype,'confdeltype',k.confdeltype,
   'confmatchtype',k.confmatchtype,'conpfeqop',k.conpfeqop,'conppeqop',k.conppeqop,'conffeqop',k.conffeqop,
   'conexclop',k.conexclop,'conbin',k.conbin::pg_catalog.text) AS j
- FROM constraints_all k ORDER BY k.oid LIMIT (SELECT constraints FROM limits)
+ FROM constraints_all k LEFT JOIN pg_catalog.pg_class ref ON ref.oid=k.confrelid
+ LEFT JOIN pg_catalog.pg_namespace ref_ns ON ref_ns.oid=ref.relnamespace
+ ORDER BY k.oid LIMIT (SELECT constraints FROM limits)
 ),
 indexes_out AS (
  SELECT i.indexrelid,pg_catalog.jsonb_build_object('indexrelid',i.indexrelid,'indrelid',i.indrelid,

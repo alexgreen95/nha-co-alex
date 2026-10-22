@@ -61,9 +61,16 @@ jobs:
           for _ in $(seq 1 60); do
             if docker exec nca-pg17-guard-witness pg_isready \
               --host="$socket" --port=5432 \
-              --username=nca_guard_witness_admin --dbname=nca_guard_witness; then
+              --username=nca_guard_witness_admin --dbname=nca_guard_witness \
+              >/dev/null 2>&1; then
               ready=1
               break
+            fi
+            if ! docker inspect --format '{{.State.Running}}' nca-pg17-guard-witness | grep -Fxq true; then
+              echo 'PostgreSQL witness container exited before becoming ready.' >&2
+              docker inspect nca-pg17-guard-witness || true
+              docker logs nca-pg17-guard-witness || true
+              exit 1
             fi
             sleep 1
           done

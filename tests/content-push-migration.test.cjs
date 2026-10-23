@@ -8,8 +8,8 @@ const requiredFKDelete=JSON.parse(sql.match(/required_fk_delete pg_catalog\.json
 const checkManifestMatches=actual=>required.checks.every(expected=>actual.some(row=>JSON.stringify(row)===JSON.stringify(expected)))&&
  required.check_alternatives.every(([table,,scope,hashes])=>actual.some(row=>row[0]===table&&row[1]===scope&&hashes.includes(row[2])));
 const fkDeleteManifestMatches=actual=>requiredFKDelete.every(expected=>{
- const sameTarget=actual.filter(row=>JSON.stringify(row.slice(0,5))===JSON.stringify(expected.slice(0,5)));
- return sameTarget.length===1&&JSON.stringify(sameTarget[0])===JSON.stringify(expected);
+ const sameLocalTuple=actual.filter(row=>row[0]===expected[0]&&JSON.stringify(row[1])===JSON.stringify(expected[1]));
+ return sameLocalTuple.length===1&&JSON.stringify(sameLocalTuple[0])===JSON.stringify(expected);
 });
 test('one new transaction, context/drift/collision guards precede creation, no replaced consumed functions',()=>{
  assert.match(sql,/BEGIN;[\s\S]*COMMIT;\s*$/);assert(sql.indexOf('NCA_CONTENT_FOUNDATION_')<sql.indexOf('CREATE FUNCTION'));
@@ -26,23 +26,38 @@ test('structural requirements are explicit columns/checks/keys/indexes, not samp
  assert(sql.includes('WHERE observed.value=item'));assert.doesNotMatch(sql,/@>/);
  assert.match(sql,/r\.relname IN \('stories','chapters'\) AND a\.attname='id' AND a\.attidentity='d' THEN '' ELSE a\.attidentity/);
 });
-test('reviewed FK delete actions stay bound to their ordered relation/column targets',()=>{
+test('reviewed FK contracts count all mappings on the exact ordered local tuple before checking target/action/flags',()=>{
  assert.deepEqual(requiredFKDelete,[
-  ['push_subscriptions',['user_id'],'auth','users',['id'],'c'],
-  ['push_preferences',['user_id'],'auth','users',['id'],'c'],
-  ['push_deliveries',['personal_notification_id'],'public','push_personal_events',['notification_id'],'c']
+  ['push_subscriptions',['user_id'],'auth','users',['id'],'c',true,false,false],
+  ['push_preferences',['user_id'],'auth','users',['id'],'c',true,false,false],
+  ['push_deliveries',['personal_notification_id'],'public','push_personal_events',['notification_id'],'c',true,false,false]
  ]);
  assert.match(sql,/k\.confdeltype::pg_catalog\.text/);
- assert.match(sql,/WHERE k\.contype='f' AND k\.convalidated AND NOT k\.condeferrable AND NOT k\.condeferred/);
+ assert.match(sql,/\), foreign_keys_all AS \([\s\S]*?k\.confdeltype::pg_catalog\.text,k\.convalidated,k\.condeferrable,k\.condeferred\) AS j[\s\S]*?WHERE k\.contype='f'\s*\)/);
+ assert.doesNotMatch(sql,/foreign_keys_all AS \([\s\S]*?WHERE k\.contype='f' AND/);
+ assert.match(sql,/actual->'foreign_keys_all'[\s\S]*?observed\.value->0=item->0 AND observed\.value->1=item->1\)<>1/);
+ assert.doesNotMatch(sql,/WHERE observed\.value->0=item->0 AND observed\.value->1=item->1 AND observed\.value->2=item->2/);
+ assert.match(sql,/WHERE observed\.value->0=item->0 AND observed\.value->1=item->1\)<>1[\s\S]*?END IF;\s*IF NOT EXISTS\([\s\S]*?WHERE observed\.value=item/);
  assert.match(sql,/jsonb_array_elements\(required_fk_delete\)/);
  assert.match(sql,/observed\.value=item/);
- assert.match(sql,/observed\.value->4=item->4\)<>1/);
- const reviewed=requiredFKDelete.map(row=>[...row.slice(0,2),row[2],row[3],[...row[4]],row[5]]);
+ const reviewed=requiredFKDelete.map(row=>[...row.slice(0,2),row[2],row[3],[...row[4]],...row.slice(5)]);
  assert(fkDeleteManifestMatches(reviewed),'exact reviewed cascade contracts pass');
  const changedAction=reviewed.map(row=>[...row]);changedAction[0][5]='a';
  assert(!fkDeleteManifestMatches(changedAction),'ON DELETE NO ACTION fails');
- const duplicateConflict=reviewed.concat([[...reviewed[0].slice(0,5),'a']]);
- assert(!fkDeleteManifestMatches(duplicateConflict),'a conflicting duplicate FK action fails');
+ const duplicateValidated=reviewed.concat([[...reviewed[0].slice(0,5),'a',true,false,false]]);
+ assert(!fkDeleteManifestMatches(duplicateValidated),'a second validated/nondeferrable FK on the same local tuple fails');
+ const duplicateUnvalidated=reviewed.concat([[...reviewed[0].slice(0,5),'c',false,false,false]]);
+ assert(!fkDeleteManifestMatches(duplicateUnvalidated),'an unvalidated duplicate remains visible and fails');
+ const duplicateDeferrable=reviewed.concat([[...reviewed[0].slice(0,5),'c',true,true,false]]);
+ assert(!fkDeleteManifestMatches(duplicateDeferrable),'a deferrable duplicate remains visible and fails');
+ const duplicateDeferred=reviewed.concat([[...reviewed[0].slice(0,5),'c',true,true,true]]);
+ assert(!fkDeleteManifestMatches(duplicateDeferred),'an initially deferred duplicate remains visible and fails');
+ const duplicateRelation=reviewed.concat([[...reviewed[0].slice(0,2),'public','other_table',['id'],'c',true,false,false]]);
+ assert(!fkDeleteManifestMatches(duplicateRelation),'a duplicate referencing another relation fails');
+ const duplicateColumns=reviewed.concat([[...reviewed[0].slice(0,4),['other_id'],'c',true,false,false]]);
+ assert(!fkDeleteManifestMatches(duplicateColumns),'a duplicate referencing another column tuple fails');
+ const unrelatedLocal=reviewed.concat([['push_subscriptions',['user_id','id'],'public','other_table',['id','id'],'c',true,false,false]]);
+ assert(fkDeleteManifestMatches(unrelatedLocal),'a different local tuple does not count as a duplicate');
  const swapped=reviewed.map(row=>[...row]);
  for(const index of [2,3,4]) [swapped[0][index],swapped[2][index]]=[swapped[2][index],swapped[0][index]];
  assert(!fkDeleteManifestMatches(swapped),'swapping FK metadata between local relations fails');
@@ -51,6 +66,10 @@ test('reviewed FK delete actions stay bound to their ordered relation/column tar
  assert(!fkDeleteManifestMatches(wrongTarget),'referenced-column mismatch fails');
  const wrongRelation=reviewed.map(row=>[...row]);wrongRelation[2][3]='push_events';
  assert(!fkDeleteManifestMatches(wrongRelation),'referenced-relation mismatch fails');
+ const unvalidatedSole=reviewed.map(row=>[...row]);unvalidatedSole[0][6]=false;
+ assert(!fkDeleteManifestMatches(unvalidatedSole),'an unvalidated sole FK fails');
+ const deferrableSole=reviewed.map(row=>[...row]);deferrableSole[0][7]=true;
+ assert(!fkDeleteManifestMatches(deferrableSole),'a deferrable sole FK fails');
  // Approved evidence in the audit note records delete action only; do not guess
  // ON UPDATE or MATCH behavior from defaults or from a collector field name.
  assert.doesNotMatch(sql,/k\.confupdtype|k\.confmatchtype/);

@@ -176,9 +176,13 @@ foreign keys: subscription user, preference user, and personal notification.
 The saved evidence does not record their exact `ON UPDATE` actions or MATCH
 types, so those properties are not asserted. The collector can capture them;
 obtain and review those values before adding further requirements. The isolated
-PostgreSQL 17.11 witness is still pending. Installation remains blocked until
-all review and runtime prerequisites are cleared; keep privileged role/routine
-DDL excluded throughout any later installation window.
+PostgreSQL 17.11 witness passed in GitHub Actions run `39833675791` on CI-only
+SHA `3dd22db7a8ecd21ec2f6ff61e52549c51c1dde1b`, using
+`postgres:17.11-bookworm`, `--network none`, and the targeted
+`node --test tests/content-push-pg17.test.cjs` regression. This establishes
+`PG17_RUNTIME = PASS`; it does not mean the migration was installed. Installation
+still requires all review prerequisites to be cleared, and privileged
+role/routine DDL must remain excluded throughout any later installation window.
 
 Targeted tests use fake HTTP/pg boundaries plus the already-running network-none
 PostgreSQL 17.11 scratch container and one pinned Unix socket, explicit database/

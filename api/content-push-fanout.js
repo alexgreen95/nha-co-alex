@@ -1,7 +1,7 @@
 'use strict';
 
 const {timingSafeEqual} = require('node:crypto');
-const {isValidHmacSecret, verifyHmacRequest} = require('../server/content-push-fanout-auth.cjs');
+const {isValidHmacSecret, hasUnambiguousAuthHeaders, verifyHmacRequest} = require('../server/content-push-fanout-auth.cjs');
 const {databaseConfig, createDatabase} = require('../server/content-push-fanout-db.cjs');
 const {runWorker} = require('../server/content-push-fanout-worker.cjs');
 
@@ -23,6 +23,7 @@ function createHandler({env = process.env, database = createDatabase, worker = r
       return res.status(400).json({ok: false});
     }
 
+    if (!hasUnambiguousAuthHeaders(req)) return res.status(401).json({ok: false});
     const supplied = req.headers?.authorization;
     const expected = 'Bearer ' + env.CRON_SECRET;
     const bearerOk = typeof supplied === 'string' &&

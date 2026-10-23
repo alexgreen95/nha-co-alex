@@ -11,6 +11,11 @@
       "maxDuration": 30
     }
   },
+  "git": {
+    "deploymentEnabled": {
+      "content-push-fanout-bridge-pg17-ci-20261023": false
+    }
+  },
   "routes": [
     {
       "src": "/assets/image-[a-f0-9]{12}\\.png",

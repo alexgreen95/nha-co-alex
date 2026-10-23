@@ -5,6 +5,7 @@ const {randomUUID}=require('node:crypto');
 const {localPG}=require('./helpers/content-push-local-pg.cjs');
 const sql=fs.readFileSync('database/migrations/20261022_content_push_delivery.sql','utf8');
 const rich=fs.readFileSync('database/migrations/20261022_personal_push_rich_content.sql','utf8');
+const bridge=fs.readFileSync('database/migrations/20261023_content_push_fanout_runtime_bridge.sql','utf8');
 const lit=x=>"'"+String(x).replaceAll("'","''")+"'";
 let db,owned=false,installed=false;
 const sender=(name,args)=>db.q(`SELECT public.${name}(${args});`,'nca_push_sender');
@@ -72,6 +73,30 @@ describe('content push PG17.11 isolated local foundation',()=>{
   assert.equal(count('content_publications'),0);assert.equal(count('push_content_events'),0);assert.equal(count('content_publication_state'),0);assert.equal(count('notifications'),0);assert.equal(count('stories'),2);
   db.run("UPDATE public.stories SET title='historical edit' WHERE id=1;UPDATE public.stories SET published=false WHERE id=1;UPDATE public.stories SET published=true WHERE id=1;UPDATE public.stories SET published=true WHERE id=2;");
   assert.equal(count('push_content_events'),0);assert.equal(db.q('SELECT bool_and(first_publication_recorded) FROM public.content_publication_state;'),true);clear();
+ });
+ it('rejects wrapper source drift transactionally, then accepts CRLF and preserves the base ACL boundary',()=>{
+  const before=db.q("SELECT jsonb_agg(jsonb_build_array(p.proname,p.prosrc,p.proacl::text,p.proconfig) ORDER BY p.proname) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname IN ('nca_capture_content_first_publication','nca_claim_content_push_events','nca_fanout_content_push_event_page','nca_finish_content_push_delivery','nca_claim_content_push_deliveries','nca_prepare_content_push_delivery');");
+  const changed=bridge.replace('SELECT public.nca_claim_content_push_events($1)','SELECT public.nca_claim_content_push_events($1) /* source drift */');
+  fail(changed,'NCA_FANOUT_BRIDGE_WRAPPER_DEFINITION_ACL');
+  assert.equal(db.q("SELECT count(*)=0 FROM pg_roles WHERE rolname='nca_push_fanout_runner';"),true);
+  assert.equal(db.q("SELECT count(*) FROM pg_proc WHERE proname IN ('nca_runner_claim_content_push_events','nca_runner_fanout_content_push_event_page');"),0);
+  db.run(bridge.replace(/\n/g,'\r\n'),'postgres');
+  assert.equal(db.q("SELECT jsonb_agg(jsonb_build_array(p.proname,p.prosrc,p.proacl::text,p.proconfig) ORDER BY p.proname) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname IN ('nca_capture_content_first_publication','nca_claim_content_push_events','nca_fanout_content_push_event_page','nca_finish_content_push_delivery','nca_claim_content_push_deliveries','nca_prepare_content_push_delivery');"),before);
+  assert.equal(db.q("SELECT rolcanlogin AND NOT rolinherit AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole AND NOT rolreplication AND NOT rolbypassrls AND rolpassword IS NULL FROM pg_roles r JOIN pg_authid a ON a.oid=r.oid WHERE r.rolname='nca_push_fanout_runner';"),true);
+  assert.equal(db.q("SELECT count(*)=0 FROM pg_auth_members WHERE member='nca_push_fanout_runner'::regrole OR roleid='nca_push_fanout_runner'::regrole;"),true);
+  assert.equal(db.q("SELECT has_schema_privilege('nca_push_fanout_runner','public','USAGE') AND NOT has_schema_privilege('nca_push_fanout_runner','public','CREATE');"),true);
+  assert.equal(db.q("SELECT bool_and(NOT has_table_privilege('nca_push_fanout_runner',c.oid,'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN') AND NOT has_any_column_privilege('nca_push_fanout_runner',c.oid,'SELECT,INSERT,UPDATE,REFERENCES')) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relname IN ('stories','chapters','content_publication_clock','content_publication_state','content_publications','push_content_events','push_preferences','push_subscriptions','push_deliveries');"),true);
+  assert.equal(db.q("SELECT bool_and(NOT has_function_privilege('nca_push_fanout_runner',p.oid,'EXECUTE')) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname IN ('nca_claim_content_push_events','nca_fanout_content_push_event_page');"),true);
+  assert.equal(db.q("SELECT count(*)=2 AND bool_and(proowner='postgres'::regrole AND prosecdef AND provolatile='v' AND NOT proisstrict AND NOT proleakproof AND NOT proretset AND prokind='f' AND proconfig=ARRAY['search_path=\"\"','lock_timeout=2s','statement_timeout=5s']) FROM pg_proc WHERE proname IN ('nca_runner_claim_content_push_events','nca_runner_fanout_content_push_event_page');"),true);
+  assert.equal(db.q("SELECT bool_and(has_function_privilege('nca_push_fanout_runner',p.oid,'EXECUTE')) FROM pg_proc p WHERE p.proname IN ('nca_runner_claim_content_push_events','nca_runner_fanout_content_push_event_page');"),true);
+  assert.equal(db.q("SELECT bool_and(NOT has_function_privilege('nca_push_fanout_runner',p.oid,'EXECUTE')) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname IN ('nca_claim_personal_push_deliveries','nca_prepare_personal_push_delivery','nca_finish_personal_push_delivery','nca_claim_content_push_deliveries','nca_prepare_content_push_delivery','nca_finish_content_push_delivery');"),true);
+  assert.equal(db.q("SELECT NOT rolcanlogin AND NOT rolinherit AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole AND NOT rolreplication AND NOT rolbypassrls FROM pg_roles WHERE rolname='nca_push_fanout';"),true);
+  assert.equal(db.q("SELECT NOT EXISTS(SELECT 1 FROM pg_auth_members WHERE member='nca_push_fanout'::regrole) AND NOT EXISTS(SELECT 1 FROM pg_auth_members WHERE roleid='nca_push_fanout'::regrole AND member<>'postgres'::regrole);"),true);
+  audience();story();const claimed=db.q('SET ROLE nca_push_fanout_runner;SELECT public.nca_runner_claim_content_push_events(1);RESET ROLE;');
+  const item=claimed.events[0];assert.ok(item);assert.equal(db.q(`SET ROLE nca_push_fanout_runner;SELECT public.nca_runner_fanout_content_push_event_page(${lit(item.event_id)},${lit(item.lease_token)},100);RESET ROLE;`).inserted,1);
+  fail(`SET ROLE nca_push_fanout_runner;SELECT public.nca_claim_content_push_events(1);`,'42501','nca_guard_witness_admin');
+  fail('SET ROLE nca_push_fanout_runner;SELECT public.nca_claim_content_push_deliveries(1);','42501','nca_guard_witness_admin');
+  fail('SET ROLE nca_push_fanout_runner;SELECT * FROM public.push_content_events;','42501','nca_guard_witness_admin');clear();
  });
  describe('capture, fanout and explicit sender lane',()=>{
   before(()=>assert.ok(installed,'migration must install before behavioral tests'));

@@ -95,13 +95,13 @@ describe('content push PG17.11 isolated local foundation',()=>{
   assert.equal(db.q("SELECT bool_and(NOT has_function_privilege('nca_push_fanout_runner',p.oid,'EXECUTE')) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname IN ('nca_claim_personal_push_deliveries','nca_prepare_personal_push_delivery','nca_finish_personal_push_delivery','nca_claim_content_push_deliveries','nca_prepare_content_push_delivery','nca_finish_content_push_delivery');"),true);
   assert.equal(db.q("SELECT NOT rolcanlogin AND NOT rolinherit AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole AND NOT rolreplication AND NOT rolbypassrls FROM pg_roles WHERE rolname='nca_push_fanout';"),true);
   assert.equal(db.q("SELECT NOT EXISTS(SELECT 1 FROM pg_auth_members WHERE member='nca_push_fanout'::regrole) AND NOT EXISTS(SELECT 1 FROM pg_auth_members WHERE roleid='nca_push_fanout'::regrole AND member<>'postgres'::regrole);"),true);
-  audience();story();const claimed=db.q('SET ROLE nca_push_fanout_runner;SELECT public.nca_runner_claim_content_push_events(1);RESET ROLE;');
-  const item=claimed.events[0];assert.ok(item);assert.equal(db.q(`SET ROLE nca_push_fanout_runner;SELECT public.nca_runner_fanout_content_push_event_page(${lit(item.event_id)},${lit(item.lease_token)},100);RESET ROLE;`).inserted,1);
-  fail(`SET ROLE nca_push_fanout_runner;SELECT public.nca_claim_content_push_events(1);`,'42501','nca_guard_witness_admin');
-  fail(`SET ROLE nca_push_fanout_runner;SELECT public.nca_fanout_content_push_event_page(1,'00000000-0000-4000-8000-000000000000'::uuid,1);`,'42501','nca_guard_witness_admin');
-  fail('SET ROLE nca_push_fanout_runner;SET ROLE nca_push_fanout;','42501','nca_guard_witness_admin');
-  fail('SET ROLE nca_push_fanout_runner;SELECT public.nca_claim_content_push_deliveries(1);','42501','nca_guard_witness_admin');
-  fail('SET ROLE nca_push_fanout_runner;SELECT * FROM public.push_content_events;','42501','nca_guard_witness_admin');clear();
+  audience();story();const claimed=db.q('SELECT public.nca_runner_claim_content_push_events(1);','nca_push_fanout_runner');
+  const item=claimed.events[0];assert.ok(item);assert.equal(db.q(`SELECT public.nca_runner_fanout_content_push_event_page(${lit(item.event_id)},${lit(item.lease_token)},100);`,'nca_push_fanout_runner').inserted,1);
+  fail('SELECT public.nca_claim_content_push_events(1);','42501','nca_push_fanout_runner');
+  fail("SELECT public.nca_fanout_content_push_event_page(1,'00000000-0000-4000-8000-000000000000'::uuid,1);",'42501','nca_push_fanout_runner');
+  fail('SET ROLE nca_push_fanout;','42501','nca_push_fanout_runner');
+  fail('SELECT public.nca_claim_content_push_deliveries(1);','42501','nca_push_fanout_runner');
+  fail('SELECT * FROM public.push_content_events;','42501','nca_push_fanout_runner');clear();
  });
  describe('capture, fanout and explicit sender lane',()=>{
   before(()=>assert.ok(installed,'migration must install before behavioral tests'));

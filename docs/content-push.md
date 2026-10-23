@@ -229,6 +229,19 @@ reconciled against the current migration, status remains
 `PRODUCTION_PREFLIGHT = BLOCKED` and
 `CONTENT_PUSH_MIGRATION_INSTALL = BLOCKED`.
 
+### First installation attempt (2026-10-23)
+
+The operator-reported single installation attempt using the reviewed migration
+SHA256 `BC17AA897A43CAB24594892451DF9A278981A75B605C8F8010EBA84B0D315112`
+failed before `COMMIT` with `NCA_CONTENT_FINAL_ROUTINES`. A subsequent
+operator-run read-only catalog collection reported that none of the six new
+Content Push routines or two capture triggers persisted and matched the accepted
+pre-install catalog apart from its timestamp. The transaction rollback is
+therefore confirmed by that supplied evidence. The migration was not retried;
+the consumed authorization does not authorize another attempt. No worker or E2E
+rollout occurred. Review any verifier fix and obtain separate authorization
+before considering another installation attempt.
+
 Later, separately authorized: verify production guard compatibility, apply the
 single migration in a controlled window (capture starts on future writes), deploy
 with content worker disabled, arrange a trusted fanout caller without expanding

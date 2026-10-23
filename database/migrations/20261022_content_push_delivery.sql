@@ -479,7 +479,7 @@ BEGIN
    WHEN r.proname IN ('nca_claim_content_push_events','nca_fanout_content_push_event_page') THEN 'nca_push_fanout' ELSE 'nca_push_sender' END;
   IF r.proowner<>owner_oid OR NOT r.prosecdef OR r.provolatile<>'v' OR r.proisstrict OR r.proleakproof OR r.proretset
   OR r.prokind<>'f' OR r.proconfig IS DISTINCT FROM ARRAY['search_path=""','lock_timeout=2s','statement_timeout=5s']
-  OR pg_catalog.md5(r.prosrc) IS DISTINCT FROM expected->>r.proname
+  OR pg_catalog.md5(pg_catalog.replace(pg_catalog.replace(r.prosrc,E'\r\n',E'\n'),E'\r',E'\n')) IS DISTINCT FROM expected->>r.proname
   OR NOT pg_catalog.has_function_privilege(allowed_oid,r.oid,'EXECUTE')
   OR EXISTS(SELECT 1 FROM pg_catalog.aclexplode(COALESCE(r.proacl,pg_catalog.acldefault('f',r.proowner))) a
    WHERE a.grantee NOT IN(owner_oid,allowed_oid) OR a.is_grantable)

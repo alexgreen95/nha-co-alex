@@ -3,6 +3,7 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),fs=requir
 const sql=fs.readFileSync('database/migrations/20261022_content_push_delivery.sql','utf8');
 const baseline=fs.readFileSync('tests/helpers/personal-push-sender-baseline.sql','utf8');
 const fn=name=>sql.match(new RegExp('CREATE FUNCTION public\\.'+name+'[\\s\\S]*?AS \\$fn\\$([\\s\\S]*?)\\$fn\\$;'))?.[1];
+const canonicalProsrc=source=>source.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
 const required=JSON.parse(sql.match(/DECLARE required pg_catalog\.jsonb := '([^']+)'/)[1]);
 const requiredFKDelete=JSON.parse(sql.match(/required_fk_delete pg_catalog\.jsonb := '([^']+)'/)[1]);
 const checkManifestMatches=actual=>required.checks.every(expected=>actual.some(row=>JSON.stringify(row)===JSON.stringify(expected)))&&
@@ -134,6 +135,23 @@ test('all six routines are definer/empty-path/hardened and have checked exact ne
   const declaration=sql.match(new RegExp('CREATE FUNCTION public\\.'+name+'[\\s\\S]*?AS \\$fn\\$'))[0];
   assert(declaration.includes("SECURITY DEFINER SET search_path='' SET lock_timeout='2s' SET statement_timeout='5s'"));
  }
+});
+test('final routine source hashes ignore only CRLF and lone-CR line endings',()=>{
+ const hashes=JSON.parse(sql.match(/expected pg_catalog\.jsonb:='([^']+)'/)[1]);
+ for(const [name,hash] of Object.entries(hashes)){
+  const source=canonicalProsrc(fn(name));
+  const md5=value=>createHash('md5').update(value).digest('hex');
+  assert.equal(md5(source),hash,`${name} LF`);
+  assert.equal(md5(canonicalProsrc(source.replace(/\n/g,'\r\n'))),hash,`${name} CRLF`);
+  assert.equal(md5(canonicalProsrc(source.replace(/\n/g,'\r'))),hash,`${name} lone CR`);
+  assert.notEqual(md5(source.replace('DECLARE','XDECLARE')),hash,`${name} substantive change`);
+  assert.notEqual(md5(source.replace('DECLARE','DECLARE ')),hash,`${name} non-newline whitespace change`);
+ }
+ assert.match(sql,/md5\(pg_catalog\.replace\(pg_catalog\.replace\(r\.prosrc,E'\\r\\n',E'\\n'\),E'\\r',E'\\n'\)\)/);
+ const verifier=sql.match(/IF r\.proowner[\s\S]*?THEN RAISE EXCEPTION 'NCA_CONTENT_FINAL_ROUTINES'; END IF;/)[0];
+ for(const condition of ['r.proowner<>owner_oid','NOT r.prosecdef',"r.provolatile<>'v'",'r.proisstrict','r.proleakproof',
+  'r.proretset',"r.prokind<>'f'",'proconfig IS DISTINCT FROM ARRAY','has_function_privilege','aclexplode','a.is_grantable'])
+  assert(verifier.includes(condition),`final verifier retains ${condition}`);
 });
 test('minimal function-only ACLs separate fanout/sender and keep capture owner-only',()=>{
  assert.doesNotMatch(sql,/GRANT\s+(?:SELECT|INSERT|UPDATE|DELETE|ALL|USAGE)|GRANT[^;]*ON\s+(?:TABLE|SEQUENCE|SCHEMA)/i);

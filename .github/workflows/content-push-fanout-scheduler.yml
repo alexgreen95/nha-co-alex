@@ -1,0 +1,56 @@
+name: Content Push Fanout Scheduler
+
+on:
+  schedule:
+    - cron: '3,8,13,18,23,28,33,38,43,48,53,58 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: content-push-fanout-scheduler
+  cancel-in-progress: false
+
+jobs:
+  fanout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Call fanout endpoint
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          FANOUT_URL: https://nha-co-alex.vercel.app/api/content-push-fanout
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${CRON_SECRET:-}" ]]; then
+            echo "CRON_SECRET is not configured"
+            exit 1
+          fi
+
+          status="$({
+            curl \
+              --silent \
+              --show-error \
+              --connect-timeout 10 \
+              --max-time 55 \
+              --output /dev/null \
+              --write-out '%{http_code}' \
+              --header "Authorization: Bearer ${CRON_SECRET}" \
+              "${FANOUT_URL}"
+          })"
+
+          case "${status}" in
+            200)
+              echo "Fanout endpoint completed successfully"
+              ;;
+            503)
+              echo "Fanout endpoint is disabled; scheduler call completed safely"
+              ;;
+            *)
+              echo "Unexpected fanout endpoint HTTP status: ${status}"
+              exit 1
+              ;;
+          esac

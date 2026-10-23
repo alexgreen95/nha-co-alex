@@ -60,7 +60,13 @@ BEGIN
    AND NOT rolcreatedb AND NOT rolcreaterole AND NOT rolreplication AND NOT rolbypassrls
    AND rolconnlimit=-1 AND rolvaliduntil IS NULL AND rolconfig IS NULL)
  THEN RAISE EXCEPTION 'NCA_FANOUT_BRIDGE_RUNNER_ATTRIBUTES'; END IF;
- IF EXISTS(SELECT 1 FROM pg_catalog.pg_auth_members WHERE member=runner OR roleid=runner)
+ IF EXISTS(SELECT 1 FROM pg_catalog.pg_auth_members WHERE member=runner)
+  OR (SELECT pg_catalog.count(*) FROM pg_catalog.pg_auth_members WHERE roleid=runner)<>1
+  OR NOT EXISTS(SELECT 1 FROM pg_catalog.pg_auth_members m JOIN pg_catalog.pg_roles grantor ON grantor.oid=m.grantor
+   WHERE m.roleid=runner AND m.member=installer AND m.admin_option IS TRUE
+    AND m.set_option IS FALSE AND m.inherit_option IS FALSE AND grantor.rolsuper)
+  OR EXISTS(SELECT 1 FROM pg_catalog.pg_auth_members
+   WHERE (roleid=runner AND member=fanout) OR (roleid=fanout AND member=runner))
  THEN RAISE EXCEPTION 'NCA_FANOUT_BRIDGE_RUNNER_MEMBERSHIP'; END IF;
  IF NOT pg_catalog.has_schema_privilege(runner,'public','USAGE') OR pg_catalog.has_schema_privilege(runner,'public','CREATE')
  THEN RAISE EXCEPTION 'NCA_FANOUT_BRIDGE_SCHEMA_PRIVILEGE'; END IF;

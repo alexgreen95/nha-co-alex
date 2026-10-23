@@ -20,8 +20,13 @@ worker has been enabled.
 candidate only; it has not been installed in production. It preserves
 `nca_push_fanout` as NOLOGIN and introduces a dedicated `nca_push_fanout_runner`
 LOGIN that can execute only two fixed SECURITY DEFINER wrappers. It has no table
-or column privileges and no membership in any role. The runner is created with
-`PASSWORD NULL`; PostgreSQL 17 permits a LOGIN role without a password, and
+or column privileges and no membership in `nca_push_fanout`. PostgreSQL 17
+automatically grants a new role created by a non-superuser CREATEROLE installer
+back to that creator with ADMIN TRUE, SET FALSE, and INHERIT FALSE; the bootstrap
+superuser is recorded as grantor. This is administrative control, not runtime
+inheritance. The bridge verifier requires exactly that one incoming installer
+membership, no outgoing runner memberships, and no runner/fanout membership.
+The runner is created with `PASSWORD NULL`; PostgreSQL 17 permits a LOGIN role without a password, and
 password authentication always fails until a separately authorized operation
 provisions one. No password is committed or generated here.
 

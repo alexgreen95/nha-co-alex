@@ -9,7 +9,8 @@ SELECT pg_catalog.jsonb_build_object(
  'runner_role',(SELECT pg_catalog.to_jsonb(r) - 'oid' FROM pg_catalog.pg_roles r WHERE rolname='nca_push_fanout_runner'),
  'runner_password_unset',(SELECT a.rolpassword IS NULL FROM pg_catalog.pg_authid a WHERE rolname='nca_push_fanout_runner'),
  'runner_memberships',COALESCE((SELECT pg_catalog.jsonb_agg(pg_catalog.jsonb_build_object(
-   'role',parent.rolname,'member',member.rolname,'grantor',grantor.rolname,'admin_option',m.admin_option,
+   'role',parent.rolname,'member',member.rolname,'grantor',grantor.rolname,'grantor_is_superuser',grantor.rolsuper,
+   'admin_option',m.admin_option,
    'inherit_option',m.inherit_option,'set_option',m.set_option)
    ORDER BY parent.rolname,member.rolname)
   FROM pg_catalog.pg_auth_members m JOIN pg_catalog.pg_roles parent ON parent.oid=m.roleid

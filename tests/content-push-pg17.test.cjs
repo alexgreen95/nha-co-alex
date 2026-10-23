@@ -83,7 +83,10 @@ describe('content push PG17.11 isolated local foundation',()=>{
   db.run(bridge.replace(/\n/g,'\r\n'),'postgres');
   assert.equal(db.q("SELECT jsonb_agg(jsonb_build_array(p.proname,p.prosrc,p.proacl::text,p.proconfig) ORDER BY p.proname) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname IN ('nca_capture_content_first_publication','nca_claim_content_push_events','nca_fanout_content_push_event_page','nca_finish_content_push_delivery','nca_claim_content_push_deliveries','nca_prepare_content_push_delivery');"),before);
   assert.equal(db.q("SELECT rolcanlogin AND NOT rolinherit AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole AND NOT rolreplication AND NOT rolbypassrls AND rolpassword IS NULL FROM pg_roles r JOIN pg_authid a ON a.oid=r.oid WHERE r.rolname='nca_push_fanout_runner';"),true);
-  assert.equal(db.q("SELECT count(*)=0 FROM pg_auth_members WHERE member='nca_push_fanout_runner'::regrole OR roleid='nca_push_fanout_runner'::regrole;"),true);
+  assert.equal(db.q("SELECT count(*)=1 FROM pg_auth_members WHERE roleid='nca_push_fanout_runner'::regrole;"),true);
+  assert.equal(db.q("SELECT m.admin_option IS TRUE AND m.set_option IS FALSE AND m.inherit_option IS FALSE AND grantor.rolsuper FROM pg_auth_members m JOIN pg_roles grantor ON grantor.oid=m.grantor WHERE m.roleid='nca_push_fanout_runner'::regrole AND m.member='postgres'::regrole;"),true);
+  assert.equal(db.q("SELECT count(*)=0 FROM pg_auth_members WHERE member='nca_push_fanout_runner'::regrole;"),true);
+  assert.equal(db.q("SELECT NOT EXISTS(SELECT 1 FROM pg_auth_members WHERE (roleid='nca_push_fanout_runner'::regrole AND member='nca_push_fanout'::regrole) OR (roleid='nca_push_fanout'::regrole AND member='nca_push_fanout_runner'::regrole));"),true);
   assert.equal(db.q("SELECT has_schema_privilege('nca_push_fanout_runner','public','USAGE') AND NOT has_schema_privilege('nca_push_fanout_runner','public','CREATE');"),true);
   assert.equal(db.q("SELECT bool_and(NOT has_table_privilege('nca_push_fanout_runner',c.oid,'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN') AND NOT has_any_column_privilege('nca_push_fanout_runner',c.oid,'SELECT,INSERT,UPDATE,REFERENCES')) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relname IN ('stories','chapters','content_publication_clock','content_publication_state','content_publications','push_content_events','push_preferences','push_subscriptions','push_deliveries');"),true);
   assert.equal(db.q("SELECT bool_and(NOT has_function_privilege('nca_push_fanout_runner',p.oid,'EXECUTE')) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname IN ('nca_claim_content_push_events','nca_fanout_content_push_event_page');"),true);
@@ -95,6 +98,8 @@ describe('content push PG17.11 isolated local foundation',()=>{
   audience();story();const claimed=db.q('SET ROLE nca_push_fanout_runner;SELECT public.nca_runner_claim_content_push_events(1);RESET ROLE;');
   const item=claimed.events[0];assert.ok(item);assert.equal(db.q(`SET ROLE nca_push_fanout_runner;SELECT public.nca_runner_fanout_content_push_event_page(${lit(item.event_id)},${lit(item.lease_token)},100);RESET ROLE;`).inserted,1);
   fail(`SET ROLE nca_push_fanout_runner;SELECT public.nca_claim_content_push_events(1);`,'42501','nca_guard_witness_admin');
+  fail(`SET ROLE nca_push_fanout_runner;SELECT public.nca_fanout_content_push_event_page(1,'00000000-0000-4000-8000-000000000000'::uuid,1);`,'42501','nca_guard_witness_admin');
+  fail('SET ROLE nca_push_fanout_runner;SET ROLE nca_push_fanout;','42501','nca_guard_witness_admin');
   fail('SET ROLE nca_push_fanout_runner;SELECT public.nca_claim_content_push_deliveries(1);','42501','nca_guard_witness_admin');
   fail('SET ROLE nca_push_fanout_runner;SELECT * FROM public.push_content_events;','42501','nca_guard_witness_admin');clear();
  });

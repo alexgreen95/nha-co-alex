@@ -55,11 +55,20 @@ test('bridge verifier pins exact argument and return types for all six base rout
  assert.match(migration,/r\.proname<>'nca_capture_content_first_publication' AND r\.prorettype IS DISTINCT FROM 'pg_catalog\.jsonb'::pg_catalog\.regtype/);
 });
 
+test('runner verifier allows only the exact PostgreSQL 17 creator-admin membership',()=>{
+ assert.match(migration,/WHERE member=runner\)/);
+ assert.match(migration,/count\(\*\) FROM pg_catalog\.pg_auth_members WHERE roleid=runner\)<>1/);
+ assert.match(migration,/m\.roleid=runner AND m\.member=installer AND m\.admin_option IS TRUE\s+AND m\.set_option IS FALSE AND m\.inherit_option IS FALSE AND grantor\.rolsuper/);
+ assert.match(migration,/roleid=runner AND member=fanout\) OR \(roleid=fanout AND member=runner/);
+ assert.doesNotMatch(migration,/pg_auth_members WHERE member=runner OR roleid=runner/);
+});
+
 test('collector is read-only, catalog-only, bounded, and returns deterministic evidence plus completion marker',()=>{
  assert.match(collector,/^BEGIN;\s*SET TRANSACTION READ ONLY;/);
  assert.match(collector,/statement_timeout='5s'/);assert.match(collector,/lock_timeout='2s'/);
  assert.match(collector,/CONTENT_PUSH_FANOUT_RUNTIME_BRIDGE_COLLECTOR_COMPLETE/);assert.match(collector,/ROLLBACK;\s*$/);
  assert.match(collector,/runner_role/);assert.match(collector,/runner_memberships/);assert.match(collector,/runner_relations/);
+ assert.match(collector,/grantor_is_superuser/);assert.match(collector,/grantor\.rolsuper/);
  assert.match(collector,/wrappers/);assert.match(collector,/underlying_fanout_routines/);assert.match(collector,/relevant_dependencies/);
  const executable=collector.replace(/'(?:''|[^'])*'/g,"''");
  assert.doesNotMatch(executable,/\b(?:INSERT|UPDATE|DELETE|TRUNCATE|CREATE|ALTER|DROP|CALL|PERFORM)\b/i);

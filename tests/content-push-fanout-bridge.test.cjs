@@ -74,3 +74,22 @@ test('collector is read-only, catalog-only, bounded, and returns deterministic e
  assert.doesNotMatch(executable,/\b(?:INSERT|UPDATE|DELETE|TRUNCATE|CREATE|ALTER|DROP|CALL|PERFORM)\b/i);
  assert.doesNotMatch(collector,/SELECT\s+(?:public\.)?nca_(?:runner_)?(?:claim|fanout)/i);
 });
+
+test('collector remains safe before runner installation',()=>{
+ assert.match(collector,/WITH runner AS \(\s*SELECT pg_catalog\.to_regrole\('nca_push_fanout_runner'\)::pg_catalog\.oid AS oid\s*\)/);
+ assert.match(collector,/runner_role',[\s\S]*?pg_catalog\.pg_roles r WHERE r\.oid=runner\.oid/);
+ assert.match(collector,/runner_password_unset',[\s\S]*?pg_catalog\.pg_authid a WHERE a\.oid=runner\.oid/);
+ assert.match(collector,/runner_memberships'[\s\S]*?\),'\[\]'::pg_catalog\.jsonb\)/);
+ assert.match(collector,/runner_schema_privileges'[\s\S]*?pg_catalog\.has_schema_privilege\(runner\.oid/);
+ assert.match(collector,/wrappers'[\s\S]*?\),'\[\]'::pg_catalog\.jsonb\)/);
+ assert.match(collector,/underlying_fanout_routines'[\s\S]*?pg_catalog\.has_function_privilege\(runner\.oid/);
+ assert.match(collector,/fanout_execute',pg_catalog\.has_function_privilege\('nca_push_fanout'/);
+ assert.match(collector,/'fanout_role',[\s\S]*?pg_catalog\.pg_roles/);
+ assert.match(collector,/'fanout_memberships',[\s\S]*?pg_catalog\.pg_auth_members/);
+ assert.match(collector,/FROM runner;/);
+ assert.doesNotMatch(collector,/pg_catalog\.has_(?:schema|table|column|function)_privilege\(\s*'nca_push_fanout_runner'/i);
+ assert.match(collector,/pg_catalog\.has_schema_privilege\(runner\.oid/);
+ assert.match(collector,/pg_catalog\.has_table_privilege\(runner\.oid/);
+ assert.match(collector,/pg_catalog\.has_column_privilege\(runner\.oid/);
+ assert.match(collector,/pg_catalog\.has_function_privilege\(runner\.oid/);
+});

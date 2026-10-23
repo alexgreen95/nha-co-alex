@@ -16,8 +16,10 @@ This document records that supplied evidence; it is not a new production query.
 Runtime remains OFF. No fanout endpoint or scheduler is deployed, and no push
 worker has been enabled.
 
-`database/migrations/20261023_content_push_fanout_runtime_bridge.sql` is a local
-candidate only; it has not been installed in production. It preserves
+The operator now reports that
+`database/migrations/20261023_content_push_fanout_runtime_bridge.sql` is installed
+and post-install verified. This is supplied context, not a new production query.
+It preserves
 `nca_push_fanout` as NOLOGIN and introduces a dedicated `nca_push_fanout_runner`
 LOGIN that can execute only two fixed SECURITY DEFINER wrappers. It has no table
 or column privileges and no membership in `nca_push_fanout`. PostgreSQL 17
@@ -34,15 +36,43 @@ Before any runtime configuration, a separate secret operation must provision a
 password and a dedicated connection URL for the runner. The expected shared
 Supavisor custom-role username shape is `[ROLE].[PROJECT-REF]`; the runtime must
 verify both `current_user` and `session_user` as `nca_push_fanout_runner` and
-must never fall back to postgres credentials. No actual host, project reference,
-or password belongs in this repository. The bridge is still a preflight candidate;
-its collector has not been run against production.
+must never fall back to postgres credentials. No password belongs in this
+repository. The reported runner password remains NULL; this task provisions none.
 
-The bridge does not implement an HTTP endpoint or scheduler. The existing sender
-flag remains fail-closed; a fanout runtime flag has not been implemented.
-Controlled E2E remains blocked pending bridge preflight/installation, separate
-password provisioning, runtime implementation, client deployment/adoption, and
-explicit rollout authorization.
+The local runtime adds `GET /api/content-push-fanout`, disabled unless
+`NCA_CONTENT_PUSH_FANOUT_ENABLED` is exactly `true`. It requires an exact
+`Authorization: Bearer <CRON_SECRET>` header; `CRON_SECRET` must be 32–256 ASCII
+letters, digits, underscores or hyphens. All other methods return 405. Nonempty
+query/body inputs are rejected; callers cannot choose work parameters. Responses
+are no-store and contain only aggregate counts, never leases or event data.
+
+The dedicated `NCA_PUSH_FANOUT_DATABASE_URL` must use `postgresql`, wire user
+`nca_push_fanout_runner.cwwulyrutdvuekydydew`, nonempty password, host
+`aws-0-ap-northeast-2.pooler.supabase.com`, port 5432 and database `postgres`,
+without URL options. `NCA_PUSH_FANOUT_CA_CERT_B64` is required: canonical base64
+of exactly one validated PEM CA certificate, supplied explicitly with verified
+TLS. Neither variable falls back to sender credentials. Pool size is one;
+checkout timeout is 2s and query timeout 7s. Each new connection verifies both
+runner identities, then establishes/verifies a 5s statement timeout,
+`search_path=pg_catalog`, read-only default off, and application name
+`nca_content_push_fanout`. Only the two runner wrappers are callable.
+
+One invocation claims at most two events once, walks at most two pages/event,
+four pages total, with 50 subscription locators/page (at most 200 scanned).
+These small fixed bounds limit database work. Admission checks use a monotonic
+45s budget, reserving 30s before each call for checkout and possible new-client
+initialization plus RPC; Vercel maxDuration is 60s. `pages` counts attempts;
+`scanned`/`inserted` count validated responses only. `deferred` counts claimed
+events not confirmed terminal, including unknown outcomes. Completed, gone,
+expired and source-mismatch events stop their page walk. Any RPC error or
+malformed response stops the invocation; there is no blind retry, lease release,
+or lease renewal. At a bound, the database retains its authoritative cursor and
+120s lease; a future invocation can claim unfinished work only after that lease
+expires. Error results do not prove an attempted page rolled back.
+
+No cron schedule is configured. No sender/transport is invoked. Both runtime
+and rollout remain disabled pending separately authorized credential provisioning,
+configuration, deployment and enablement. Existing sender flags are unchanged.
 
 ## Capture and legacy behavior
 

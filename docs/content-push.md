@@ -7,6 +7,43 @@ zero non-internal target triggers. No additional production inspection occurred.
 The old SQL is neither restored nor modified. The existing personal SQL safety
 patterns and `docs/push-category-preferences-contract-v1.md` are local references.
 
+## Runtime bridge status — 2026-10-23
+
+The operator reports that the production base Content Push migration is installed
+and post-install verified. The supplied read-only queue snapshot at
+`2026-10-23 02:29:07.593043+00` reported zero events and zero content deliveries.
+This document records that supplied evidence; it is not a new production query.
+Runtime remains OFF. No fanout endpoint or scheduler is deployed, and no push
+worker has been enabled.
+
+`database/migrations/20261023_content_push_fanout_runtime_bridge.sql` is a local
+candidate only; it has not been installed in production. It preserves
+`nca_push_fanout` as NOLOGIN and introduces a dedicated `nca_push_fanout_runner`
+LOGIN that can execute only two fixed SECURITY DEFINER wrappers. It has no table
+or column privileges and no membership in `nca_push_fanout`. PostgreSQL 17
+automatically grants a new role created by a non-superuser CREATEROLE installer
+back to that creator with ADMIN TRUE, SET FALSE, and INHERIT FALSE; the bootstrap
+superuser is recorded as grantor. This is administrative control, not runtime
+inheritance. The bridge verifier requires exactly that one incoming installer
+membership, no outgoing runner memberships, and no runner/fanout membership.
+The runner is created with `PASSWORD NULL`; PostgreSQL 17 permits a LOGIN role without a password, and
+password authentication always fails until a separately authorized operation
+provisions one. No password is committed or generated here.
+
+Before any runtime configuration, a separate secret operation must provision a
+password and a dedicated connection URL for the runner. The expected shared
+Supavisor custom-role username shape is `[ROLE].[PROJECT-REF]`; the runtime must
+verify both `current_user` and `session_user` as `nca_push_fanout_runner` and
+must never fall back to postgres credentials. No actual host, project reference,
+or password belongs in this repository. The bridge is still a preflight candidate;
+its collector has not been run against production.
+
+The bridge does not implement an HTTP endpoint or scheduler. The existing sender
+flag remains fail-closed; a fanout runtime flag has not been implemented.
+Controlled E2E remains blocked pending bridge preflight/installation, separate
+password provisioning, runtime implementation, client deployment/adoption, and
+explicit rollout authorization.
+
 ## Capture and legacy behavior
 
 `20261022_content_push_delivery.sql` creates two AFTER INSERT OR UPDATE row
@@ -229,6 +266,9 @@ reconciled against the current migration, status remains
 `PRODUCTION_PREFLIGHT = BLOCKED` and
 `CONTENT_PUSH_MIGRATION_INSTALL = BLOCKED`.
 
+The preceding collector instructions describe the historical pre-install gate.
+They are not the current base-migration status recorded above.
+
 ### First installation attempt (2026-10-23)
 
 The operator-reported single installation attempt using the reviewed migration
@@ -242,9 +282,13 @@ the consumed authorization does not authorize another attempt. No worker or E2E
 rollout occurred. Review any verifier fix and obtain separate authorization
 before considering another installation attempt.
 
-Later, separately authorized: verify production guard compatibility, apply the
-single migration in a controlled window (capture starts on future writes), deploy
-with content worker disabled, arrange a trusted fanout caller without expanding
-sender authority, ensure clients adopt the updated service worker, then approve
-controlled publication/fanout/worker testing. Older installed workers reject
-content payloads until updated. No endpoint, fanout or real push is invoked here.
+### Subsequent operator-reported installation status
+
+The operator later reported that the base migration was separately installed
+and post-install verified. The supplied pre-runtime queue snapshot was clean.
+This later evidence supersedes the earlier pending-install instructions; it does
+not authorize runtime deployment or activation. The bridge above remains a local
+candidate only. An authorized bridge preflight/installation, separate runner
+password provisioning, server runtime implementation, client deployment/adoption,
+and staged E2E approval remain outstanding. No endpoint, fanout, or real push is
+invoked here.

@@ -12,7 +12,7 @@ function args(user){
  const adapter=fs.readFileSync(client,'utf8');assert(adapter.includes('--host=unix:///var/run/docker.sock'));assert(adapter.includes('nca-pg17-guard-witness env -i'));
  return ['-X','-w','-q','-A','-t','-v','ON_ERROR_STOP=1','-v','VERBOSITY=verbose','-h',socket,'-p','5432','-d','nca_guard_witness','-U',user];
 }
-const roles='nca_push_sender,nca_push_fanout,nca_push_api,postgres,anon,authenticated,service_role,authenticator';
+const roles='nca_push_sender,nca_push_fanout,nca_push_fanout_runner,nca_push_api,postgres,anon,authenticated,service_role,authenticator';
 function localPG(){
  const inspect=spawnSync('docker',['--host=unix:///var/run/docker.sock','inspect','--format','{{.HostConfig.NetworkMode}}','nca-pg17-guard-witness'],{env,encoding:'utf8'});
  assert.equal(inspect.status,0);assert.equal(inspect.stdout.trim(),'none');
@@ -33,7 +33,11 @@ function localPG(){
    grants+=`REVOKE ALL ON FUNCTION public.${sig} FROM PUBLIC,anon,authenticated,service_role;GRANT EXECUTE ON FUNCTION public.${sig} TO nca_push_sender;`;
   run('BEGIN;'+fs.readFileSync('tests/helpers/content-push-foundation.sql','utf8')+fs.readFileSync('tests/helpers/personal-push-sender-baseline.sql','utf8')+grants+'COMMIT;');
  },cleanup(){
-  run(`DROP OWNED BY ${roles} CASCADE; DROP ROLE ${roles};`);
+  const roleList=roles.split(',').map(role=>`'${role}'`).join(',');
+  run(`DO $cleanup$ DECLARE role_name text; BEGIN
+   FOR role_name IN SELECT rolname FROM pg_catalog.pg_roles WHERE rolname=ANY(ARRAY[${roleList}]::text[])
+   LOOP EXECUTE pg_catalog.format('DROP OWNED BY %I CASCADE',role_name); END LOOP;
+  END $cleanup$; DROP ROLE IF EXISTS ${roles};`);
   assert.equal(q("SELECT count(*) FROM pg_namespace WHERE nspname='auth';"),0);
   assert.equal(q("SELECT count(*) FROM pg_roles WHERE rolname IN ('postgres','nca_push_sender','nca_push_fanout','nca_push_api');"),0);
  },concurrent(text){

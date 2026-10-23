@@ -45,6 +45,16 @@ test('bridge final verifier preserves all six base routines and the original fan
  assert.match(migration,/REVOKE ALL ON FUNCTION public\.nca_runner_claim_content_push_events[^;]*FROM PUBLIC,anon,authenticated,service_role,authenticator,nca_push_api,nca_push_sender,nca_push_fanout,nca_push_fanout_runner/);
 });
 
+test('bridge verifier pins exact argument and return types for all six base routines',()=>{
+ const signatures={nca_capture_content_first_publication:'',nca_claim_content_push_events:'23',
+  nca_fanout_content_push_event_page:'20 2950 23',nca_finish_content_push_delivery:'2950 2950 25',
+  nca_claim_content_push_deliveries:'23',nca_prepare_content_push_delivery:'2950 2950'};
+ for(const [name,args] of Object.entries(signatures))
+  assert.ok(migration.includes(`(r.proname='${name}' AND r.proargtypes::pg_catalog.text IS DISTINCT FROM '${args}')`),name);
+ assert.match(migration,/r\.proname='nca_capture_content_first_publication' AND r\.prorettype IS DISTINCT FROM 'pg_catalog\.trigger'::pg_catalog\.regtype/);
+ assert.match(migration,/r\.proname<>'nca_capture_content_first_publication' AND r\.prorettype IS DISTINCT FROM 'pg_catalog\.jsonb'::pg_catalog\.regtype/);
+});
+
 test('collector is read-only, catalog-only, bounded, and returns deterministic evidence plus completion marker',()=>{
  assert.match(collector,/^BEGIN;\s*SET TRANSACTION READ ONLY;/);
  assert.match(collector,/statement_timeout='5s'/);assert.match(collector,/lock_timeout='2s'/);

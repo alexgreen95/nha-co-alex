@@ -100,15 +100,14 @@ BEGIN
     THEN (SELECT oid FROM pg_catalog.pg_roles WHERE rolname='nca_push_sender') ELSE installer END;
   IF r.proowner<>installer OR NOT r.prosecdef OR r.provolatile<>'v' OR r.proisstrict OR r.proleakproof OR r.proretset OR r.prokind<>'f'
    OR r.prolang<>(SELECT oid FROM pg_catalog.pg_language WHERE lanname='plpgsql')
-   OR r.proargtypes IS DISTINCT FROM CASE r.proname
-    WHEN 'nca_capture_content_first_publication' THEN ''::pg_catalog.oidvector
-    WHEN 'nca_claim_content_push_events' THEN '23'::pg_catalog.oidvector
-    WHEN 'nca_fanout_content_push_event_page' THEN '20 2950 23'::pg_catalog.oidvector
-    WHEN 'nca_finish_content_push_delivery' THEN '2950 2950 25'::pg_catalog.oidvector
-    WHEN 'nca_claim_content_push_deliveries' THEN '23'::pg_catalog.oidvector
-    WHEN 'nca_prepare_content_push_delivery' THEN '2950 2950'::pg_catalog.oidvector END
-   OR r.prorettype IS DISTINCT FROM CASE WHEN r.proname='nca_capture_content_first_publication'
-    THEN 'trigger'::pg_catalog.regtype ELSE 'jsonb'::pg_catalog.regtype END
+   OR (r.proname='nca_capture_content_first_publication' AND r.proargtypes::pg_catalog.text IS DISTINCT FROM '')
+   OR (r.proname='nca_claim_content_push_events' AND r.proargtypes::pg_catalog.text IS DISTINCT FROM '23')
+   OR (r.proname='nca_fanout_content_push_event_page' AND r.proargtypes::pg_catalog.text IS DISTINCT FROM '20 2950 23')
+   OR (r.proname='nca_finish_content_push_delivery' AND r.proargtypes::pg_catalog.text IS DISTINCT FROM '2950 2950 25')
+   OR (r.proname='nca_claim_content_push_deliveries' AND r.proargtypes::pg_catalog.text IS DISTINCT FROM '23')
+   OR (r.proname='nca_prepare_content_push_delivery' AND r.proargtypes::pg_catalog.text IS DISTINCT FROM '2950 2950')
+   OR (r.proname='nca_capture_content_first_publication' AND r.prorettype IS DISTINCT FROM 'pg_catalog.trigger'::pg_catalog.regtype)
+   OR (r.proname<>'nca_capture_content_first_publication' AND r.prorettype IS DISTINCT FROM 'pg_catalog.jsonb'::pg_catalog.regtype)
    OR r.proconfig IS DISTINCT FROM ARRAY['search_path=""','lock_timeout=2s','statement_timeout=5s']
    OR pg_catalog.md5(pg_catalog.replace(pg_catalog.replace(r.prosrc,E'\r\n',E'\n'),E'\r',E'\n')) IS DISTINCT FROM base_hashes->>r.proname
    OR NOT pg_catalog.has_function_privilege(allowed,r.oid,'EXECUTE')

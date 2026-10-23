@@ -118,6 +118,19 @@ describe('content push raw catalog collector: static safety and evidence contrac
   for(const field of ['conf_schema','conf_relation','conf_columns'])assert.ok(source.includes(`'${field}'`),field);
   assert.ok(source.includes('pg_catalog.unnest(k.confkey) WITH ORDINALITY'));
  });
+ it('retains every FK on requested relations for exhaustive local-tuple preflight',()=>{
+  const allConstraints=source.slice(source.indexOf('constraints_all AS MATERIALIZED'),source.indexOf('indexes_all AS MATERIALIZED'));
+  assert.match(allConstraints,/SELECT k\.\* FROM pg_catalog\.pg_constraint k WHERE k\.conrelid IN \(SELECT oid FROM relations_all\)/);
+  assert.doesNotMatch(allConstraints,/\b(?:contype|convalidated|condeferrable|condeferred)\s*(?:=|AND|OR)/);
+  const output=source.slice(source.indexOf('constraints_out AS'),source.indexOf('indexes_out AS'));
+  for(const field of ['conrelid','conkey','confrelid','confkey','conf_schema','conf_relation','conf_columns',
+   'confdeltype','convalidated','condeferrable','condeferred'])assert.ok(output.includes(`'${field}'`),field);
+  assert.ok(output.includes('ORDER BY k.oid LIMIT (SELECT constraints FROM limits)'));
+  assert.ok(source.includes("'constraints',COALESCE((SELECT pg_catalog.jsonb_agg(j ORDER BY oid) FROM constraints_out),'[]'::pg_catalog.jsonb)"));
+  assert.ok(source.includes("'CAP_EXCEEDED:'||c.key"));
+  assert.ok(source.includes("'catalog_evidence_complete',NOT EXISTS(SELECT 1 FROM catalog_reasons)"));
+  for(const field of ['attrelid','attnum','attname'])assert.ok(source.includes(`'${field}'`),field);
+ });
  it('uses dependency AND source-token discovery before any routine cap, not guessed names alone',()=>{
   const discovery=source.slice(source.indexOf('candidate_all AS'),source.indexOf('candidates AS'));
   assert.doesNotMatch(discovery,/\bLIMIT\b/);

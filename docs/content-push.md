@@ -189,6 +189,46 @@ PostgreSQL 17.11 scratch container and one pinned Unix socket, explicit database
 identity, no inherited DB credentials. Fixtures are synthetic and cleaned up.
 No production connection, SQL/RPC, push, secret/env change or deployment occurred.
 
+## Manual production read-only preflight
+
+**READ-ONLY PREFLIGHT — run only this file:**
+`database/verification/20261022_content_push_contract_collector.sql`
+
+**NOT AUTHORIZED — do not run this file:**
+`database/migrations/20261022_content_push_delivery.sql`
+
+Using an already-authorized production SQL Editor, create a new query, paste the
+entire read-only collector, and run it once. It starts a `READ ONLY` transaction,
+sets local timeouts, reads PostgreSQL catalogs, returns one marker and a
+diagnostic JSON result, then rolls back. It reads no application rows and invokes
+no application routine. It does not authorize or install the migration.
+
+Save the complete, untruncated SQL Editor result, including its header, marker,
+and full diagnostic value, as
+`content-push-production-preflight-20261023.txt`. Confirm the marker is present
+and `catalog_evidence_complete` is true; stop if output is missing or truncated,
+any catalog/output cap is exceeded, or required relation, column, or constraint
+records are absent. `evidence_complete` also reports the collector's documented
+routine-discovery limitation. Manually confirm the exact required personal
+routines and Content Push name/signature collision records are present and not
+withheld; do not ignore missing or ambiguous records.
+
+The constraint section includes every constraint on the requested relations.
+For the three protected FK local tuples, map each ordered `conkey` attnum through
+the emitted relation and column records. Compare all such rows—including wrong
+targets, unvalidated and deferrable FKs—then verify the target, ordered
+`conf_columns`, delete action, validation, and deferrability. The catalog cap is
+fail-closed; if `catalog_evidence_complete` is false, the output cannot prove the
+preflight.
+
+The collector withholds source/configuration it flags as potentially sensitive,
+but its metadata warns that secret detection is not exhaustive. Keep the result
+local until checked for secret-like material. If any appears, do not upload it;
+provide only a safe complete result for reconciliation. Until fresh output is
+reconciled against the current migration, status remains
+`PRODUCTION_PREFLIGHT = BLOCKED` and
+`CONTENT_PUSH_MIGRATION_INSTALL = BLOCKED`.
+
 Later, separately authorized: verify production guard compatibility, apply the
 single migration in a controlled window (capture starts on future writes), deploy
 with content worker disabled, arrange a trusted fanout caller without expanding

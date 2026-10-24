@@ -27,10 +27,9 @@
       .profile-story-cover{overflow:hidden}
       .freshness-ribbon{position:absolute;z-index:3;display:inline-flex;align-items:center;justify-content:center;padding:0 8px;font-weight:800;letter-spacing:.08em;line-height:1;color:var(--fresh-ribbon-fg);background:var(--fresh-ribbon-bg);border:0;border-radius:0;box-shadow:0 2px 6px color-mix(in srgb,var(--fg) 14%,transparent);pointer-events:none;user-select:none}
       .freshness-ribbon[hidden]{display:none!important}
-      .story-card>.freshness-ribbon{right:10px;bottom:33px;width:88px;height:22px;font-size:10px;transform:rotate(-45deg);transform-origin:center}
-      .story-card>.freshness-ribbon::before,.story-card>.freshness-ribbon::after{content:"";position:absolute;top:100%;width:0;height:0;border-top:6px solid var(--fresh-ribbon-fold)}
-      .story-card>.freshness-ribbon::before{left:0;border-right:7px solid transparent}
-      .story-card>.freshness-ribbon::after{right:0;border-left:7px solid transparent}
+      .story-card>.freshness-ribbon{right:0;bottom:40px;width:122px;height:28px;font-size:10.5px;transform:none;transform-origin:center}
+      .story-card>.freshness-ribbon::before{content:"";position:absolute;left:-10px;top:4px;width:12px;height:28px;background:var(--fresh-ribbon-fold);clip-path:polygon(100% 0,100% 100%,0 80%,45% 50%,0 20%)}
+      .story-card>.freshness-ribbon::after{content:"";position:absolute;right:0;top:100%;width:0;height:0;border-top:6px solid var(--fresh-ribbon-fold);border-left:8px solid transparent}
       .profile-story-cover>.freshness-ribbon{left:-23px;top:13px;width:78px;height:19px;font-size:8.5px;transform:rotate(-45deg);transform-origin:center;box-shadow:0 1px 4px color-mix(in srgb,var(--fg) 12%,transparent)}
       .profile-story-cover>.freshness-ribbon::after{content:"";position:absolute;right:0;top:100%;width:0;height:0;border-top:4px solid var(--fresh-ribbon-fold);border-left:5px solid transparent}
       #introChapters button{display:flex;align-items:center;gap:10px}
@@ -39,7 +38,8 @@
       .notif-filters{display:flex!important;flex-wrap:nowrap!important;overflow:visible!important;gap:5px!important;width:100%;padding-bottom:2px!important}
       .notif-filters button{flex:1 1 0;min-width:0;min-height:36px!important;padding:6px 6px!important;font-size:12px!important;white-space:nowrap!important}
       @media(max-width:700px){
-        .story-card>.freshness-ribbon{right:9px;bottom:30px;width:84px;height:21px;font-size:9.5px}
+        .story-card>.freshness-ribbon{right:0;bottom:36px;width:112px;height:26px;font-size:10px}
+        .story-card>.freshness-ribbon::before{left:-9px;top:4px;width:11px;height:26px}
         .profile-story-cover>.freshness-ribbon{left:-21px;top:12px;width:72px;height:18px;font-size:8px}
         .chapter-freshness-badge{padding:3px 6px;font-size:8.5px}
         header .notif-filters{display:flex!important;flex-wrap:nowrap!important;overflow:visible!important;gap:4px!important;width:100%}

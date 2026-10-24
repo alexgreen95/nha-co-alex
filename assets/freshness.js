@@ -1,0 +1,258 @@
+/* Publication-event freshness + member update feed. No Push/notification-row coupling. */
+(function (root) {
+  'use strict';
+
+  const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+  const MAX_SEQUENCE = 9223372036854775807n;
+
+  function asBigInt(value, fallback = 0n) {
+    if (typeof value === 'bigint') return value;
+    if (typeof value !== 'string' || !/^(0|[1-9][0-9]*)$/.test(value)) return fallback;
+    try {
+      const result = BigInt(value);
+      return result <= MAX_SEQUENCE ? result : fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  function asTime(value) {
+    if (typeof value !== 'string') return null;
+    const ms = Date.parse(value);
+    return Number.isFinite(ms) ? ms : null;
+  }
+
+  function parseCatalog(payload) {
+    const nowMs = asTime(payload?.server_now);
+    if (nowMs === null || !Array.isArray(payload?.stories)) throw new Error('INVALID_FRESHNESS_CATALOG');
+    const stories = new Map();
+    for (const row of payload.stories) {
+      const storyId = Number(row?.story_id);
+      if (!Number.isSafeInteger(storyId) || storyId <= 0 || stories.has(storyId)) throw new Error('INVALID_FRESHNESS_CATALOG');
+      const storySequence = row.story_sequence === null ? null : asBigInt(row.story_sequence, -1n);
+      const chapterSequence = row.chapter_sequence === null ? null : asBigInt(row.chapter_sequence, -1n);
+      const storyAt = row.story_occurred_at === null ? null : asTime(row.story_occurred_at);
+      const chapterAt = row.chapter_occurred_at === null ? null : asTime(row.chapter_occurred_at);
+      const chapterId = row.chapter_id === null ? null : Number(row.chapter_id);
+      if (storySequence === -1n || chapterSequence === -1n ||
+          (storySequence !== null && storyAt === null) ||
+          (chapterSequence !== null && (chapterAt === null || !Number.isSafeInteger(chapterId) || chapterId <= 0))) {
+        throw new Error('INVALID_FRESHNESS_CATALOG');
+      }
+      stories.set(storyId, Object.freeze({
+        storyId,
+        storySequence,
+        storyAt,
+        chapterSequence,
+        chapterAt,
+        chapterId
+      }));
+    }
+    return Object.freeze({nowMs, stories});
+  }
+
+  function parseState(payload) {
+    const baselineCutoffMs = asTime(payload?.baseline_cutoff_at);
+    if (baselineCutoffMs === null || !Array.isArray(payload?.acks)) throw new Error('INVALID_FRESHNESS_STATE');
+    const updatesSeenSequence = asBigInt(payload?.updates_seen_sequence, -1n);
+    if (updatesSeenSequence < 0n) throw new Error('INVALID_FRESHNESS_STATE');
+    const acks = new Map();
+    for (const row of payload.acks) {
+      const storyId = Number(row?.story_id);
+      const storyAck = asBigInt(row?.story_ack_sequence, -1n);
+      const chapterAck = asBigInt(row?.chapter_ack_sequence, -1n);
+      if (!Number.isSafeInteger(storyId) || storyId <= 0 || storyAck < 0n || chapterAck < 0n || acks.has(storyId)) {
+        throw new Error('INVALID_FRESHNESS_STATE');
+      }
+      acks.set(storyId, Object.freeze({storyAck, chapterAck}));
+    }
+    return Object.freeze({baselineCutoffMs, updatesSeenSequence, acks});
+  }
+
+  function markerFor(entry, {authenticated, catalogNowMs, baselineCutoffMs, ack} = {}) {
+    if (!entry) return Object.freeze({isNew:false, storyNew:false, chapterNew:false, chapterId:null});
+    const cutoffMs = authenticated
+      ? baselineCutoffMs
+      : catalogNowMs - THREE_DAYS_MS;
+    if (!Number.isFinite(cutoffMs)) return Object.freeze({isNew:false, storyNew:false, chapterNew:false, chapterId:null});
+
+    const storyAck = ack?.storyAck ?? 0n;
+    const chapterAck = ack?.chapterAck ?? 0n;
+
+    const storyNew = entry.storySequence !== null &&
+      entry.storyAt >= cutoffMs &&
+      entry.storySequence > storyAck;
+
+    const chapterNew = entry.chapterSequence !== null &&
+      entry.chapterAt >= cutoffMs &&
+      entry.chapterSequence > chapterAck;
+
+    return Object.freeze({
+      isNew: storyNew || chapterNew,
+      storyNew,
+      chapterNew,
+      chapterId: chapterNew ? entry.chapterId : null
+    });
+  }
+
+  function parseUpdates(payload) {
+    if (!payload || typeof payload.is_admin !== 'boolean' || !Array.isArray(payload.updates)) {
+      throw new Error('INVALID_MEMBER_UPDATES');
+    }
+    const updates = payload.updates.map((row) => {
+      const sequence = asBigInt(row?.catalog_sequence, -1n);
+      const storyId = Number(row?.story_id);
+      const chapterId = row?.chapter_id === null ? null : Number(row.chapter_id);
+      const occurredAt = asTime(row?.occurred_at);
+      if (sequence < 0n || !Number.isSafeInteger(storyId) || storyId <= 0 || occurredAt === null ||
+          !['new_story','new_chapter'].includes(row?.kind) ||
+          (row.kind === 'new_chapter' && (!Number.isSafeInteger(chapterId) || chapterId <= 0))) {
+        throw new Error('INVALID_MEMBER_UPDATES');
+      }
+      return Object.freeze({
+        sequence,
+        sequenceText:String(row.catalog_sequence),
+        occurredAt,
+        kind:row.kind,
+        storyId,
+        chapterId,
+        storyTitle:String(row.story_title || ''),
+        chapterTitle:row.chapter_title == null ? '' : String(row.chapter_title),
+        isRead:row.is_read === true
+      });
+    });
+    const maxSequence = payload.max_sequence === null ? null : asBigInt(payload.max_sequence, -1n);
+    if (maxSequence === -1n) throw new Error('INVALID_MEMBER_UPDATES');
+    return Object.freeze({
+      isAdmin:payload.is_admin,
+      updates:Object.freeze(updates),
+      unreadCount:Number(payload.unread_count) || 0,
+      maxSequence
+    });
+  }
+
+  function create({sb, getAccount, onChange} = {}) {
+    if (!sb?.rpc || typeof getAccount !== 'function') throw new Error('FRESHNESS_DEPENDENCIES_REQUIRED');
+
+    let catalog = Object.freeze({nowMs:0, stories:new Map()});
+    let state = null;
+    let updates = Object.freeze({isAdmin:false, updates:Object.freeze([]), unreadCount:0, maxSequence:null});
+    let generation = 0;
+
+    function emit() {
+      try { onChange?.(); } catch {}
+    }
+
+    async function rpc(name, args) {
+      const result = args ? await sb.rpc(name, args) : await sb.rpc(name);
+      if (result?.error) throw result.error;
+      return result?.data;
+    }
+
+    async function load({withUpdates=true} = {}) {
+      const token = ++generation;
+      const account = getAccount() || null;
+      const catalogPromise = rpc('nca_get_freshness_catalog');
+      const statePromise = account ? rpc('nca_get_freshness_state') : Promise.resolve(null);
+      const updatesPromise = account && withUpdates ? rpc('nca_get_member_updates',{p_limit:50}) : Promise.resolve(null);
+      const [catalogPayload,statePayload,updatesPayload] = await Promise.all([catalogPromise,statePromise,updatesPromise]);
+      if (token !== generation || account !== (getAccount() || null)) return false;
+      catalog = parseCatalog(catalogPayload);
+      state = statePayload ? parseState(statePayload) : null;
+      updates = updatesPayload ? parseUpdates(updatesPayload) :
+        Object.freeze({isAdmin:false,updates:Object.freeze([]),unreadCount:0,maxSequence:null});
+      emit();
+      return true;
+    }
+
+    function marker(storyId) {
+      const id = Number(storyId);
+      const entry = catalog.stories.get(id);
+      const account = getAccount() || null;
+      return markerFor(entry, {
+        authenticated:!!account,
+        catalogNowMs:catalog.nowMs,
+        baselineCutoffMs:state?.baselineCutoffMs,
+        ack:state?.acks.get(id)
+      });
+    }
+
+    async function ackStoryOpen(storyId) {
+      if (!getAccount()) return false;
+      const id = Number(storyId);
+      const current = marker(id);
+      if (!current.storyNew) return false;
+      const payload = await rpc('nca_ack_story_freshness',{p_story_id:id});
+      if (payload?.acknowledged !== true) return false;
+      const ackSequence = asBigInt(payload.story_ack_sequence, -1n);
+      if (ackSequence < 0n || !state) return false;
+      const acks = new Map(state.acks);
+      const old = acks.get(id) || {storyAck:0n,chapterAck:0n};
+      acks.set(id,Object.freeze({storyAck:old.storyAck > ackSequence ? old.storyAck : ackSequence,chapterAck:old.chapterAck}));
+      state = Object.freeze({...state,acks});
+      emit();
+      return true;
+    }
+
+    async function ackChapterOpen(storyId, chapterId) {
+      if (!getAccount()) return false;
+      const id = Number(storyId), cid = Number(chapterId);
+      const current = marker(id);
+      if (!current.chapterNew || current.chapterId !== cid) return false;
+      const payload = await rpc('nca_ack_chapter_freshness',{p_story_id:id,p_chapter_id:cid});
+      if (payload?.acknowledged !== true) return false;
+      const ackSequence = asBigInt(payload.chapter_ack_sequence, -1n);
+      if (ackSequence < 0n || !state) return false;
+      const acks = new Map(state.acks);
+      const old = acks.get(id) || {storyAck:0n,chapterAck:0n};
+      acks.set(id,Object.freeze({storyAck:old.storyAck,chapterAck:old.chapterAck > ackSequence ? old.chapterAck : ackSequence}));
+      state = Object.freeze({...state,acks});
+      emit();
+      return true;
+    }
+
+    async function refreshUpdates() {
+      if (!getAccount()) return updates;
+      updates = parseUpdates(await rpc('nca_get_member_updates',{p_limit:50}));
+      emit();
+      return updates;
+    }
+
+    async function markUpdatesRead(sequence) {
+      if (!getAccount()) return false;
+      const seq = typeof sequence === 'bigint' ? sequence : asBigInt(String(sequence), -1n);
+      if (seq <= 0n) return false;
+      const payload = await rpc('nca_mark_member_updates_read',{p_through_sequence:seq.toString()});
+      if (payload?.updated !== true && payload?.updates_seen_sequence == null) return false;
+      await refreshUpdates();
+      return true;
+    }
+
+    function reset() {
+      ++generation;
+      catalog = Object.freeze({nowMs:0,stories:new Map()});
+      state = null;
+      updates = Object.freeze({isAdmin:false,updates:Object.freeze([]),unreadCount:0,maxSequence:null});
+      emit();
+    }
+
+    return Object.freeze({
+      load, reset, marker, ackStoryOpen, ackChapterOpen, refreshUpdates, markUpdatesRead,
+      get updates(){ return updates; },
+      get catalogLoaded(){ return catalog.nowMs > 0; },
+      get authenticated(){ return !!getAccount(); }
+    });
+  }
+
+  root.NCAFreshness = Object.freeze({
+    THREE_DAYS_MS,
+    asBigInt,
+    parseCatalog,
+    parseState,
+    parseUpdates,
+    markerFor,
+    create
+  });
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = root.NCAFreshness;
+})(typeof window !== 'undefined' ? window : globalThis);

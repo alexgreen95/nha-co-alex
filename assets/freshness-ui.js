@@ -6,6 +6,7 @@
   let controller=null;
   let refreshQueued=false;
   let expiryTimer=null;
+  let activeCompletion=null;
 
   function installStyles(){
     if(document.getElementById(STYLE_ID))return;
@@ -14,19 +15,31 @@
     style.textContent=`
       :root{--fresh-ribbon-bg:#d789a4;--fresh-ribbon-fold:#a95770;--fresh-ribbon-fg:#fffafd}
       body.light{--fresh-ribbon-bg:#d789a4;--fresh-ribbon-fold:#a95770;--fresh-ribbon-fg:#fffafd}
-      body.smoky{--fresh-ribbon-bg:#ad8451;--fresh-ribbon-fold:#795a34;--fresh-ribbon-fg:#fffaf0}
+      body.smoky{--fresh-ribbon-bg:#8f748e;--fresh-ribbon-fold:#625060;--fresh-ribbon-fg:#fffaff}
       body.dustyrose{--fresh-ribbon-bg:#b86f84;--fresh-ribbon-fold:#844a5c;--fresh-ribbon-fg:#fff8fa}
       body.mistblue{--fresh-ribbon-bg:#668f9a;--fresh-ribbon-fold:#466a73;--fresh-ribbon-fg:#f7fcfd}
       body.pastel{--fresh-ribbon-bg:#a98bc6;--fresh-ribbon-fold:#795f96;--fresh-ribbon-fg:#fffaff}
       body.night{--fresh-ribbon-bg:#718aa3;--fresh-ribbon-fold:#4b6176;--fresh-ribbon-fg:#f7fbff}
       body.purplenight{--fresh-ribbon-bg:#9878b8;--fresh-ribbon-fold:#684d83;--fresh-ribbon-fg:#fffaff}
-      .story-card,.profile-story-tile{position:relative}
-      .freshness-ribbon{position:absolute;z-index:3;right:-22px;bottom:13px;width:92px;height:25px;padding:0 10px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;letter-spacing:.08em;line-height:1;color:var(--fresh-ribbon-fg);background:var(--fresh-ribbon-bg);border:0;border-radius:0;box-shadow:0 3px 8px color-mix(in srgb,var(--fg) 16%,transparent);transform:rotate(-45deg);transform-origin:center;pointer-events:none;user-select:none}
+      .story-card,.profile-story-cover{position:relative}
+      .story-card{overflow:hidden}
+      .profile-story-cover{overflow:hidden}
+      .freshness-ribbon{position:absolute;z-index:3;display:inline-flex;align-items:center;justify-content:center;padding:0 8px;font-weight:800;letter-spacing:.08em;line-height:1;color:var(--fresh-ribbon-fg);background:var(--fresh-ribbon-bg);border:0;border-radius:0;box-shadow:0 2px 6px color-mix(in srgb,var(--fg) 14%,transparent);pointer-events:none;user-select:none}
       .freshness-ribbon[hidden]{display:none!important}
-      .freshness-ribbon::before,.freshness-ribbon::after{content:"";position:absolute;bottom:-6px;width:0;height:0;border-top:6px solid var(--fresh-ribbon-fold)}
-      .freshness-ribbon::before{left:0;border-right:7px solid transparent}
-      .freshness-ribbon::after{right:0;border-left:7px solid transparent}
-      @media(max-width:700px){.freshness-ribbon{right:-23px;bottom:12px;width:90px;height:24px;font-size:10.5px}}
+      .story-card>.freshness-ribbon{right:-19px;bottom:20px;width:104px;height:24px;font-size:10.5px;transform:rotate(-45deg);transform-origin:center}
+      .story-card>.freshness-ribbon::before,.story-card>.freshness-ribbon::after{content:"";position:absolute;top:100%;width:0;height:0;border-top:6px solid var(--fresh-ribbon-fold)}
+      .story-card>.freshness-ribbon::before{left:0;border-right:7px solid transparent}
+      .story-card>.freshness-ribbon::after{right:0;border-left:7px solid transparent}
+      .profile-story-cover>.freshness-ribbon{left:-23px;top:13px;width:78px;height:19px;font-size:8.5px;transform:rotate(-45deg);transform-origin:center;box-shadow:0 1px 4px color-mix(in srgb,var(--fg) 12%,transparent)}
+      .profile-story-cover>.freshness-ribbon::after{content:"";position:absolute;right:0;top:100%;width:0;height:0;border-top:4px solid var(--fresh-ribbon-fold);border-left:5px solid transparent}
+      #introChapters button{display:flex;align-items:center;gap:10px}
+      .chapter-freshness-title{min-width:0;flex:1 1 auto}
+      .chapter-freshness-badge{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;padding:3px 7px;border:1px solid color-mix(in srgb,var(--fresh-ribbon-bg) 55%,var(--line));background:color-mix(in srgb,var(--fresh-ribbon-bg) 16%,var(--card));color:color-mix(in srgb,var(--fresh-ribbon-bg) 78%,var(--fg));font-size:9px;font-weight:800;letter-spacing:.08em;line-height:1;border-radius:999px}
+      @media(max-width:700px){
+        .story-card>.freshness-ribbon{right:-18px;bottom:19px;width:98px;height:23px;font-size:10px}
+        .profile-story-cover>.freshness-ribbon{left:-21px;top:12px;width:72px;height:18px;font-size:8px}
+        .chapter-freshness-badge{padding:3px 6px;font-size:8.5px}
+      }
     `;
     document.head.appendChild(style);
   }
@@ -53,21 +66,56 @@
   }
 
   function refreshRibbons(){
-    refreshQueued=false;
     if(!controller)return;
     document.querySelectorAll('.story-card').forEach(card=>{
       const id=storyIdFromElement(card);if(id)ensureRibbon(card,id);
     });
-    document.querySelectorAll('.profile-story-cover > .freshness-ribbon').forEach(ribbon=>ribbon.remove());
-    document.querySelectorAll('.profile-story-tile').forEach(tile=>{
-      const id=storyIdFromElement(tile);if(id)ensureRibbon(tile,id);
+    document.querySelectorAll('.profile-story-tile > .freshness-ribbon').forEach(ribbon=>ribbon.remove());
+    document.querySelectorAll('.profile-story-tile .profile-story-cover').forEach(cover=>{
+      const id=storyIdFromElement(cover);if(id)ensureRibbon(cover,id);
     });
   }
 
-  function queueRibbonRefresh(){
+  function chapterDescriptor(button){
+    const raw=button.getAttribute('onclick')||'';
+    const match=/\bread\(\s*([0-9]+)\s*,\s*([0-9]+)/.exec(raw);
+    if(!match||typeof stories==='undefined')return null;
+    const storyId=Number(match[1]),index=Number(match[2]);
+    const story=stories.find(s=>String(s.id)===String(storyId));
+    const chapter=story?.chapters?.[index],chapterId=Number(chapter?.id);
+    return story&&Number.isSafeInteger(chapterId)&&chapterId>0?{storyId,chapterId}:null;
+  }
+
+  function refreshChapterBadges(){
+    if(!controller)return;
+    document.querySelectorAll('#introChapters button').forEach(button=>{
+      const descriptor=chapterDescriptor(button);
+      let title=button.querySelector(':scope > .chapter-freshness-title');
+      if(!title){
+        const text=[...button.childNodes].filter(node=>node.nodeType===Node.TEXT_NODE).map(node=>node.textContent).join('').trim();
+        if(text){
+          [...button.childNodes].filter(node=>node.nodeType===Node.TEXT_NODE).forEach(node=>node.remove());
+          title=document.createElement('span');title.className='chapter-freshness-title';title.textContent=text;button.prepend(title);
+        }
+      }
+      let badge=button.querySelector(':scope > .chapter-freshness-badge');
+      const visible=!!descriptor&&!!controller.chapterMarker(descriptor.storyId,descriptor.chapterId)?.isNew;
+      if(visible&&!badge){
+        badge=document.createElement('span');badge.className='chapter-freshness-badge';badge.textContent='MỚI';badge.setAttribute('aria-label','Chương mới');button.appendChild(badge);
+      }else if(!visible&&badge){badge.remove();}
+    });
+  }
+
+  function refreshFreshnessUI(){
+    refreshQueued=false;
+    refreshRibbons();
+    refreshChapterBadges();
+  }
+
+  function queueFreshnessRefresh(){
     if(refreshQueued)return;
     refreshQueued=true;
-    queueMicrotask(refreshRibbons);
+    queueMicrotask(refreshFreshnessUI);
   }
 
   function configureNotificationRoleTab(){
@@ -143,14 +191,46 @@
     root.updateAuthUI=wrapped;
   }
 
-  function currentChapterId(){
+  function currentChapterDescriptor(){
     try{
       if(typeof currentStory==='undefined'||typeof currentChapter==='undefined'||!currentStory)return null;
-      const chapter=currentStory.chapters?.[Number(currentChapter)];
-      const id=Number(chapter?.id);
-      return Number.isSafeInteger(id)&&id>0?id:null;
+      const storyId=Number(currentStory.id),chapter=currentStory.chapters?.[Number(currentChapter)],chapterId=Number(chapter?.id);
+      return Number.isSafeInteger(storyId)&&storyId>0&&Number.isSafeInteger(chapterId)&&chapterId>0?{storyId,chapterId}:null;
     }catch{return null;}
   }
+
+  function armChapterCompletion(storyId,chapterId){
+    if(!controller?.authenticated||!controller.chapterMarker(storyId,chapterId)?.isNew){activeCompletion=null;return;}
+    activeCompletion={storyId:Number(storyId),chapterId:Number(chapterId),gesture:false,pending:false};
+  }
+
+  function activeCompletionCurrent(){
+    const current=currentChapterDescriptor();
+    return !!activeCompletion&&!!current&&activeCompletion.storyId===current.storyId&&activeCompletion.chapterId===current.chapterId;
+  }
+
+  async function finishActiveChapter(){
+    if(!activeCompletionCurrent()||activeCompletion.pending)return false;
+    const job=activeCompletion;job.pending=true;
+    try{
+      const ok=await controller.markChapterRead(job.storyId,job.chapterId);
+      if(activeCompletion===job){if(ok)activeCompletion=null;else job.pending=false;}
+      return ok;
+    }catch(error){
+      if(activeCompletion===job)job.pending=false;
+      console.warn('chapter freshness read',error);return false;
+    }
+  }
+
+  function checkChapterCompletion(){
+    if(!activeCompletionCurrent()||!activeCompletion.gesture||activeCompletion.pending)return;
+    const chapter=document.getElementById('chapter');
+    if(!chapter||document.getElementById('reader')?.classList.contains('hidden'))return;
+    const rect=chapter.getBoundingClientRect(),viewport=window.innerHeight||document.documentElement.clientHeight||0;
+    if(rect.height>0&&rect.bottom<=viewport+28&&rect.top<viewport*.75)void finishActiveChapter();
+  }
+
+  function noteReaderGesture(){if(activeCompletionCurrent())activeCompletion.gesture=true;}
 
   function patchOpenStory(){
     if(typeof root.openStory!=='function'||root.openStory.__ncaFreshnessPatched)return;
@@ -171,13 +251,15 @@
     if(typeof original!=='function'||original.__ncaFreshnessPatched)return;
     const wrapped=function(){
       const args=arguments;
+      if(name==='moveChapter'&&Number(args[0])>0&&activeCompletionCurrent())void finishActiveChapter();
       const result=original.apply(this,args);
       const routeFlag=name==='read'?args[2]:true;
       if(routeFlag!==false){
         Promise.resolve(result).then(()=>{
-          const storyId=Number(typeof currentStory!=='undefined'?currentStory?.id:null);
-          const chapterId=currentChapterId();
-          if(Number.isSafeInteger(storyId)&&storyId>0&&chapterId)controller?.ackChapterOpen(storyId,chapterId).catch(()=>{});
+          const current=currentChapterDescriptor();
+          if(!current)return;
+          controller?.ackChapterOpen(current.storyId,current.chapterId).catch(()=>{});
+          armChapterCompletion(current.storyId,current.chapterId);
         }).catch(()=>{});
       }
       return result;
@@ -192,6 +274,11 @@
     patchReaderAction('moveChapter');
     patchReaderAction('goChapter');
     patchNotificationNavigation();
+    window.addEventListener('touchstart',noteReaderGesture,{passive:true});
+    window.addEventListener('pointerdown',noteReaderGesture,{passive:true});
+    window.addEventListener('wheel',noteReaderGesture,{passive:true});
+    window.addEventListener('keydown',event=>{if(['ArrowDown','PageDown',' ','End'].includes(event.key))noteReaderGesture();});
+    window.addEventListener('scroll',()=>{if(activeCompletionCurrent()&&activeCompletion.gesture)requestAnimationFrame(checkChapterCompletion);},{passive:true});
   }
 
   function scheduleExpiryReload(){
@@ -205,9 +292,10 @@
   async function reload(){
     if(!controller)return;
     controller.reset();
+    activeCompletion=null;
     try{await controller.load();}catch(error){console.warn('freshness load',error);}
     configureNotificationRoleTab();
-    queueRibbonRefresh();
+    queueFreshnessRefresh();
     scheduleExpiryReload();
   }
 
@@ -217,7 +305,7 @@
     controller=root.NCAFreshness.create({
       sb,
       getAccount:()=>typeof authUser==='undefined'||!authUser?null:authUser.id,
-      onChange:queueRibbonRefresh
+      onChange:queueFreshnessRefresh
     });
     root.ncaFreshness=controller;
     patchNotificationCopy();
@@ -225,7 +313,7 @@
     installInteractionHooks();
     configureNotificationRoleTab();
 
-    const observer=new MutationObserver(queueRibbonRefresh);
+    const observer=new MutationObserver(queueFreshnessRefresh);
     observer.observe(document.body,{childList:true,subtree:true});
 
     if(sb?.auth?.onAuthStateChange){

@@ -71,7 +71,7 @@ describe('bounded content worker, no blind retries',()=>{
 describe('content API authority and pinned sender adapter',()=>{
  it('disabled, wrong method, missing/wrong auth, invalid secret or supplied body never creates DB/transport',async()=>{
   let constructions=0;const factory=()=>{constructions++;throw Error();};
-  for(const [e,req,code] of [[{}, {method:'POST',headers:{}},503],[env,{method:'GET',headers:{}},405],[env,{method:'POST',headers:{}},401],[env,{method:'POST',headers:{authorization:'Bearer wrong'}},401],[{...env,NCA_PUSH_WORKER_SECRET:'bad'},{method:'POST',headers:{}},503],[{...env,NCA_CONTENT_PUSH_WORKER_ENABLED:'false',NCA_PERSONAL_PUSH_WORKER_ENABLED:'true'},{method:'POST',headers:{}},503],[env,{method:'POST',headers:{authorization:'Bearer '+env.NCA_PUSH_WORKER_SECRET},body:{limit:100}},400]]){
+  for(const [e,req,code] of [[{}, {method:'POST',headers:{}},503],[env,{method:'GET',headers:{}},405],[env,{method:'POST',headers:{}},401],[env,{method:'POST',headers:{authorization:'Bearer wrong'}},401],[{...env,NCA_PUSH_WORKER_SECRET:'bad'},{method:'POST',headers:{}},503],[{...env,NCA_CONTENT_PUSH_WORKER_ENABLED:'false',NCA_PERSONAL_PUSH_WORKER_ENABLED:'true'},{method:'POST',headers:{}},401],[{...env,NCA_CONTENT_PUSH_WORKER_ENABLED:'false'},{method:'POST',headers:{authorization:'Bearer '+env.NCA_PUSH_WORKER_SECRET}},503],[env,{method:'POST',headers:{authorization:'Bearer '+env.NCA_PUSH_WORKER_SECRET},body:{limit:100}},400]]){
    const res=response();await createHandler({env:e,database:factory,transport:factory})(req,res);assert.equal(res.code,code);
   }assert.equal(constructions,0);
  });

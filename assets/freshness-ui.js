@@ -22,11 +22,10 @@
       body.night{--fresh-ribbon-bg:#718aa3;--fresh-ribbon-fold:#4b6176;--fresh-ribbon-fg:#f7fbff}
       body.purplenight{--fresh-ribbon-bg:#9878b8;--fresh-ribbon-fold:#684d83;--fresh-ribbon-fg:#fffaff}
       .story-card,.profile-story-cover{position:relative}
-      .story-card{overflow:hidden}
       .profile-story-cover{overflow:hidden}
       .freshness-ribbon{position:absolute;z-index:3;display:inline-flex;align-items:center;justify-content:center;padding:0 8px;font-weight:800;letter-spacing:.08em;line-height:1;color:var(--fresh-ribbon-fg);background:var(--fresh-ribbon-bg);border:0;border-radius:0;box-shadow:0 2px 6px color-mix(in srgb,var(--fg) 14%,transparent);pointer-events:none;user-select:none}
       .freshness-ribbon[hidden]{display:none!important}
-      .story-card>.freshness-ribbon{right:-19px;bottom:20px;width:104px;height:24px;font-size:10.5px;transform:rotate(-45deg);transform-origin:center}
+      .story-card>.freshness-ribbon{right:10px;bottom:33px;width:88px;height:22px;font-size:10px;transform:rotate(-45deg);transform-origin:center}
       .story-card>.freshness-ribbon::before,.story-card>.freshness-ribbon::after{content:"";position:absolute;top:100%;width:0;height:0;border-top:6px solid var(--fresh-ribbon-fold)}
       .story-card>.freshness-ribbon::before{left:0;border-right:7px solid transparent}
       .story-card>.freshness-ribbon::after{right:0;border-left:7px solid transparent}
@@ -36,7 +35,7 @@
       .chapter-freshness-title{min-width:0;flex:1 1 auto}
       .chapter-freshness-badge{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;padding:3px 7px;border:1px solid color-mix(in srgb,var(--fresh-ribbon-bg) 55%,var(--line));background:color-mix(in srgb,var(--fresh-ribbon-bg) 16%,var(--card));color:color-mix(in srgb,var(--fresh-ribbon-bg) 78%,var(--fg));font-size:9px;font-weight:800;letter-spacing:.08em;line-height:1;border-radius:999px}
       @media(max-width:700px){
-        .story-card>.freshness-ribbon{right:-18px;bottom:19px;width:98px;height:23px;font-size:10px}
+        .story-card>.freshness-ribbon{right:9px;bottom:30px;width:84px;height:21px;font-size:9.5px}
         .profile-story-cover>.freshness-ribbon{left:-21px;top:12px;width:72px;height:18px;font-size:8px}
         .chapter-freshness-badge{padding:3px 6px;font-size:8.5px}
       }

@@ -5,6 +5,20 @@ alter table public.notifications
   references public.content_publications(id)
   on delete cascade;
 
+alter table public.notifications
+  drop constraint notifications_type_check;
+
+alter table public.notifications
+  add constraint notifications_type_check
+  check (type = any (array[
+    'story_like'::text,
+    'comment'::text,
+    'reply'::text,
+    'mention'::text,
+    'comment_like'::text,
+    'update'::text
+  ]));
+
 create unique index notifications_content_publication_user_uidx
   on public.notifications(user_id,content_publication_id)
   where content_publication_id is not null;

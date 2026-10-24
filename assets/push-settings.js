@@ -14,10 +14,10 @@
     document.head.appendChild(base);
   }
 
-  let style=document.getElementById('nca-neon-preview-match-v12');
+  let style=document.getElementById('nca-neon-preview-match-v13');
   if(!style){
     style=document.createElement('style');
-    style.id='nca-neon-preview-match-v12';
+    style.id='nca-neon-preview-match-v13';
     style.textContent=`
       /* Banner is intentionally frozen at the approved state. */
       html body.purplenight .art-hero{
@@ -182,6 +182,171 @@
         border-color:rgba(255,255,255,.16)!important;
       }
 
+      /* Neon controls are transparent signboards: only the tube itself is visible. */
+      html body.purplenight :is(
+        .nav button,
+        .btn,
+        .sort-main,
+        .sort-choice,
+        .float-tools button,
+        .chapter-end-nav button,
+        .comment-login-gate button,
+        .home-feed-list-more,
+        .profile-activity-list-more,
+        .comment-panel-close,
+        .emoji-trigger,
+        .comment-compose-row>button:not(.emoji-trigger),
+        .intro-compose-actions>button,
+        .story-comment-pagination button
+      ){
+        position:relative!important;
+        isolation:isolate!important;
+        overflow:visible!important;
+        background:rgba(5,6,13,.10)!important;
+        color:#f8fdff!important;
+        border:0!important;
+        outline:0!important;
+        border-radius:14px!important;
+        box-shadow:none!important;
+        filter:none!important;
+        transform:none!important;
+        text-shadow:
+          0 0 2px rgba(255,255,255,.82),
+          0 0 6px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 48%,transparent)!important;
+      }
+      html body.purplenight :is(
+        .nav button,
+        .btn,
+        .sort-main,
+        .sort-choice,
+        .float-tools button,
+        .chapter-end-nav button,
+        .comment-login-gate button,
+        .home-feed-list-more,
+        .profile-activity-list-more,
+        .comment-panel-close,
+        .emoji-trigger,
+        .comment-compose-row>button:not(.emoji-trigger),
+        .intro-compose-actions>button,
+        .story-comment-pagination button
+      )::before{
+        content:""!important;
+        position:absolute!important;
+        inset:0!important;
+        z-index:-1!important;
+        pointer-events:none!important;
+        border:2px solid color-mix(in srgb,#fff 24%,var(--neon-tone,var(--neon-cyan)) 76%)!important;
+        border-radius:inherit!important;
+        background:transparent!important;
+        box-shadow:
+          0 0 2px rgba(255,255,255,.62),
+          0 0 5px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 92%,transparent),
+          0 0 11px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 48%,transparent),
+          0 0 22px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 20%,transparent),
+          inset 0 0 3px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 72%,transparent),
+          inset 0 0 9px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 22%,transparent)!important;
+        transition:border-color .16s ease,box-shadow .16s ease,opacity .16s ease!important;
+      }
+      html body.purplenight :is(
+        .nav button,
+        .btn,
+        .sort-main,
+        .sort-choice,
+        .float-tools button,
+        .chapter-end-nav button,
+        .comment-login-gate button,
+        .home-feed-list-more,
+        .profile-activity-list-more,
+        .comment-panel-close,
+        .emoji-trigger,
+        .comment-compose-row>button:not(.emoji-trigger),
+        .intro-compose-actions>button,
+        .story-comment-pagination button
+      )::after{
+        content:none!important;
+        display:none!important;
+      }
+      html body.purplenight :is(
+        .nav button,
+        .btn,
+        .sort-main,
+        .sort-choice,
+        .float-tools button,
+        .chapter-end-nav button,
+        .comment-login-gate button,
+        .home-feed-list-more,
+        .profile-activity-list-more,
+        .comment-panel-close,
+        .emoji-trigger,
+        .comment-compose-row>button:not(.emoji-trigger),
+        .intro-compose-actions>button,
+        .story-comment-pagination button
+      ):hover{
+        background:rgba(5,6,13,.14)!important;
+        transform:none!important;
+        box-shadow:none!important;
+      }
+      html body.purplenight :is(
+        .nav button,
+        .btn,
+        .sort-main,
+        .sort-choice,
+        .float-tools button,
+        .chapter-end-nav button,
+        .comment-login-gate button,
+        .home-feed-list-more,
+        .profile-activity-list-more,
+        .comment-panel-close,
+        .emoji-trigger,
+        .comment-compose-row>button:not(.emoji-trigger),
+        .intro-compose-actions>button,
+        .story-comment-pagination button
+      ):hover::before,
+      html body.purplenight :is(
+        .nav button,
+        .btn,
+        .sort-main,
+        .sort-choice,
+        .float-tools button,
+        .chapter-end-nav button,
+        .comment-login-gate button,
+        .home-feed-list-more,
+        .profile-activity-list-more,
+        .comment-panel-close,
+        .emoji-trigger,
+        .comment-compose-row>button:not(.emoji-trigger),
+        .intro-compose-actions>button,
+        .story-comment-pagination button
+      ):focus-visible::before{
+        border-color:color-mix(in srgb,#fff 34%,var(--neon-tone,var(--neon-cyan)) 66%)!important;
+        box-shadow:
+          0 0 3px rgba(255,255,255,.74),
+          0 0 7px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 96%,transparent),
+          0 0 15px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 58%,transparent),
+          0 0 28px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 26%,transparent),
+          inset 0 0 4px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 82%,transparent),
+          inset 0 0 12px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 28%,transparent)!important;
+      }
+      html body.purplenight :is(
+        .nav button,
+        .btn,
+        .sort-main,
+        .sort-choice,
+        .float-tools button,
+        .chapter-end-nav button,
+        .comment-login-gate button,
+        .home-feed-list-more,
+        .profile-activity-list-more,
+        .comment-panel-close,
+        .emoji-trigger,
+        .comment-compose-row>button:not(.emoji-trigger),
+        .intro-compose-actions>button,
+        .story-comment-pagination button
+      ):active{
+        transform:none!important;
+        background:rgba(5,6,13,.16)!important;
+      }
+
       @media(max-width:700px){
         html body.purplenight .art-hero .hero-panel h1{
           width:min(94vw,560px)!important;
@@ -200,7 +365,7 @@
   }
 
   const pinLast=()=>{
-    const current=document.getElementById('nca-neon-preview-match-v12');
+    const current=document.getElementById('nca-neon-preview-match-v13');
     if(current&&document.head.lastElementChild!==current)document.head.appendChild(current);
   };
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',pinLast,{once:true});

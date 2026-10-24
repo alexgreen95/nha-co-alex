@@ -73,6 +73,18 @@
         border-right:5px solid transparent;
       }
 
+      #stories .story-actions .btn{
+        font-size:15px!important;
+      }
+      .home-feed-list-more{
+        font-size:14px!important;
+      }
+      .home-review-more,
+      #commentsPanel .activity-more,
+      .story-comment-more{
+        font-size:13px!important;
+      }
+
       @media(max-width:700px){
         .story-card>.freshness-corner-shell{
           right:-3px!important;
@@ -101,6 +113,9 @@
         .profile-story-cover>.freshness-ribbon::after{
           left:13px;
           top:7px;
+        }
+        #stories .story-actions .btn{
+          font-size:14px!important;
         }
       }
     `;

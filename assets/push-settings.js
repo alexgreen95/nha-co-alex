@@ -14,6 +14,14 @@
       neonOption.setAttribute('aria-label','Neon');
     }
 
+    if(!document.getElementById('nca-neon-font')){
+      const neonFont=document.createElement('link');
+      neonFont.id='nca-neon-font';
+      neonFont.rel='stylesheet';
+      neonFont.href='https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400&display=swap';
+      document.head.appendChild(neonFont);
+    }
+
     if(document.getElementById('nca-freshness-ribbon-inset'))return;
     const style=document.createElement('style');
     style.id='nca-freshness-ribbon-inset';
@@ -85,7 +93,7 @@
 
       /* Neon replaces Purple Night only; keep the old key for saved preferences. */
       .sw-purplenight{
-        background:conic-gradient(from 40deg,#4df9ff,#ff4ed5,#a8ff5a,#ffd85a,#8d6bff,#4df9ff)!important;
+        background:conic-gradient(from 40deg,#4df9ff,#ff4ed5,#a8ff5a,#ffd85a,#9a73ff,#4df9ff)!important;
         border-color:#4df9ff!important;
         box-shadow:0 0 5px rgba(77,249,255,.72),0 0 10px rgba(255,78,213,.48)!important;
       }
@@ -163,23 +171,25 @@
         border:0!important;
       }
 
-      /* Straight neon-tube lettering like a storefront sign, not a script font. */
+      /* Hollow tube wordmark: the letter outline itself is the neon tubing. */
       body.purplenight .art-hero .hero-panel h1{
-        margin:0 0 12px!important;
-        font-family:'Nunito','Arial Rounded MT Bold','Trebuchet MS',Arial,sans-serif!important;
-        font-size:clamp(64px,7.8vw,106px)!important;
-        font-weight:400!important;
+        margin:0 0 14px!important;
+        font-family:'Comfortaa','Arial Rounded MT Bold','Trebuchet MS','Nunito',sans-serif!important;
+        font-size:clamp(68px,8.1vw,112px)!important;
+        font-weight:300!important;
         line-height:1.02!important;
-        letter-spacing:.055em!important;
-        color:rgba(235,253,255,.055)!important;
-        -webkit-text-stroke:2px #e5fdff!important;
-        text-shadow:
-          0 0 1px #fff,
-          0 0 4px #fff,
-          0 0 8px var(--neon-cyan),
-          0 0 16px rgba(77,249,255,.92),
-          0 0 28px rgba(77,249,255,.62),
-          0 0 46px rgba(57,188,255,.34)!important;
+        letter-spacing:.065em!important;
+        color:transparent!important;
+        -webkit-text-fill-color:transparent!important;
+        -webkit-text-stroke:2px #eaffff!important;
+        paint-order:stroke fill!important;
+        text-shadow:none!important;
+        filter:
+          drop-shadow(0 0 1px #fff)
+          drop-shadow(0 0 3px #fff)
+          drop-shadow(0 0 7px var(--neon-cyan))
+          drop-shadow(0 0 14px rgba(77,249,255,.86))
+          drop-shadow(0 0 28px rgba(77,249,255,.44))!important;
         transform:none!important;
       }
       body.purplenight .art-hero .hero-panel .muted{
@@ -189,12 +199,14 @@
       }
       body.purplenight .hero-panel .search{
         background:rgba(4,7,14,.90)!important;
-        border:2px solid rgba(77,249,255,.82)!important;
+        border:1.8px solid #bffcff!important;
+        border-radius:18px!important;
         box-shadow:
-          inset 0 0 12px rgba(77,249,255,.07),
-          0 0 3px rgba(77,249,255,.85),
-          0 0 10px rgba(77,249,255,.48),
-          0 0 22px rgba(255,78,213,.12)!important;
+          inset 0 0 10px rgba(77,249,255,.07),
+          0 0 2px #fff,
+          0 0 6px rgba(77,249,255,.92),
+          0 0 14px rgba(77,249,255,.46),
+          0 0 26px rgba(255,78,213,.13)!important;
       }
       body.purplenight .hero-panel .search input{
         background:transparent!important;
@@ -208,7 +220,7 @@
         color:#ffd8f5!important;
       }
 
-      /* Color assignment. */
+      /* Color assignment across Neon controls. */
       body.purplenight .story-actions .btn:first-child,
       body.purplenight .intro-actions .btn:first-child,
       body.purplenight .home-tab:nth-child(1),
@@ -244,7 +256,7 @@
       body.purplenight .chapter-end-nav>button:first-child{--neon-tone:var(--neon-cyan)}
       body.purplenight .chapter-end-nav>button:last-child{--neon-tone:var(--neon-pink)}
 
-      /* Real controls: thicker tube line + stronger glow, like physical neon signs. */
+      /* Physical neon signs: bright tube core with a soft, layered halo. */
       body.purplenight :is(
         .nav button,
         .btn,
@@ -259,20 +271,22 @@
         .comment-panel-close,
         .emoji-trigger
       ){
-        --neon-tone:var(--neon-cyan);
-        background:rgba(7,10,18,.90)!important;
+        background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,0) 58%),rgba(6,9,17,.93)!important;
         color:#f7feff!important;
-        border:2px solid color-mix(in srgb,var(--neon-tone) 88%,#253047)!important;
+        border:1.8px solid color-mix(in srgb,#fff 18%,var(--neon-tone,var(--neon-cyan)) 82%)!important;
+        border-radius:13px!important;
         box-shadow:
-          inset 0 0 10px color-mix(in srgb,var(--neon-tone) 9%,transparent),
-          0 0 2px color-mix(in srgb,var(--neon-tone) 90%,transparent),
-          0 0 8px color-mix(in srgb,var(--neon-tone) 52%,transparent),
-          0 0 18px color-mix(in srgb,var(--neon-tone) 24%,transparent)!important;
+          inset 0 0 2px rgba(255,255,255,.24),
+          inset 0 0 8px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 12%,transparent),
+          0 0 1px #fff,
+          0 0 4px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 94%,transparent),
+          0 0 10px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 62%,transparent),
+          0 0 21px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 29%,transparent)!important;
         text-shadow:
-          0 0 2px #fff,
-          0 0 6px color-mix(in srgb,var(--neon-tone) 62%,transparent),
-          0 0 11px color-mix(in srgb,var(--neon-tone) 28%,transparent)!important;
+          0 0 2px rgba(255,255,255,.95),
+          0 0 6px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 70%,transparent)!important;
       }
+      body.purplenight :is(.story-actions .btn,.intro-actions .btn){border-radius:11px!important}
       body.purplenight :is(
         .nav button,
         .btn,
@@ -287,58 +301,58 @@
         .comment-panel-close,
         .emoji-trigger
       ):is(:hover,:focus-visible){
-        border-color:var(--neon-tone)!important;
+        border-color:#fff!important;
         box-shadow:
-          inset 0 0 12px color-mix(in srgb,var(--neon-tone) 12%,transparent),
-          0 0 3px var(--neon-tone),
-          0 0 11px color-mix(in srgb,var(--neon-tone) 68%,transparent),
-          0 0 25px color-mix(in srgb,var(--neon-tone) 34%,transparent)!important;
+          inset 0 0 2px rgba(255,255,255,.35),
+          inset 0 0 11px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 17%,transparent),
+          0 0 2px #fff,
+          0 0 7px var(--neon-tone,var(--neon-cyan)),
+          0 0 16px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 68%,transparent),
+          0 0 30px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 34%,transparent)!important;
       }
 
-      /* Tabs are sign labels, not framed buttons: remove the obvious boxes. */
+      /* Tabs: no framed boxes and exactly one glowing underline. */
       body.purplenight :is(.home-tab,.profile-tabs button,.notif-filters button,.intro-tabs button){
-        --neon-tone:var(--neon-cyan);
-        background:transparent!important;
+        background:none!important;
+        background-image:none!important;
+        color:color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 70%,#fff)!important;
         border:0!important;
-        border-bottom:2px solid transparent!important;
+        border-bottom:0!important;
         border-radius:0!important;
         box-shadow:none!important;
-        color:#eaf6ff!important;
-        text-shadow:
-          0 0 4px color-mix(in srgb,var(--neon-tone) 58%,transparent),
-          0 0 10px color-mix(in srgb,var(--neon-tone) 26%,transparent)!important;
+        outline:0!important;
+        filter:none!important;
+        padding-bottom:10px!important;
+        text-shadow:0 0 5px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 56%,transparent)!important;
       }
-      body.purplenight :is(.home-tab,.profile-tabs button,.notif-filters button,.intro-tabs button):is(:hover,:focus-visible){
+      body.purplenight :is(.home-tab,.profile-tabs button,.notif-filters button,.intro-tabs button)::before,
+      body.purplenight :is(.home-tab,.profile-tabs button,.notif-filters button,.intro-tabs button)::after{
+        content:none!important;
+        display:none!important;
+      }
+      body.purplenight :is(.home-tab,.profile-tabs button,.notif-filters button,.intro-tabs button).active{
+        background-image:linear-gradient(90deg,transparent 0%,var(--neon-tone,var(--neon-cyan)) 18%,var(--neon-tone,var(--neon-cyan)) 82%,transparent 100%)!important;
+        background-repeat:no-repeat!important;
+        background-position:center bottom!important;
+        background-size:76% 2px!important;
         color:#fff!important;
+        border:0!important;
+        border-bottom:0!important;
+        box-shadow:none!important;
+        filter:drop-shadow(0 3px 3px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 72%,transparent)) drop-shadow(0 6px 8px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 38%,transparent))!important;
         text-shadow:
           0 0 2px #fff,
-          0 0 6px color-mix(in srgb,var(--neon-tone) 78%,transparent),
-          0 0 14px color-mix(in srgb,var(--neon-tone) 42%,transparent)!important;
-      }
-      body.purplenight .home-tab.active,
-      body.purplenight .profile-tabs button.active,
-      body.purplenight .notif-filters button.active,
-      body.purplenight .intro-tabs button.active{
-        color:#fff!important;
-        border-bottom-color:var(--neon-tone)!important;
-        box-shadow:0 8px 9px -9px var(--neon-tone)!important;
-        text-shadow:
-          0 0 2px #fff,
-          0 0 7px var(--neon-tone),
-          0 0 16px color-mix(in srgb,var(--neon-tone) 56%,transparent)!important;
-      }
-
-      /* Tiny text controls glow without becoming chunky boxes. */
-      body.purplenight :is(.home-review-more,#commentsPanel .activity-more,.story-comment-more){
-        color:var(--neon-cyan)!important;
-        text-shadow:0 0 4px rgba(77,249,255,.72),0 0 10px rgba(77,249,255,.34)!important;
+          0 0 6px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 84%,transparent),
+          0 0 14px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 42%,transparent)!important;
       }
 
       body.purplenight .status-done{color:#baffd9!important}
       body.purplenight .status-ongoing{color:#ffe0a0!important}
-      body.purplenight input,body.purplenight textarea,body.purplenight select{
-        background:#070a13!important;
-        border-color:#293149!important;
+      body.purplenight input,
+      body.purplenight textarea,
+      body.purplenight select{
+        background:#080b14!important;
+        border-color:#283148!important;
         color:#f2f8ff!important;
       }
 
@@ -370,9 +384,9 @@
         .profile-story-cover>.freshness-ribbon::after{left:13px;top:7px}
         #stories .story-actions .btn{font-size:14px!important}
         body.purplenight .art-hero .hero-panel h1{
-          font-size:clamp(48px,14.5vw,70px)!important;
-          -webkit-text-stroke:1.5px #e5fdff!important;
-          letter-spacing:.035em!important;
+          font-size:clamp(52px,15vw,78px)!important;
+          -webkit-text-stroke:1.6px #eaffff!important;
+          letter-spacing:.045em!important;
         }
         body.purplenight .hero-panel{padding:24px 14px 20px!important}
       }

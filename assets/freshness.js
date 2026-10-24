@@ -51,7 +51,10 @@
   }
   function markerFor(entry,{authenticated,catalogNowMs,baselineCutoffMs,ack}={}){
     if(!entry)return Object.freeze({isNew:false,storyNew:false,chapterNew:false,chapterId:null});
-    const cutoffMs=authenticated?baselineCutoffMs:catalogNowMs-THREE_DAYS_MS;
+    const rollingCutoffMs=catalogNowMs-THREE_DAYS_MS;
+    const cutoffMs=authenticated&&Number.isFinite(baselineCutoffMs)
+      ?Math.max(baselineCutoffMs,rollingCutoffMs)
+      :rollingCutoffMs;
     if(!Number.isFinite(cutoffMs))return Object.freeze({isNew:false,storyNew:false,chapterNew:false,chapterId:null});
     const storyAck=ack?.storyAck??0n,chapterAck=ack?.chapterAck??0n;
     const storyNew=entry.storySequence!==null&&entry.storyAt>=cutoffMs&&entry.storySequence>storyAck;

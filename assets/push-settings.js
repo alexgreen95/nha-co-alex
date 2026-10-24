@@ -10,8 +10,8 @@
     style.id='nca-freshness-ribbon-inset';
     style.textContent=`
       .story-card>.freshness-corner-shell{
-        right:-1px!important;
-        bottom:-1px!important;
+        right:-4px!important;
+        bottom:-4px!important;
         width:72px!important;
         height:72px!important;
       }
@@ -27,13 +27,13 @@
         border-radius:inherit;
       }
       .profile-story-cover>.freshness-ribbon{
-        left:-10px!important;
-        top:13px!important;
+        left:-7px!important;
+        top:21px!important;
       }
       @media(max-width:700px){
         .story-card>.freshness-corner-shell{
-          right:-1px!important;
-          bottom:-1px!important;
+          right:-3px!important;
+          bottom:-3px!important;
           width:66px!important;
           height:66px!important;
         }
@@ -43,8 +43,8 @@
           width:84px!important;
         }
         .profile-story-cover>.freshness-ribbon{
-          left:-9px!important;
-          top:12px!important;
+          left:-6px!important;
+          top:19px!important;
         }
       }
     `;

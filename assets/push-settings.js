@@ -4,6 +4,7 @@
   if(typeof module==='object'&&module.exports){module.exports=require('./push-settings-core.js');return;}
   if(typeof document!=='object'||document.readyState!=='loading')throw Error('NCA_BOOTSTRAP_ORDER');
   document.write('<script src="/assets/push-settings-core.js"><\/script><script src="/assets/freshness.js"><\/script><script src="/assets/freshness-ui.js"><\/script>');
+
   document.addEventListener('DOMContentLoaded',()=>{
     const neonOption=document.querySelector('.theme-option[data-theme="purplenight"]');
     if(neonOption){
@@ -17,6 +18,7 @@
     const style=document.createElement('style');
     style.id='nca-freshness-ribbon-inset';
     style.textContent=`
+      /* Freshness ribbons: geometry intentionally frozen. */
       .story-card>.freshness-corner-shell{
         right:-4px!important;
         bottom:-4px!important;
@@ -29,13 +31,8 @@
         bottom:16px!important;
         width:90px!important;
       }
-
-      .profile-story-cover{
-        overflow:visible!important;
-      }
-      .profile-story-cover img{
-        border-radius:inherit;
-      }
+      .profile-story-cover{overflow:visible!important}
+      .profile-story-cover img{border-radius:inherit}
       .profile-story-cover>.freshness-ribbon{
         left:-4px!important;
         top:-4px!important;
@@ -81,32 +78,25 @@
         border-right:5px solid transparent;
       }
 
-      #stories .story-actions .btn{
-        font-size:15px!important;
-      }
-      .home-feed-list-more{
-        font-size:14px!important;
-      }
-      .home-review-more,
-      #commentsPanel .activity-more,
-      .story-comment-more{
-        font-size:13px!important;
-      }
+      /* Slightly larger action copy. */
+      #stories .story-actions .btn{font-size:15px!important}
+      .home-feed-list-more{font-size:14px!important}
+      .home-review-more,#commentsPanel .activity-more,.story-comment-more{font-size:13px!important}
 
-      /* Neon replaces Purple Night only. Keep the internal key for saved preferences. */
+      /* Neon replaces Purple Night only; keep the old key for saved preferences. */
       .sw-purplenight{
         background:conic-gradient(from 40deg,#4df9ff,#ff4ed5,#a8ff5a,#ffd85a,#8d6bff,#4df9ff)!important;
         border-color:#4df9ff!important;
-        box-shadow:0 0 5px rgba(77,249,255,.7),0 0 9px rgba(255,78,213,.45)!important;
+        box-shadow:0 0 5px rgba(77,249,255,.72),0 0 10px rgba(255,78,213,.48)!important;
       }
       body.purplenight{
-        --bg:#060710!important;
+        --bg:#05060d!important;
         --fg:#f5fbff!important;
         --muted:#a8b2c8!important;
-        --line:#252b3e!important;
-        --panel:#0b0e18!important;
-        --card:#0a0d17!important;
-        --soft:#101526!important;
+        --line:#242a3b!important;
+        --panel:#090c15!important;
+        --card:#090c15!important;
+        --soft:#0e1321!important;
         --accent:#4df9ff!important;
         --neon-cyan:#4df9ff;
         --neon-pink:#ff4ed5;
@@ -115,9 +105,9 @@
         --neon-violet:#9a73ff;
       }
       body.purplenight header{
-        background:rgba(6,7,16,.92)!important;
+        background:rgba(5,6,13,.94)!important;
         border-bottom-color:rgba(77,249,255,.24)!important;
-        box-shadow:0 5px 24px rgba(0,0,0,.28),0 1px 0 rgba(255,78,213,.12)!important;
+        box-shadow:0 5px 24px rgba(0,0,0,.30),0 1px 0 rgba(255,78,213,.12)!important;
       }
       body.purplenight .card,
       body.purplenight .story-card,
@@ -127,8 +117,8 @@
       body.purplenight .intro-pane,
       body.purplenight .profile-card,
       body.purplenight .profile-section{
-        background:#0a0d17!important;
-        border-color:#242b3e!important;
+        background:#090c15!important;
+        border-color:#252b3d!important;
         box-shadow:0 8px 24px rgba(0,0,0,.24)!important;
       }
       body.purplenight .theme-menu,
@@ -137,28 +127,22 @@
       body.purplenight .notif-panel,
       body.purplenight .paragraph-comment-panel,
       body.purplenight #emojiPopup{
-        background:#090c16!important;
-        border-color:rgba(77,249,255,.28)!important;
-        box-shadow:0 16px 38px rgba(0,0,0,.42),0 0 18px rgba(77,249,255,.07)!important;
+        background:#080b14!important;
+        border-color:rgba(77,249,255,.30)!important;
+        box-shadow:0 16px 38px rgba(0,0,0,.44),0 0 20px rgba(77,249,255,.08)!important;
       }
 
-      /* Neon hero: no sunset artwork, only dark ambience + glowing sign. */
+      /* Neon hero: no sunset artwork. */
       body.purplenight .art-hero{
         background:
-          radial-gradient(circle at 16% 24%,rgba(77,249,255,.16),transparent 26%),
-          radial-gradient(circle at 84% 22%,rgba(255,78,213,.15),transparent 28%),
-          radial-gradient(circle at 50% 92%,rgba(154,115,255,.12),transparent 34%),
-          linear-gradient(180deg,#060710 0%,#080a14 58%,#060710 100%)!important;
-        border-bottom:1px solid rgba(77,249,255,.12)!important;
+          radial-gradient(circle at 15% 25%,rgba(77,249,255,.16),transparent 28%),
+          radial-gradient(circle at 84% 22%,rgba(255,78,213,.14),transparent 29%),
+          radial-gradient(circle at 52% 92%,rgba(154,115,255,.11),transparent 36%),
+          linear-gradient(180deg,#05060d 0%,#080a14 58%,#05060d 100%)!important;
+        border-bottom:1px solid rgba(77,249,255,.11)!important;
       }
-      body.purplenight .art-hero-image{
-        display:none!important;
-        background-image:none!important;
-      }
-      body.purplenight .hero-fade-top,
-      body.purplenight .hero-fade{
-        display:none!important;
-      }
+      body.purplenight .art-hero-image{display:none!important;background-image:none!important}
+      body.purplenight .hero-fade-top,body.purplenight .hero-fade{display:none!important}
       body.purplenight .art-hero::after{
         content:""!important;
         position:absolute!important;
@@ -166,114 +150,65 @@
         z-index:1!important;
         pointer-events:none!important;
         background:
-          linear-gradient(rgba(77,249,255,.025) 1px,transparent 1px),
-          linear-gradient(90deg,rgba(255,78,213,.02) 1px,transparent 1px)!important;
-        background-size:44px 44px!important;
-        opacity:.55!important;
+          linear-gradient(rgba(77,249,255,.022) 1px,transparent 1px),
+          linear-gradient(90deg,rgba(255,78,213,.018) 1px,transparent 1px)!important;
+        background-size:46px 46px!important;
+        opacity:.50!important;
       }
       body.purplenight .hero-panel{
-        width:min(860px,calc(100% - 36px))!important;
+        width:min(900px,calc(100% - 36px))!important;
         padding:30px 20px 24px!important;
         background:transparent!important;
         box-shadow:none!important;
         border:0!important;
       }
+
+      /* Straight neon-tube lettering like a storefront sign, not a script font. */
       body.purplenight .art-hero .hero-panel h1{
-        margin:0 0 8px!important;
-        font-family:'Brush Script MT','Segoe Script','Lucida Handwriting',cursive!important;
-        font-size:clamp(62px,8.2vw,96px)!important;
-        font-weight:700!important;
-        line-height:1!important;
-        letter-spacing:.01em!important;
-        color:#f8ffff!important;
-        -webkit-text-stroke:.35px rgba(255,255,255,.78)!important;
+        margin:0 0 12px!important;
+        font-family:'Nunito','Arial Rounded MT Bold','Trebuchet MS',Arial,sans-serif!important;
+        font-size:clamp(64px,7.8vw,106px)!important;
+        font-weight:400!important;
+        line-height:1.02!important;
+        letter-spacing:.055em!important;
+        color:rgba(235,253,255,.055)!important;
+        -webkit-text-stroke:2px #e5fdff!important;
         text-shadow:
-          0 0 2px #fff,
-          0 0 7px var(--neon-cyan),
-          0 0 15px rgba(77,249,255,.88),
-          0 0 25px rgba(255,78,213,.64),
-          0 0 46px rgba(154,115,255,.34)!important;
-        transform:rotate(-1deg)!important;
+          0 0 1px #fff,
+          0 0 4px #fff,
+          0 0 8px var(--neon-cyan),
+          0 0 16px rgba(77,249,255,.92),
+          0 0 28px rgba(77,249,255,.62),
+          0 0 46px rgba(57,188,255,.34)!important;
+        transform:none!important;
       }
       body.purplenight .art-hero .hero-panel .muted{
-        color:#c2cce0!important;
-        text-shadow:0 0 7px rgba(77,249,255,.32)!important;
+        color:#c8d4e7!important;
+        text-shadow:0 0 7px rgba(77,249,255,.30)!important;
         letter-spacing:.055em!important;
       }
       body.purplenight .hero-panel .search{
-        background:rgba(5,8,16,.88)!important;
-        border:1px solid rgba(77,249,255,.66)!important;
+        background:rgba(4,7,14,.90)!important;
+        border:2px solid rgba(77,249,255,.82)!important;
         box-shadow:
-          inset 0 0 10px rgba(77,249,255,.05),
-          0 0 8px rgba(77,249,255,.26),
-          0 0 18px rgba(255,78,213,.10)!important;
+          inset 0 0 12px rgba(77,249,255,.07),
+          0 0 3px rgba(77,249,255,.85),
+          0 0 10px rgba(77,249,255,.48),
+          0 0 22px rgba(255,78,213,.12)!important;
       }
       body.purplenight .hero-panel .search input{
         background:transparent!important;
         color:#effcff!important;
         caret-color:var(--neon-cyan)!important;
       }
-      body.purplenight .hero-panel .search input::placeholder{
-        color:#8f9bb2!important;
-      }
+      body.purplenight .hero-panel .search input::placeholder{color:#8f9bb2!important}
       body.purplenight .hero-panel .search button{
-        background:rgba(9,14,25,.92)!important;
-        border-color:rgba(255,78,213,.5)!important;
+        background:rgba(8,12,23,.94)!important;
+        border-color:rgba(255,78,213,.75)!important;
         color:#ffd8f5!important;
       }
 
-      /* Shared neon-sign treatment for controls. */
-      body.purplenight :is(
-        .nav button,
-        .btn,
-        .home-tab,
-        .sort-main,
-        .sort-choice,
-        .float-tools button,
-        .profile-tabs button,
-        .notif-filters button,
-        .chapter-end-nav button,
-        .comment-login-gate button,
-        .home-feed-list-more,
-        .profile-activity-list-more,
-        .theme-option,
-        .comment-panel-close,
-        .emoji-trigger
-      ){
-        --neon-tone:var(--neon-cyan);
-        background:rgba(8,11,20,.88)!important;
-        color:#f6fdff!important;
-        border-color:color-mix(in srgb,var(--neon-tone) 68%,#263044)!important;
-        box-shadow:
-          inset 0 0 8px color-mix(in srgb,var(--neon-tone) 7%,transparent),
-          0 0 5px color-mix(in srgb,var(--neon-tone) 32%,transparent),
-          0 0 12px color-mix(in srgb,var(--neon-tone) 12%,transparent)!important;
-        text-shadow:0 0 6px color-mix(in srgb,var(--neon-tone) 46%,transparent)!important;
-      }
-      body.purplenight :is(
-        .nav button,
-        .btn,
-        .home-tab,
-        .sort-main,
-        .sort-choice,
-        .float-tools button,
-        .profile-tabs button,
-        .notif-filters button,
-        .chapter-end-nav button,
-        .comment-login-gate button,
-        .home-feed-list-more,
-        .profile-activity-list-more,
-        .theme-option,
-        .comment-panel-close,
-        .emoji-trigger
-      ):is(:hover,:focus-visible){
-        border-color:var(--neon-tone)!important;
-        box-shadow:
-          inset 0 0 10px color-mix(in srgb,var(--neon-tone) 10%,transparent),
-          0 0 7px color-mix(in srgb,var(--neon-tone) 52%,transparent),
-          0 0 18px color-mix(in srgb,var(--neon-tone) 22%,transparent)!important;
-      }
-
+      /* Color assignment. */
       body.purplenight .story-actions .btn:first-child,
       body.purplenight .intro-actions .btn:first-child,
       body.purplenight .home-tab:nth-child(1),
@@ -309,28 +244,101 @@
       body.purplenight .chapter-end-nav>button:first-child{--neon-tone:var(--neon-cyan)}
       body.purplenight .chapter-end-nav>button:last-child{--neon-tone:var(--neon-pink)}
 
-      body.purplenight .home-tab.active,
-      body.purplenight .profile-tabs button.active,
-      body.purplenight .notif-filters button.active{
-        color:#fff!important;
+      /* Real controls: thicker tube line + stronger glow, like physical neon signs. */
+      body.purplenight :is(
+        .nav button,
+        .btn,
+        .sort-main,
+        .sort-choice,
+        .float-tools button,
+        .chapter-end-nav button,
+        .comment-login-gate button,
+        .home-feed-list-more,
+        .profile-activity-list-more,
+        .theme-option,
+        .comment-panel-close,
+        .emoji-trigger
+      ){
+        --neon-tone:var(--neon-cyan);
+        background:rgba(7,10,18,.90)!important;
+        color:#f7feff!important;
+        border:2px solid color-mix(in srgb,var(--neon-tone) 88%,#253047)!important;
+        box-shadow:
+          inset 0 0 10px color-mix(in srgb,var(--neon-tone) 9%,transparent),
+          0 0 2px color-mix(in srgb,var(--neon-tone) 90%,transparent),
+          0 0 8px color-mix(in srgb,var(--neon-tone) 52%,transparent),
+          0 0 18px color-mix(in srgb,var(--neon-tone) 24%,transparent)!important;
+        text-shadow:
+          0 0 2px #fff,
+          0 0 6px color-mix(in srgb,var(--neon-tone) 62%,transparent),
+          0 0 11px color-mix(in srgb,var(--neon-tone) 28%,transparent)!important;
+      }
+      body.purplenight :is(
+        .nav button,
+        .btn,
+        .sort-main,
+        .sort-choice,
+        .float-tools button,
+        .chapter-end-nav button,
+        .comment-login-gate button,
+        .home-feed-list-more,
+        .profile-activity-list-more,
+        .theme-option,
+        .comment-panel-close,
+        .emoji-trigger
+      ):is(:hover,:focus-visible){
         border-color:var(--neon-tone)!important;
         box-shadow:
-          inset 0 0 12px color-mix(in srgb,var(--neon-tone) 10%,transparent),
-          0 0 8px color-mix(in srgb,var(--neon-tone) 58%,transparent),
-          0 0 20px color-mix(in srgb,var(--neon-tone) 26%,transparent)!important;
+          inset 0 0 12px color-mix(in srgb,var(--neon-tone) 12%,transparent),
+          0 0 3px var(--neon-tone),
+          0 0 11px color-mix(in srgb,var(--neon-tone) 68%,transparent),
+          0 0 25px color-mix(in srgb,var(--neon-tone) 34%,transparent)!important;
       }
+
+      /* Tabs are sign labels, not framed buttons: remove the obvious boxes. */
+      body.purplenight :is(.home-tab,.profile-tabs button,.notif-filters button,.intro-tabs button){
+        --neon-tone:var(--neon-cyan);
+        background:transparent!important;
+        border:0!important;
+        border-bottom:2px solid transparent!important;
+        border-radius:0!important;
+        box-shadow:none!important;
+        color:#eaf6ff!important;
+        text-shadow:
+          0 0 4px color-mix(in srgb,var(--neon-tone) 58%,transparent),
+          0 0 10px color-mix(in srgb,var(--neon-tone) 26%,transparent)!important;
+      }
+      body.purplenight :is(.home-tab,.profile-tabs button,.notif-filters button,.intro-tabs button):is(:hover,:focus-visible){
+        color:#fff!important;
+        text-shadow:
+          0 0 2px #fff,
+          0 0 6px color-mix(in srgb,var(--neon-tone) 78%,transparent),
+          0 0 14px color-mix(in srgb,var(--neon-tone) 42%,transparent)!important;
+      }
+      body.purplenight .home-tab.active,
+      body.purplenight .profile-tabs button.active,
+      body.purplenight .notif-filters button.active,
       body.purplenight .intro-tabs button.active{
-        color:var(--neon-cyan)!important;
-        border-bottom-color:var(--neon-cyan)!important;
-        text-shadow:0 0 7px rgba(77,249,255,.54)!important;
+        color:#fff!important;
+        border-bottom-color:var(--neon-tone)!important;
+        box-shadow:0 8px 9px -9px var(--neon-tone)!important;
+        text-shadow:
+          0 0 2px #fff,
+          0 0 7px var(--neon-tone),
+          0 0 16px color-mix(in srgb,var(--neon-tone) 56%,transparent)!important;
       }
+
+      /* Tiny text controls glow without becoming chunky boxes. */
+      body.purplenight :is(.home-review-more,#commentsPanel .activity-more,.story-comment-more){
+        color:var(--neon-cyan)!important;
+        text-shadow:0 0 4px rgba(77,249,255,.72),0 0 10px rgba(77,249,255,.34)!important;
+      }
+
       body.purplenight .status-done{color:#baffd9!important}
       body.purplenight .status-ongoing{color:#ffe0a0!important}
-      body.purplenight input,
-      body.purplenight textarea,
-      body.purplenight select{
-        background:#080b14!important;
-        border-color:#283148!important;
+      body.purplenight input,body.purplenight textarea,body.purplenight select{
+        background:#070a13!important;
+        border-color:#293149!important;
         color:#f2f8ff!important;
       }
 
@@ -359,19 +367,14 @@
           height:18px;
           font-size:8px;
         }
-        .profile-story-cover>.freshness-ribbon::after{
-          left:13px;
-          top:7px;
-        }
-        #stories .story-actions .btn{
-          font-size:14px!important;
-        }
+        .profile-story-cover>.freshness-ribbon::after{left:13px;top:7px}
+        #stories .story-actions .btn{font-size:14px!important}
         body.purplenight .art-hero .hero-panel h1{
-          font-size:clamp(52px,16vw,72px)!important;
+          font-size:clamp(48px,14.5vw,70px)!important;
+          -webkit-text-stroke:1.5px #e5fdff!important;
+          letter-spacing:.035em!important;
         }
-        body.purplenight .hero-panel{
-          padding:24px 14px 20px!important;
-        }
+        body.purplenight .hero-panel{padding:24px 14px 20px!important}
       }
     `;
     document.head.appendChild(style);

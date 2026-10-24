@@ -14,29 +14,11 @@
     document.head.appendChild(base);
   }
 
-  const applyWordmark=()=>{
-    const title=document.querySelector('.art-hero .hero-panel h1');
-    if(!title)return;
-    title.setAttribute('aria-label','Nhà có Alex');
-    title.textContent='Nhà có Alex';
-    delete title.dataset.neonBalanced;
-  };
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',applyWordmark,{once:true});
-  else applyWordmark();
-
-  let style=document.getElementById('nca-neon-preview-match-v10');
+  let style=document.getElementById('nca-neon-preview-match-v11');
   if(!style){
     style=document.createElement('style');
-    style.id='nca-neon-preview-match-v10';
+    style.id='nca-neon-preview-match-v11';
     style.textContent=`
-      @font-face{
-        font-family:'NCA Keystone';
-        src:url('https://www.fontmirror.com/app_public/files/t/22/2024/10/KEYSTONE.OTF') format('opentype');
-        font-weight:400;
-        font-style:normal;
-        font-display:swap;
-      }
-
       /* Banner is intentionally frozen at the approved state. */
       html body.purplenight .art-hero{
         background:#05060d!important;
@@ -77,32 +59,31 @@
       }
       html body.purplenight .hero-panel{z-index:3!important}
 
-      /* Keystone trial wordmark: one continuous title, no split capitals. */
+      /* Path-only SVG wordmark: no runtime font dependency. */
       html body.purplenight .art-hero .hero-panel h1{
         display:block!important;
-        width:auto!important;
+        width:min(640px,76vw)!important;
+        aspect-ratio:3358.4/871!important;
         height:auto!important;
-        margin:0 auto 12px!important;
+        margin:0 auto 7px!important;
         padding:0!important;
         overflow:visible!important;
-        font-family:'NCA Keystone','Keystone','Arial Rounded MT Bold',sans-serif!important;
-        font-size:clamp(58px,5.6vw,82px)!important;
-        font-weight:400!important;
-        line-height:1!important;
-        letter-spacing:.055em!important;
-        color:#fff7ff!important;
-        -webkit-text-fill-color:#fff7ff!important;
-        -webkit-text-stroke:.9px rgba(255,249,255,.98)!important;
-        background:none!important;
-        text-shadow:
-          0 0 1px #fff,
-          0 0 3px rgba(255,255,255,.98),
-          0 0 7px rgba(255,229,252,.98),
-          0 0 12px rgba(255,157,234,.96),
-          0 0 20px rgba(255,79,215,.92),
-          0 0 32px rgba(244,54,218,.78),
-          0 0 48px rgba(203,52,242,.58)!important;
-        filter:drop-shadow(0 0 6px rgba(255,91,220,.62)) drop-shadow(0 0 18px rgba(182,58,249,.24))!important;
+        font-size:0!important;
+        line-height:0!important;
+        color:transparent!important;
+        -webkit-text-fill-color:transparent!important;
+        -webkit-text-stroke:0!important;
+        text-shadow:none!important;
+        background-image:url('/assets/neon-title-signature.svg?v=20261025-1')!important;
+        background-size:contain!important;
+        background-position:center!important;
+        background-repeat:no-repeat!important;
+        filter:
+          drop-shadow(0 0 2px rgba(255,255,255,.98))
+          drop-shadow(0 0 7px rgba(255,159,234,.94))
+          drop-shadow(0 0 14px rgba(255,76,216,.86))
+          drop-shadow(0 0 25px rgba(209,54,239,.62))
+          drop-shadow(0 0 42px rgba(142,54,243,.34))!important;
         transform:none!important;
         white-space:nowrap!important;
       }
@@ -113,6 +94,35 @@
           0 0 3px rgba(255,238,252,.42),
           0 0 8px rgba(255,83,214,.30),
           0 0 14px rgba(168,59,242,.18)!important;
+      }
+
+      /* Search field now matches the pink neon wordmark instead of cyan. */
+      html body.purplenight .art-hero .search input{
+        border-color:rgba(255,115,220,.96)!important;
+        color:#f8effb!important;
+        caret-color:#ff78de!important;
+        box-shadow:
+          0 0 2px rgba(255,255,255,.82),
+          0 0 7px rgba(255,116,222,.78),
+          0 0 15px rgba(255,66,207,.48),
+          0 0 26px rgba(183,62,238,.24),
+          inset 0 0 10px rgba(255,92,218,.07)!important;
+      }
+      html body.purplenight .art-hero .search input:focus{
+        outline:none!important;
+        border-color:#ff8be3!important;
+        box-shadow:
+          0 0 2px rgba(255,255,255,.92),
+          0 0 8px rgba(255,134,227,.88),
+          0 0 17px rgba(255,67,209,.58),
+          0 0 30px rgba(183,62,238,.30),
+          inset 0 0 12px rgba(255,92,218,.09)!important;
+      }
+      html body.purplenight .art-hero .search input::placeholder{color:#bca9c7!important}
+      html body.purplenight .art-hero .search button{
+        border-color:rgba(255,115,220,.96)!important;
+        color:#fff6ff!important;
+        box-shadow:0 0 7px rgba(255,116,222,.56),0 0 15px rgba(183,62,238,.22)!important;
       }
 
       /* Keep the theme picker plain like Night. */
@@ -159,11 +169,8 @@
 
       @media(max-width:700px){
         html body.purplenight .art-hero .hero-panel h1{
-          font-size:clamp(29px,8.5vw,42px)!important;
-          line-height:1!important;
-          letter-spacing:.035em!important;
-          -webkit-text-stroke:.6px rgba(255,249,255,.98)!important;
-          white-space:nowrap!important;
+          width:min(94vw,540px)!important;
+          margin-bottom:4px!important;
         }
         html body.purplenight .hero-panel{
           width:calc(100% - 10px)!important;
@@ -178,7 +185,7 @@
   }
 
   const pinLast=()=>{
-    const current=document.getElementById('nca-neon-preview-match-v10');
+    const current=document.getElementById('nca-neon-preview-match-v11');
     if(current&&document.head.lastElementChild!==current)document.head.appendChild(current);
   };
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',pinLast,{once:true});

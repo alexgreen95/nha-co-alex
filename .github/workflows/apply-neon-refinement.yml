@@ -1,0 +1,164 @@
+name: Apply Neon refinement
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-neon-refinement.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: contains(github.event.head_commit.message, 'chore: add one-shot neon refinement')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Refine Neon theme
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('assets/push-settings.js')
+          text = path.read_text(encoding='utf-8')
+          if 'NEON_REFINEMENT_V2' in text:
+              raise SystemExit('Neon refinement already applied')
+
+          marker = "    `;\n    document.head.appendChild(style);"
+          if marker not in text:
+              raise SystemExit('style marker not found')
+
+          css = r'''
+      /* NEON_REFINEMENT_V2 — tabs, physical neon tubing, hollow tube title. */
+
+      /* Kill every legacy underline source, then draw exactly one glowing line. */
+      body.purplenight :is(.home-tab,.profile-tabs button,.notif-filters button,.intro-tabs button){
+        position:relative!important;
+        background:transparent!important;
+        border:0!important;
+        border-bottom:0!important;
+        outline:0!important;
+        box-shadow:none!important;
+        border-radius:0!important;
+        padding-bottom:10px!important;
+        text-shadow:
+          0 0 2px rgba(255,255,255,.90),
+          0 0 7px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 52%,transparent)!important;
+      }
+      body.purplenight :is(.home-tab,.profile-tabs button,.notif-filters button,.intro-tabs button)::after{
+        content:none!important;
+        display:none!important;
+      }
+      body.purplenight :is(.home-tab,.profile-tabs button,.notif-filters button,.intro-tabs button).active{
+        border:0!important;
+        border-bottom:0!important;
+        box-shadow:
+          inset 0 -2px 0 var(--neon-tone,var(--neon-cyan)),
+          0 8px 8px -8px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 86%,transparent),
+          0 12px 18px -14px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 58%,transparent)!important;
+        text-shadow:
+          0 0 2px #fff,
+          0 0 7px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 82%,transparent),
+          0 0 15px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 42%,transparent)!important;
+      }
+
+      /* Physical sign buttons: rounder tube, bright core, soft multi-layer halo. */
+      body.purplenight :is(
+        .nav button,
+        .btn,
+        .sort-main,
+        .sort-choice,
+        .float-tools button,
+        .chapter-end-nav button,
+        .comment-login-gate button,
+        .home-feed-list-more,
+        .profile-activity-list-more,
+        .theme-option,
+        .comment-panel-close,
+        .emoji-trigger
+      ){
+        border:2px solid var(--neon-tone,var(--neon-cyan))!important;
+        border-radius:12px!important;
+        background:
+          linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,0) 58%),
+          rgba(5,8,15,.92)!important;
+        outline:1px solid color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 32%,transparent)!important;
+        outline-offset:2px!important;
+        box-shadow:
+          inset 0 0 2px rgba(255,255,255,.28),
+          inset 0 0 10px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 11%,transparent),
+          0 0 2px rgba(255,255,255,.90),
+          0 0 6px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 88%,transparent),
+          0 0 13px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 54%,transparent),
+          0 0 25px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 24%,transparent)!important;
+        text-shadow:
+          0 0 2px rgba(255,255,255,.95),
+          0 0 7px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 72%,transparent)!important;
+      }
+      body.purplenight :is(.story-actions .btn,.intro-actions .btn){
+        border-radius:11px!important;
+      }
+      body.purplenight :is(
+        .nav button,
+        .btn,
+        .sort-main,
+        .sort-choice,
+        .float-tools button,
+        .chapter-end-nav button,
+        .comment-login-gate button,
+        .home-feed-list-more,
+        .profile-activity-list-more,
+        .theme-option,
+        .comment-panel-close,
+        .emoji-trigger
+      ):is(:hover,:focus-visible){
+        outline-color:color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 50%,transparent)!important;
+        box-shadow:
+          inset 0 0 2px rgba(255,255,255,.35),
+          inset 0 0 12px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 15%,transparent),
+          0 0 3px #fff,
+          0 0 8px var(--neon-tone,var(--neon-cyan)),
+          0 0 18px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 65%,transparent),
+          0 0 34px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 32%,transparent)!important;
+      }
+
+      /* Hollow neon-tube wordmark: the glyph outline itself is the glowing tube. */
+      body.purplenight .art-hero .hero-panel h1{
+        font-family:'Nunito','Arial Rounded MT Bold','Trebuchet MS',Arial,sans-serif!important;
+        font-size:clamp(68px,8vw,112px)!important;
+        font-weight:400!important;
+        line-height:1!important;
+        letter-spacing:.075em!important;
+        color:transparent!important;
+        -webkit-text-fill-color:transparent!important;
+        -webkit-text-stroke:2.25px #eaffff!important;
+        paint-order:stroke fill!important;
+        filter:
+          drop-shadow(0 0 1px #fff)
+          drop-shadow(0 0 4px #fff)
+          drop-shadow(0 0 7px var(--neon-cyan))
+          drop-shadow(0 0 13px rgba(77,249,255,.82))
+          drop-shadow(0 0 25px rgba(77,249,255,.42))!important;
+        text-shadow:none!important;
+        transform:none!important;
+      }
+
+      @media(max-width:700px){
+        body.purplenight .art-hero .hero-panel h1{
+          font-size:clamp(52px,15vw,78px)!important;
+          -webkit-text-stroke:1.8px #eaffff!important;
+          letter-spacing:.05em!important;
+        }
+      }
+'''
+
+          text = text.replace(marker, css + '\n' + marker, 1)
+          path.write_text(text, encoding='utf-8')
+
+      - name: Commit refinement
+        run: |
+          git config user.name "alexgreen95"
+          git config user.email "131966796+alexgreen95@users.noreply.github.com"
+          git add assets/push-settings.js
+          git commit -m "style: refine neon tubing and tabs"
+          git push

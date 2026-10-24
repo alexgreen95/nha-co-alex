@@ -10,15 +10,15 @@
       const link=document.createElement('link');
       link.id='nca-neon-preview-font';
       link.rel='stylesheet';
-      link.href='https://fonts.googleapis.com/css2?family=Pacifico&family=Dancing+Script:wght@700&display=swap';
+      link.href='https://fonts.googleapis.com/css2?family=Alex+Brush&family=Great+Vibes&family=Dancing+Script:wght@700&display=swap';
       document.head.appendChild(link);
     }
 
-    if(document.getElementById('nca-neon-preview-match-v3'))return;
+    if(document.getElementById('nca-neon-preview-match-v4'))return;
     const style=document.createElement('style');
-    style.id='nca-neon-preview-match-v3';
+    style.id='nca-neon-preview-match-v4';
     style.textContent=`
-      /* Preview-match hero: original banner only, treated like wallpaper in a dark room. */
+      /* Match the approved preview: original banner as very dark, nearly desaturated wallpaper. */
       body.purplenight .art-hero-image{
         display:block!important;
         background-image:url("/alex-banner.jpg")!important;
@@ -26,7 +26,7 @@
         background-position:center 30%!important;
         background-repeat:no-repeat!important;
         opacity:1!important;
-        filter:brightness(.34) saturate(.42) contrast(.92)!important;
+        filter:brightness(.17) saturate(.10) contrast(1.08)!important;
       }
       body.purplenight .art-hero::after{
         content:""!important;
@@ -36,38 +36,40 @@
         pointer-events:none!important;
         opacity:1!important;
         background:
-          radial-gradient(ellipse 40% 34% at 50% 31%,rgba(255,61,205,.24) 0%,rgba(170,67,255,.12) 34%,rgba(77,249,255,.04) 52%,transparent 72%),
-          radial-gradient(ellipse 24% 26% at 66% 30%,rgba(77,249,255,.08) 0%,transparent 72%),
-          rgba(1,2,8,.54)!important;
+          radial-gradient(ellipse 42% 36% at 50% 30%,rgba(255,52,205,.24) 0%,rgba(204,45,231,.18) 20%,rgba(143,48,255,.12) 40%,rgba(72,18,105,.04) 58%,transparent 72%),
+          linear-gradient(180deg,rgba(1,0,7,.74),rgba(1,0,7,.79))!important;
       }
       body.purplenight .hero-fade-top,
       body.purplenight .hero-fade{display:none!important}
 
-      /* Script neon sign like the approved preview: bright white core, pink tube glow, faint cyan spill. */
+      /* Approved-preview wordmark: flowing neon tubing with a bright white core and pink-purple halo. */
       body.purplenight .art-hero .hero-panel h1{
-        font-family:'Pacifico','Dancing Script','Segoe Script','Brush Script MT',cursive!important;
-        font-size:clamp(78px,8vw,112px)!important;
+        font-family:'Alex Brush','Great Vibes','Dancing Script','Segoe Script','Brush Script MT',cursive!important;
+        font-size:clamp(92px,8.7vw,126px)!important;
         font-weight:400!important;
-        line-height:1!important;
-        letter-spacing:.005em!important;
+        line-height:.90!important;
+        letter-spacing:.008em!important;
         color:#fff7ff!important;
         -webkit-text-fill-color:#fff7ff!important;
-        -webkit-text-stroke:.55px rgba(255,255,255,.92)!important;
+        -webkit-text-stroke:1.05px rgba(255,247,255,.98)!important;
         text-shadow:
-          0 0 2px #fff,
-          0 0 5px #fff,
-          0 0 10px rgba(255,93,218,.98),
-          0 0 20px rgba(255,54,204,.90),
-          0 0 34px rgba(208,65,255,.66),
-          0 0 50px rgba(132,63,255,.42),
-          0 0 64px rgba(77,249,255,.16)!important;
-        filter:none!important;
+          0 0 1px #fff,
+          0 0 3px #fff,
+          0 0 6px rgba(255,213,250,.98),
+          0 0 10px rgba(255,126,225,.98),
+          0 0 18px rgba(255,52,204,.96),
+          0 0 30px rgba(236,46,225,.82),
+          0 0 46px rgba(185,55,255,.68),
+          0 0 68px rgba(133,42,236,.46)!important;
+        filter:
+          drop-shadow(0 0 5px rgba(255,80,211,.80))
+          drop-shadow(0 0 18px rgba(191,52,255,.44))!important;
         transform:none!important;
         white-space:nowrap!important;
       }
       body.purplenight .art-hero .hero-panel .muted{
-        color:#d8d7e4!important;
-        text-shadow:0 0 6px rgba(255,78,213,.24)!important;
+        color:#d7d3df!important;
+        text-shadow:0 0 6px rgba(255,67,210,.24),0 0 11px rgba(173,51,255,.14)!important;
       }
 
       /* Theme picker stays plain, exactly like a normal Night-theme menu. */
@@ -114,15 +116,16 @@
 
       @media(max-width:700px){
         body.purplenight .art-hero .hero-panel h1{
-          font-size:clamp(32px,10.2vw,47px)!important;
-          letter-spacing:-.015em!important;
-          -webkit-text-stroke:.4px rgba(255,255,255,.90)!important;
+          font-size:clamp(39px,12vw,55px)!important;
+          line-height:.92!important;
+          letter-spacing:-.012em!important;
+          -webkit-text-stroke:.72px rgba(255,247,255,.98)!important;
           white-space:nowrap!important;
         }
         body.purplenight .hero-panel{
-          width:calc(100% - 14px)!important;
-          padding-left:7px!important;
-          padding-right:7px!important;
+          width:calc(100% - 10px)!important;
+          padding-left:5px!important;
+          padding-right:5px!important;
         }
       }
     `;

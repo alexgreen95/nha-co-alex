@@ -18,26 +18,16 @@
       const neonFont=document.createElement('link');
       neonFont.id='nca-neon-font';
       neonFont.rel='stylesheet';
-      neonFont.href='https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400&display=swap';
+      neonFont.href='https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&display=swap';
       document.head.appendChild(neonFont);
     }
 
     const neonTitle=document.querySelector('.art-hero .hero-panel h1');
-    if(neonTitle&&!neonTitle.dataset.neonTubed){
-      const label=neonTitle.textContent||'Nhà có Alex';
-      neonTitle.dataset.neonTubed='1';
+    if(neonTitle){
+      const label=neonTitle.getAttribute('aria-label')||neonTitle.textContent||'Nhà có Alex';
+      neonTitle.textContent=label;
       neonTitle.setAttribute('aria-label',label);
-      neonTitle.textContent='';
-      let visible=0;
-      for(const ch of Array.from(label)){
-        if(ch===' '){neonTitle.appendChild(document.createTextNode(' '));continue;}
-        const span=document.createElement('span');
-        span.className='nca-neon-letter';
-        span.textContent=ch;
-        if([1,4,7,9].includes(visible))span.classList.add(visible%2?'tube-cut-bottom':'tube-cut-right');
-        neonTitle.appendChild(span);
-        visible++;
-      }
+      neonTitle.removeAttribute('data-neon-tubed');
     }
 
     if(document.getElementById('nca-freshness-ribbon-inset'))return;
@@ -167,16 +157,20 @@
         box-shadow:0 16px 38px rgba(0,0,0,.44),0 0 20px rgba(77,249,255,.08)!important;
       }
 
-      /* Neon hero: no sunset artwork. */
+      /* Neon hero: original banner, untouched, with only a dark room-like overlay. */
       body.purplenight .art-hero{
-        background:
-          radial-gradient(circle at 15% 25%,rgba(77,249,255,.16),transparent 28%),
-          radial-gradient(circle at 84% 22%,rgba(255,78,213,.14),transparent 29%),
-          radial-gradient(circle at 52% 92%,rgba(154,115,255,.11),transparent 36%),
-          linear-gradient(180deg,#05060d 0%,#080a14 58%,#05060d 100%)!important;
+        background:#05060d!important;
         border-bottom:1px solid rgba(77,249,255,.11)!important;
       }
-      body.purplenight .art-hero-image{display:none!important;background-image:none!important}
+      body.purplenight .art-hero-image{
+        display:block!important;
+        background-image:url("/alex-banner.jpg")!important;
+        background-size:cover!important;
+        background-position:center 30%!important;
+        background-repeat:no-repeat!important;
+        opacity:1!important;
+        filter:none!important;
+      }
       body.purplenight .hero-fade-top,body.purplenight .hero-fade{display:none!important}
       body.purplenight .art-hero::after{
         content:""!important;
@@ -184,11 +178,8 @@
         inset:0!important;
         z-index:1!important;
         pointer-events:none!important;
-        background:
-          linear-gradient(rgba(77,249,255,.022) 1px,transparent 1px),
-          linear-gradient(90deg,rgba(255,78,213,.018) 1px,transparent 1px)!important;
-        background-size:46px 46px!important;
-        opacity:.50!important;
+        background:rgba(2,3,9,.70)!important;
+        opacity:1!important;
       }
       body.purplenight .hero-panel{
         width:min(930px,calc(100% - 36px))!important;
@@ -198,61 +189,31 @@
         border:0!important;
       }
 
-      /* Tubed wordmark: rounded outline, more breathing room, with occasional real-looking tube breaks. */
+      /* Neon sign wordmark: continuous tube, no fake cut markers. */
       body.purplenight .art-hero .hero-panel h1{
         margin:0 0 14px!important;
-        font-family:'Comfortaa','Arial Rounded MT Bold','Trebuchet MS','Nunito',sans-serif!important;
-        font-size:clamp(68px,8.1vw,112px)!important;
-        font-weight:300!important;
-        line-height:1.02!important;
-        letter-spacing:.11em!important;
-        color:transparent!important;
-        -webkit-text-fill-color:transparent!important;
-        -webkit-text-stroke:2px #eaffff!important;
-        paint-order:stroke fill!important;
-        text-shadow:none!important;
-        filter:
-          drop-shadow(0 0 1px #fff)
-          drop-shadow(0 0 3px #fff)
-          drop-shadow(0 0 7px var(--neon-cyan))
-          drop-shadow(0 0 14px rgba(77,249,255,.86))
-          drop-shadow(0 0 28px rgba(77,249,255,.44))!important;
+        font-family:'Dancing Script','Segoe Script','Brush Script MT',cursive!important;
+        font-size:clamp(76px,8.4vw,116px)!important;
+        font-weight:600!important;
+        line-height:.98!important;
+        letter-spacing:.035em!important;
+        color:#fff8ff!important;
+        -webkit-text-fill-color:#fff8ff!important;
+        -webkit-text-stroke:.7px rgba(255,255,255,.82)!important;
+        text-shadow:
+          0 0 2px #fff,
+          0 0 6px #fff,
+          0 0 11px rgba(255,78,213,.98),
+          0 0 22px rgba(255,78,213,.78),
+          0 0 36px rgba(154,115,255,.54),
+          0 0 52px rgba(77,249,255,.22)!important;
+        filter:none!important;
         transform:none!important;
         white-space:nowrap!important;
       }
-      body.purplenight .art-hero .hero-panel h1 .nca-neon-letter{
-        position:relative;
-        display:inline-block;
-      }
-      body.purplenight .art-hero .hero-panel h1 .nca-neon-letter.tube-cut-bottom::after{
-        content:"";
-        position:absolute;
-        left:48%;
-        bottom:1px;
-        width:8px;
-        height:4px;
-        transform:translateX(-50%) rotate(-4deg);
-        background:#070912;
-        border-left:1.5px solid #eaffff;
-        border-right:1.5px solid #eaffff;
-        box-shadow:-2px 0 4px rgba(77,249,255,.88),2px 0 4px rgba(77,249,255,.88);
-      }
-      body.purplenight .art-hero .hero-panel h1 .nca-neon-letter.tube-cut-right::after{
-        content:"";
-        position:absolute;
-        right:0;
-        top:53%;
-        width:4px;
-        height:8px;
-        transform:translateY(-50%) rotate(3deg);
-        background:#070912;
-        border-top:1.5px solid #eaffff;
-        border-bottom:1.5px solid #eaffff;
-        box-shadow:0 -2px 4px rgba(77,249,255,.88),0 2px 4px rgba(77,249,255,.88);
-      }
       body.purplenight .art-hero .hero-panel .muted{
-        color:#c8d4e7!important;
-        text-shadow:0 0 7px rgba(77,249,255,.30)!important;
+        color:#d2d8e8!important;
+        text-shadow:0 0 7px rgba(255,78,213,.24),0 0 8px rgba(77,249,255,.18)!important;
         letter-spacing:.055em!important;
       }
       body.purplenight .hero-panel .search{
@@ -537,11 +498,12 @@
         .profile-story-cover>.freshness-ribbon::after{left:13px;top:7px}
         #stories .story-actions .btn{font-size:14px!important}
         body.purplenight .art-hero .hero-panel h1{
-          font-size:clamp(50px,14vw,74px)!important;
-          -webkit-text-stroke:1.6px #eaffff!important;
-          letter-spacing:.07em!important;
+          font-size:clamp(38px,10.5vw,54px)!important;
+          -webkit-text-stroke:.55px rgba(255,255,255,.82)!important;
+          letter-spacing:.01em!important;
+          white-space:nowrap!important;
         }
-        body.purplenight .hero-panel{padding:24px 14px 20px!important}
+        body.purplenight .hero-panel{padding:24px 10px 20px!important;width:calc(100% - 18px)!important}
       }
     `;
     document.head.appendChild(style);

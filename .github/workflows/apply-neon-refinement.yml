@@ -10,13 +10,13 @@ permissions:
 
 jobs:
   patch:
-    if: contains(github.event.head_commit.message, 'chore: add one-shot neon refinement')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Refine Neon theme
-        shell: python
+        shell: bash
         run: |
+          python - <<'PY'
           from pathlib import Path
 
           path = Path('assets/push-settings.js')
@@ -154,6 +154,7 @@ jobs:
 
           text = text.replace(marker, css + '\n' + marker, 1)
           path.write_text(text, encoding='utf-8')
+          PY
 
       - name: Commit refinement
         run: |

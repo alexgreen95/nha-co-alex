@@ -7,6 +7,8 @@
   let refreshQueued=false;
   let expiryTimer=null;
   let activeCompletion=null;
+  let latestChapterUpdatedByStory=new Map();
+  let chapterUpdateFlight=null;
 
   function installStyles(){
     if(document.getElementById(STYLE_ID))return;
@@ -120,6 +122,51 @@
     if(refreshQueued)return;
     refreshQueued=true;
     queueMicrotask(refreshFreshnessUI);
+  }
+
+  function effectiveStoryUpdateTime(story){
+    const storyTime=Date.parse(story?.updatedAt||'');
+    const chapterTime=latestChapterUpdatedByStory.get(String(story?.id))||0;
+    return Math.max(Number.isFinite(storyTime)?storyTime:0,chapterTime);
+  }
+
+  function applyStoryUpdateOrder(){
+    if(typeof stories==='undefined'||!Array.isArray(stories)||!latestChapterUpdatedByStory.size)return;
+    stories.sort((a,b)=>effectiveStoryUpdateTime(b)-effectiveStoryUpdateTime(a)||Number(b?.id||0)-Number(a?.id||0));
+  }
+
+  function patchStoryRender(){
+    if(typeof root.render!=='function'||root.render.__ncaFreshnessSortPatched)return;
+    const original=root.render;
+    const wrapped=function(){
+      applyStoryUpdateOrder();
+      return original.apply(this,arguments);
+    };
+    wrapped.__ncaFreshnessSortPatched=true;
+    root.render=wrapped;
+  }
+
+  async function refreshChapterUpdateTimes(){
+    if(chapterUpdateFlight)return chapterUpdateFlight;
+    if(typeof root.fetchAllRows!=='function')return;
+    chapterUpdateFlight=(async()=>{
+      try{
+        const rows=await root.fetchAllRows('chapters','id','story_id,published,created_at,updated_at');
+        const next=new Map();
+        for(const row of rows){
+          if(row?.published===false)continue;
+          const updated=Date.parse(row?.updated_at||'');
+          const created=Date.parse(row?.created_at||'');
+          const time=Math.max(Number.isFinite(updated)?updated:0,Number.isFinite(created)?created:0);
+          const key=String(row?.story_id??'');
+          if(key&&time>(next.get(key)||0))next.set(key,time);
+        }
+        latestChapterUpdatedByStory=next;
+        applyStoryUpdateOrder();
+        if(typeof root.render==='function')root.render();
+      }catch(error){console.warn('story update sort',error);}
+    })().finally(()=>{chapterUpdateFlight=null;});
+    return chapterUpdateFlight;
   }
 
   function configureNotificationRoleTab(){
@@ -318,6 +365,7 @@
       onChange:queueFreshnessRefresh
     });
     root.ncaFreshness=controller;
+    patchStoryRender();
     patchNotificationCopy();
     patchAuthUI();
     installInteractionHooks();
@@ -329,7 +377,12 @@
     if(sb?.auth?.onAuthStateChange){
       sb.auth.onAuthStateChange(()=>setTimeout(reload,0));
     }
-    document.addEventListener('visibilitychange',()=>{if(!document.hidden)void reload();});
+    document.addEventListener('visibilitychange',()=>{
+      if(document.hidden)return;
+      void reload();
+      void refreshChapterUpdateTimes();
+    });
+    void refreshChapterUpdateTimes();
     void reload();
   }
 

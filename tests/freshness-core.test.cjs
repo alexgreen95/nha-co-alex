@@ -1,5 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 const F = require('../assets/freshness.js');
 
 const now = Date.parse('2026-10-24T10:00:00Z');
@@ -30,15 +32,23 @@ test('guest uses moving 3-day server-time window only',()=>{
   assert.deepEqual(F.markerFor(old,{authenticated:false,catalogNowMs:now}),{isNew:false,storyNew:false,chapterNew:false,chapterId:null});
 });
 
-test('authenticated baseline cutoff is fixed and does not expire with wall time',()=>{
-  const cutoff=Date.parse('2026-10-21T10:00:00Z');
-  const e=entry({storyAt:cutoff+1,chapterAt:cutoff+1});
-  const marker=F.markerFor(e,{authenticated:true,catalogNowMs:Date.parse('2027-01-01T00:00:00Z'),baselineCutoffMs:cutoff,ack:{storyAck:0n,chapterAck:0n}});
-  assert.equal(marker.isNew,true);
+test('authenticated old account also expires after rolling 3-day server window',()=>{
+  const occurred=Date.parse('2026-10-24T09:00:00Z');
+  const later=occurred+F.THREE_DAYS_MS+1;
+  const old=entry({storyAt:occurred,chapterAt:occurred});
+  const marker=F.markerFor(old,{
+    authenticated:true,
+    catalogNowMs:later,
+    baselineCutoffMs:Date.parse('2026-10-01T00:00:00Z'),
+    ack:{storyAck:0n,chapterAck:0n}
+  });
+  assert.deepEqual(marker,{isNew:false,storyNew:false,chapterNew:false,chapterId:null});
 });
 
-test('baseline does not mean acknowledged',()=>{
-  const marker=F.markerFor(entry(),{authenticated:true,catalogNowMs:now,baselineCutoffMs:Date.parse('2026-10-21T10:00:00Z'),ack:undefined});
+test('first account baseline limits initial history without acknowledging it',()=>{
+  const baseline=Date.parse('2026-10-21T10:00:00Z');
+  const e=entry({storyAt:baseline+1,chapterAt:baseline+1});
+  const marker=F.markerFor(e,{authenticated:true,catalogNowMs:now,baselineCutoffMs:baseline,ack:undefined});
   assert.equal(marker.storyNew,true);
   assert.equal(marker.chapterNew,true);
 });
@@ -116,4 +126,24 @@ test('old chapter is rejected client-side before ack rpc',async()=>{
   assert.equal(await controller.ackChapterOpen(2,966),false);
   assert.equal(calls.length,before);
   assert.equal(controller.marker(2).chapterNew,true);
+});
+
+test('controller schedules the nearest server-time 3-day expiry',async()=>{
+  const sb={rpc:async(name)=>{
+    if(name==='nca_get_freshness_catalog')return {data:catalogPayload()};
+    throw new Error('unexpected rpc '+name);
+  }};
+  const controller=F.create({sb,getAccount:()=>null});
+  await controller.load();
+  assert.equal(controller.msUntilNextExpiry(),F.THREE_DAYS_MS-60*60*1000);
+});
+
+test('ribbon CSS hides inactive nodes and uses square diagonal theme band',()=>{
+  const source=fs.readFileSync(path.join(__dirname,'../assets/freshness-ui.js'),'utf8');
+  assert.match(source,/\.freshness-ribbon\[hidden\]\{display:none!important\}/);
+  assert.match(source,/border-radius:0/);
+  assert.match(source,/transform:rotate\(-45deg\)/);
+  assert.match(source,/body\.light\{--fresh-ribbon-bg:/);
+  assert.match(source,/body\.purplenight\{--fresh-ribbon-bg:/);
+  assert.match(source,/document\.querySelectorAll\('\.profile-story-tile'\)/);
 });

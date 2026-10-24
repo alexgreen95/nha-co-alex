@@ -177,7 +177,7 @@
     installStyles();
     controller=root.NCAFreshness.create({
       sb,
-      getAccount:()=>typeof authUser==='undefined'?null:authUser,
+      getAccount:()=>typeof authUser==='undefined'||!authUser?null:authUser.id,
       onChange:queueRibbonRefresh
     });
     root.ncaFreshness=controller;

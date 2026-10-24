@@ -20,6 +20,7 @@
         bottom:16px!important;
         width:90px!important;
       }
+
       .profile-story-cover{
         overflow:visible!important;
       }
@@ -27,9 +28,49 @@
         border-radius:inherit;
       }
       .profile-story-cover>.freshness-ribbon{
-        left:-7px!important;
-        top:21px!important;
+        left:-4px!important;
+        top:-4px!important;
+        width:72px!important;
+        height:72px!important;
+        padding:0!important;
+        font-size:0!important;
+        color:transparent!important;
+        background:transparent!important;
+        box-shadow:none!important;
+        transform:none!important;
+        overflow:hidden!important;
       }
+      .profile-story-cover>.freshness-ribbon::before{
+        content:"MỚI";
+        position:absolute;
+        left:-25px;
+        top:16px;
+        width:90px;
+        height:19px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        color:var(--fresh-ribbon-fg);
+        background:var(--fresh-ribbon-bg);
+        font-size:8.5px;
+        font-weight:800;
+        letter-spacing:.08em;
+        line-height:1;
+        transform:rotate(-45deg);
+        transform-origin:center;
+        box-shadow:0 1px 4px color-mix(in srgb,var(--fg) 12%,transparent);
+      }
+      .profile-story-cover>.freshness-ribbon::after{
+        content:"";
+        position:absolute;
+        left:14px;
+        top:8px;
+        width:0;
+        height:0;
+        border-bottom:4px solid var(--fresh-ribbon-fold);
+        border-right:5px solid transparent;
+      }
+
       @media(max-width:700px){
         .story-card>.freshness-corner-shell{
           right:-3px!important;
@@ -43,8 +84,21 @@
           width:84px!important;
         }
         .profile-story-cover>.freshness-ribbon{
-          left:-6px!important;
-          top:19px!important;
+          left:-3px!important;
+          top:-3px!important;
+          width:66px!important;
+          height:66px!important;
+        }
+        .profile-story-cover>.freshness-ribbon::before{
+          left:-23px;
+          top:14px;
+          width:84px;
+          height:18px;
+          font-size:8px;
+        }
+        .profile-story-cover>.freshness-ribbon::after{
+          left:13px;
+          top:7px;
         }
       }
     `;

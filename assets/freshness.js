@@ -15,6 +15,13 @@
     const ms=Date.parse(value);
     return Number.isFinite(ms)?ms:null;
   }
+  function chapterKey(storyId,chapterId){return `${storyId}:${chapterId}`;}
+  function cutoffFor({authenticated,catalogNowMs,baselineCutoffMs}={}){
+    const rollingCutoffMs=catalogNowMs-THREE_DAYS_MS;
+    return authenticated&&Number.isFinite(baselineCutoffMs)
+      ?Math.max(baselineCutoffMs,rollingCutoffMs)
+      :rollingCutoffMs;
+  }
   function parseCatalog(payload){
     const nowMs=asTime(payload?.server_now);
     if(nowMs===null||!Array.isArray(payload?.stories))throw Error('INVALID_FRESHNESS_CATALOG');
@@ -34,7 +41,21 @@
       }
       stories.set(storyId,Object.freeze({storyId,storySequence,storyAt,chapterSequence,chapterAt,chapterId}));
     }
-    return Object.freeze({nowMs,stories});
+    const recentChapters=new Map();
+    const rows=payload?.recent_chapters===undefined?[]:payload.recent_chapters;
+    if(!Array.isArray(rows))throw Error('INVALID_FRESHNESS_CATALOG');
+    for(const row of rows){
+      const storyId=Number(row?.story_id),chapterId=Number(row?.chapter_id);
+      const sequence=asBigInt(row?.chapter_sequence,-1n),occurredAt=asTime(row?.chapter_occurred_at);
+      if(!Number.isSafeInteger(storyId)||storyId<=0||!Number.isSafeInteger(chapterId)||chapterId<=0||sequence<0n||occurredAt===null){
+        throw Error('INVALID_FRESHNESS_CATALOG');
+      }
+      const key=chapterKey(storyId,chapterId),old=recentChapters.get(key);
+      if(!old||sequence>old.sequence||(sequence===old.sequence&&occurredAt>old.occurredAt)){
+        recentChapters.set(key,Object.freeze({storyId,chapterId,sequence,occurredAt}));
+      }
+    }
+    return Object.freeze({nowMs,stories,recentChapters});
   }
   function parseState(payload){
     const baselineCutoffMs=asTime(payload?.baseline_cutoff_at);
@@ -47,23 +68,34 @@
       if(!Number.isSafeInteger(storyId)||storyId<=0||storyAck<0n||chapterAck<0n||acks.has(storyId))throw Error('INVALID_FRESHNESS_STATE');
       acks.set(storyId,Object.freeze({storyAck,chapterAck}));
     }
-    return Object.freeze({baselineCutoffMs,acks});
+    const readRows=payload?.read_chapter_ids===undefined?[]:payload.read_chapter_ids;
+    if(!Array.isArray(readRows))throw Error('INVALID_FRESHNESS_STATE');
+    const readChapters=new Set();
+    for(const value of readRows){
+      const chapterId=Number(value);
+      if(!Number.isSafeInteger(chapterId)||chapterId<=0||readChapters.has(chapterId))throw Error('INVALID_FRESHNESS_STATE');
+      readChapters.add(chapterId);
+    }
+    return Object.freeze({baselineCutoffMs,acks,readChapters});
   }
   function markerFor(entry,{authenticated,catalogNowMs,baselineCutoffMs,ack}={}){
     if(!entry)return Object.freeze({isNew:false,storyNew:false,chapterNew:false,chapterId:null});
-    const rollingCutoffMs=catalogNowMs-THREE_DAYS_MS;
-    const cutoffMs=authenticated&&Number.isFinite(baselineCutoffMs)
-      ?Math.max(baselineCutoffMs,rollingCutoffMs)
-      :rollingCutoffMs;
+    const cutoffMs=cutoffFor({authenticated,catalogNowMs,baselineCutoffMs});
     if(!Number.isFinite(cutoffMs))return Object.freeze({isNew:false,storyNew:false,chapterNew:false,chapterId:null});
     const storyAck=ack?.storyAck??0n,chapterAck=ack?.chapterAck??0n;
     const storyNew=entry.storySequence!==null&&entry.storyAt>=cutoffMs&&entry.storySequence>storyAck;
     const chapterNew=entry.chapterSequence!==null&&entry.chapterAt>=cutoffMs&&entry.chapterSequence>chapterAck;
     return Object.freeze({isNew:storyNew||chapterNew,storyNew,chapterNew,chapterId:chapterNew?entry.chapterId:null});
   }
+  function chapterMarkerFor(entry,{authenticated,catalogNowMs,baselineCutoffMs,read=false}={}){
+    if(!entry)return Object.freeze({isNew:false,chapterId:null});
+    const cutoffMs=cutoffFor({authenticated,catalogNowMs,baselineCutoffMs});
+    const isNew=Number.isFinite(cutoffMs)&&entry.occurredAt>=cutoffMs&&(!authenticated||!read);
+    return Object.freeze({isNew,chapterId:isNew?entry.chapterId:null});
+  }
   function create({sb,getAccount,onChange}={}){
     if(!sb?.rpc||typeof getAccount!=='function')throw Error('FRESHNESS_DEPENDENCIES_REQUIRED');
-    let catalog=Object.freeze({nowMs:0,stories:new Map()}),state=null,generation=0;
+    let catalog=Object.freeze({nowMs:0,stories:new Map(),recentChapters:new Map()}),state=null,generation=0;
     function emit(){try{onChange?.()}catch{}}
     async function rpc(name,args){
       const result=args?await sb.rpc(name,args):await sb.rpc(name);
@@ -91,6 +123,16 @@
         ack:state?.acks.get(id)
       });
     }
+    function chapterMarker(storyId,chapterId){
+      const sid=Number(storyId),cid=Number(chapterId),account=getAccount()||null;
+      const entry=catalog.recentChapters.get(chapterKey(sid,cid));
+      return chapterMarkerFor(entry,{
+        authenticated:!!account,
+        catalogNowMs:catalog.nowMs,
+        baselineCutoffMs:state?.baselineCutoffMs,
+        read:!!state?.readChapters?.has(cid)
+      });
+    }
     function msUntilNextExpiry(){
       if(!Number.isFinite(catalog.nowMs)||catalog.nowMs<=0)return null;
       let next=Infinity;
@@ -100,6 +142,10 @@
           const remaining=at+THREE_DAYS_MS-catalog.nowMs;
           if(remaining>0&&remaining<next)next=remaining;
         }
+      }
+      for(const entry of catalog.recentChapters.values()){
+        const remaining=entry.occurredAt+THREE_DAYS_MS-catalog.nowMs;
+        if(remaining>0&&remaining<next)next=remaining;
       }
       return Number.isFinite(next)?Math.ceil(next):null;
     }
@@ -127,15 +173,24 @@
       acks.set(id,Object.freeze({storyAck:old.storyAck,chapterAck:old.chapterAck>ackSequence?old.chapterAck:ackSequence}));
       state=Object.freeze({...state,acks});emit();return true;
     }
+    async function markChapterRead(storyId,chapterId){
+      if(!getAccount())return false;
+      const sid=Number(storyId),cid=Number(chapterId),current=chapterMarker(sid,cid);
+      if(!current.isNew)return false;
+      const payload=await rpc('nca_mark_chapter_freshness_read',{p_story_id:sid,p_chapter_id:cid});
+      if(payload?.acknowledged!==true||!state)return false;
+      const readChapters=new Set(state.readChapters);readChapters.add(cid);
+      state=Object.freeze({...state,readChapters});emit();return true;
+    }
     function reset(){
-      ++generation;catalog=Object.freeze({nowMs:0,stories:new Map()});state=null;emit();
+      ++generation;catalog=Object.freeze({nowMs:0,stories:new Map(),recentChapters:new Map()});state=null;emit();
     }
     return Object.freeze({
-      load,reset,marker,msUntilNextExpiry,ackStoryOpen,ackChapterOpen,
+      load,reset,marker,chapterMarker,msUntilNextExpiry,ackStoryOpen,ackChapterOpen,markChapterRead,
       get catalogLoaded(){return catalog.nowMs>0},
       get authenticated(){return !!getAccount()}
     });
   }
-  root.NCAFreshness=Object.freeze({THREE_DAYS_MS,asBigInt,parseCatalog,parseState,markerFor,create});
+  root.NCAFreshness=Object.freeze({THREE_DAYS_MS,asBigInt,parseCatalog,parseState,markerFor,chapterMarkerFor,create});
   if(typeof module!=='undefined'&&module.exports)module.exports=root.NCAFreshness;
 })(typeof window!=='undefined'?window:globalThis);

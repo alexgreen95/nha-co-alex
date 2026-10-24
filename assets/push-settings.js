@@ -14,10 +14,10 @@
     document.head.appendChild(base);
   }
 
-  let style=document.getElementById('nca-neon-preview-match-v13');
+  let style=document.getElementById('nca-neon-preview-match-v14');
   if(!style){
     style=document.createElement('style');
-    style.id='nca-neon-preview-match-v13';
+    style.id='nca-neon-preview-match-v14';
     style.textContent=`
       /* Banner is intentionally frozen at the approved state. */
       html body.purplenight .art-hero{
@@ -243,8 +243,9 @@
           0 0 5px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 92%,transparent),
           0 0 11px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 48%,transparent),
           0 0 22px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 20%,transparent),
-          inset 0 0 3px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 72%,transparent),
-          inset 0 0 9px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 22%,transparent)!important;
+          inset 0 0 4px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 92%,transparent),
+          inset 0 0 11px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 46%,transparent),
+          inset 0 0 19px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 22%,transparent)!important;
         transition:border-color .16s ease,box-shadow .16s ease,opacity .16s ease!important;
       }
       html body.purplenight :is(
@@ -324,8 +325,9 @@
           0 0 7px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 96%,transparent),
           0 0 15px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 58%,transparent),
           0 0 28px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 26%,transparent),
-          inset 0 0 4px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 82%,transparent),
-          inset 0 0 12px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 28%,transparent)!important;
+          inset 0 0 5px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 96%,transparent),
+          inset 0 0 14px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 56%,transparent),
+          inset 0 0 23px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 28%,transparent)!important;
       }
       html body.purplenight :is(
         .nav button,
@@ -347,6 +349,48 @@
         background:rgba(5,6,13,.16)!important;
       }
 
+      /* Neon-only freshness ribbon: same geometry, mini signboard material. */
+      html body.purplenight .freshness-ribbon{
+        color:#fff7ff!important;
+        background:rgba(5,6,13,.80)!important;
+        border:1.35px solid #ff69d6!important;
+        text-shadow:0 0 2px rgba(255,255,255,.90),0 0 6px rgba(255,78,213,.84),0 0 10px rgba(191,62,238,.42)!important;
+        box-shadow:
+          0 0 3px rgba(255,111,219,.82),
+          0 0 8px rgba(255,78,213,.50),
+          0 0 14px rgba(174,57,238,.26),
+          inset 0 0 4px rgba(255,78,213,.38),
+          inset 0 0 9px rgba(174,57,238,.16)!important;
+      }
+      html body.purplenight .profile-story-cover>.freshness-ribbon::before{
+        color:#fff7ff!important;
+        background:rgba(5,6,13,.82)!important;
+        border:1.35px solid #ff69d6!important;
+        text-shadow:0 0 2px rgba(255,255,255,.90),0 0 6px rgba(255,78,213,.84)!important;
+        box-shadow:0 0 3px rgba(255,111,219,.82),0 0 8px rgba(255,78,213,.50),inset 0 0 5px rgba(255,78,213,.32)!important;
+      }
+      html body.purplenight .story-card>.freshness-corner-shell>.freshness-ribbon::after,
+      html body.purplenight .profile-story-cover>.freshness-ribbon::after{
+        border-top-color:#8f3ca8!important;
+      }
+
+      /* Reader heading only: pink story title + softly glowing author line. */
+      html body.purplenight #reader .reader-head #rtitle{
+        color:#ff7bdc!important;
+        text-shadow:
+          0 0 2px rgba(255,232,249,.72),
+          0 0 5px rgba(255,101,216,.56),
+          0 0 10px rgba(255,78,213,.30)!important;
+      }
+      html body.purplenight #reader .reader-head #rauthor{
+        color:#e9e2ef!important;
+        text-shadow:
+          0 0 3px rgba(255,238,252,.34),
+          0 0 7px rgba(255,83,214,.24),
+          0 0 12px rgba(168,59,242,.14)!important;
+        letter-spacing:.04em!important;
+      }
+
       @media(max-width:700px){
         html body.purplenight .art-hero .hero-panel h1{
           width:min(94vw,560px)!important;
@@ -365,7 +409,7 @@
   }
 
   const pinLast=()=>{
-    const current=document.getElementById('nca-neon-preview-match-v13');
+    const current=document.getElementById('nca-neon-preview-match-v14');
     if(current&&document.head.lastElementChild!==current)document.head.appendChild(current);
   };
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',pinLast,{once:true});

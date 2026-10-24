@@ -102,6 +102,26 @@
     root.notifText=wrapped;
   }
 
+  function patchNotificationNavigation(){
+    if(typeof root.openNotification!=='function'||root.openNotification.__ncaFreshnessPatched)return;
+    const original=root.openNotification;
+    const wrapped=async function(id){
+      let selected=null;
+      try{selected=typeof notificationRows==='undefined'?null:notificationRows.get(String(id))||null;}catch{}
+      const result=await original.apply(this,arguments);
+      if(selected?.type==='update'&&selected.chapter_id!=null){
+        try{
+          const story=typeof stories==='undefined'?null:stories.find(s=>String(s.id)===String(selected.story_id));
+          const chapterIndex=story?.chapters?.findIndex(ch=>String(ch.id)===String(selected.chapter_id))??-1;
+          if(story&&chapterIndex>=0)await root.read(story.id,chapterIndex);
+        }catch(error){console.warn('update notification navigation',error);}
+      }
+      return result;
+    };
+    wrapped.__ncaFreshnessPatched=true;
+    root.openNotification=wrapped;
+  }
+
   function patchAuthUI(){
     if(typeof root.updateAuthUI!=='function'||root.updateAuthUI.__ncaFreshnessPatched)return;
     const original=root.updateAuthUI;
@@ -162,6 +182,7 @@
     patchReaderAction('read');
     patchReaderAction('moveChapter');
     patchReaderAction('goChapter');
+    patchNotificationNavigation();
   }
 
   async function reload(){

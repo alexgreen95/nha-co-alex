@@ -4,7 +4,7 @@
   if(typeof module==='object'&&module.exports){module.exports=require('./push-settings-base.js');return;}
   if(typeof document!=='object')return;
 
-  const BASE_SRC='/assets/push-settings-base.js?v=neon-final-20261024-2';
+  const BASE_SRC='/assets/push-settings-base.js?v=neon-final-20261024-3';
   if(document.readyState==='loading'){
     document.write('<script src="'+BASE_SRC+'"><\/script>');
   }else{
@@ -18,16 +18,20 @@
     const link=document.createElement('link');
     link.id='nca-neon-preview-font';
     link.rel='stylesheet';
-    link.href='https://fonts.googleapis.com/css2?family=Neonderthaw&display=swap';
+    link.href='https://fonts.cdnfonts.com/css/housttely-signature';
     document.head.appendChild(link);
   }
 
-  let style=document.getElementById('nca-neon-preview-match-v6');
+  let style=document.getElementById('nca-neon-preview-match-v7');
   if(!style){
     style=document.createElement('style');
-    style.id='nca-neon-preview-match-v6';
+    style.id='nca-neon-preview-match-v7';
     style.textContent=`
-      /* Final Neon hero. Extra html/body specificity intentionally beats the frozen base regardless of load order. */
+      /* Neon hero: keep the original banner, darkened like wallpaper in a switched-off room. */
+      html body.purplenight .art-hero{
+        background:#05060d!important;
+        overflow:hidden!important;
+      }
       html body.purplenight .art-hero-image{
         display:block!important;
         background-image:url("/alex-banner.jpg")!important;
@@ -35,8 +39,10 @@
         background-position:center 30%!important;
         background-repeat:no-repeat!important;
         opacity:1!important;
-        filter:brightness(.42) saturate(.18) contrast(1.03)!important;
+        filter:brightness(.34) saturate(.34) contrast(1.06)!important;
       }
+
+      /* Overall magenta-violet ambience + stronger local light spill behind the neon sign. */
       html body.purplenight .art-hero::after{
         content:""!important;
         position:absolute!important;
@@ -45,37 +51,54 @@
         pointer-events:none!important;
         opacity:1!important;
         background:
-          radial-gradient(ellipse 44% 34% at 50% 28%,rgba(255,77,220,.24) 0%,rgba(225,54,224,.17) 22%,rgba(150,55,255,.10) 42%,rgba(82,25,117,.035) 60%,transparent 74%),
-          linear-gradient(180deg,rgba(2,1,8,.56),rgba(2,1,8,.62))!important;
+          radial-gradient(ellipse 46% 36% at 50% 28%,rgba(255,158,236,.26) 0%,rgba(255,74,211,.24) 17%,rgba(211,55,230,.20) 31%,rgba(145,49,226,.14) 47%,rgba(90,30,145,.07) 62%,transparent 76%),
+          linear-gradient(120deg,rgba(102,12,108,.16) 0%,rgba(171,17,139,.12) 42%,rgba(103,24,146,.16) 100%),
+          linear-gradient(180deg,rgba(2,1,8,.54),rgba(2,1,8,.60))!important;
       }
-      html body.purplenight .hero-fade-top,
-      html body.purplenight .hero-fade{display:none!important}
 
-      /* True monoline neon wordmark: one consistent tube thickness, no calligraphic thick/thin strokes. */
+      /* Restore the same soft top/bottom fades used by the other dark themes. */
+      html body.purplenight .hero-fade-top{
+        display:block!important;
+        height:54px!important;
+        z-index:2!important;
+        background:linear-gradient(to bottom,#05060d 0%,rgba(5,6,13,.84) 18%,rgba(5,6,13,.58) 38%,rgba(5,6,13,.30) 60%,rgba(5,6,13,.10) 80%,rgba(5,6,13,0) 100%)!important;
+      }
+      html body.purplenight .hero-fade{
+        display:block!important;
+        height:118px!important;
+        z-index:2!important;
+        background:linear-gradient(to bottom,rgba(5,6,13,0) 0%,rgba(5,6,13,.10) 20%,rgba(5,6,13,.30) 44%,rgba(5,6,13,.58) 66%,rgba(5,6,13,.84) 84%,#05060d 100%)!important;
+      }
+      html body.purplenight .hero-panel{z-index:3!important}
+
+      /* Housttely Signature: elegant monoline signature used as the neon tube wordmark. */
       html body.purplenight .art-hero .hero-panel h1{
-        font-family:'Neonderthaw','Segoe Script',cursive!important;
-        font-size:clamp(88px,8.4vw,120px)!important;
+        font-family:'Housttely Signature','Segoe Script','Brush Script MT',cursive!important;
+        font-size:clamp(96px,8.6vw,126px)!important;
         font-weight:400!important;
-        line-height:.92!important;
-        letter-spacing:.018em!important;
+        line-height:.88!important;
+        letter-spacing:.012em!important;
         color:#fff7ff!important;
         -webkit-text-fill-color:#fff7ff!important;
-        -webkit-text-stroke:.55px rgba(255,249,255,.96)!important;
+        -webkit-text-stroke:.62px rgba(255,249,255,.98)!important;
         text-shadow:
-          0 0 1px rgba(255,255,255,1),
+          0 0 1px #fff,
           0 0 3px rgba(255,255,255,.98),
-          0 0 7px rgba(255,210,249,.96),
-          0 0 12px rgba(255,121,227,.92),
-          0 0 22px rgba(255,56,207,.86),
-          0 0 36px rgba(230,48,226,.68),
-          0 0 54px rgba(164,55,255,.48)!important;
-        filter:drop-shadow(0 0 7px rgba(255,72,215,.66)) drop-shadow(0 0 20px rgba(165,52,255,.30))!important;
+          0 0 6px rgba(255,229,252,.98),
+          0 0 11px rgba(255,157,234,.96),
+          0 0 18px rgba(255,79,215,.94),
+          0 0 30px rgba(244,54,218,.82),
+          0 0 46px rgba(203,52,242,.64),
+          0 0 68px rgba(144,55,244,.42)!important;
+        filter:
+          drop-shadow(0 0 6px rgba(255,91,220,.74))
+          drop-shadow(0 0 20px rgba(182,58,249,.34))!important;
         transform:none!important;
         white-space:nowrap!important;
       }
       html body.purplenight .art-hero .hero-panel .muted{
-        color:#d7d3df!important;
-        text-shadow:0 0 7px rgba(255,73,214,.20),0 0 13px rgba(159,54,255,.12)!important;
+        color:#ded8e4!important;
+        text-shadow:0 0 7px rgba(255,83,214,.24),0 0 14px rgba(168,59,242,.15)!important;
       }
 
       /* Keep the theme picker plain like Night. */
@@ -122,10 +145,10 @@
 
       @media(max-width:700px){
         html body.purplenight .art-hero .hero-panel h1{
-          font-size:clamp(36px,10.4vw,49px)!important;
-          line-height:.94!important;
-          letter-spacing:.006em!important;
-          -webkit-text-stroke:.42px rgba(255,249,255,.96)!important;
+          font-size:clamp(38px,10.8vw,52px)!important;
+          line-height:.90!important;
+          letter-spacing:.002em!important;
+          -webkit-text-stroke:.44px rgba(255,249,255,.98)!important;
           white-space:nowrap!important;
         }
         html body.purplenight .hero-panel{
@@ -133,13 +156,15 @@
           padding-left:5px!important;
           padding-right:5px!important;
         }
+        html body.purplenight .hero-fade-top{height:46px!important}
+        html body.purplenight .hero-fade{height:96px!important}
       }
     `;
     document.head.appendChild(style);
   }
 
   const pinLast=()=>{
-    const current=document.getElementById('nca-neon-preview-match-v6');
+    const current=document.getElementById('nca-neon-preview-match-v7');
     if(current&&document.head.lastElementChild!==current)document.head.appendChild(current);
   };
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',pinLast,{once:true});

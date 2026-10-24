@@ -16,6 +16,14 @@
   },
   "routes": [
     {
+      "src": "/assets/push-settings(?:-base)?\\.js",
+      "headers": {
+        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+        "Pragma": "no-cache"
+      },
+      "continue": true
+    },
+    {
       "src": "/assets/image-[a-f0-9]{12}\\.png",
       "headers": {
         "Cache-Control": "public, max-age=31536000, immutable"

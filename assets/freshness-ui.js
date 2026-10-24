@@ -27,10 +27,10 @@
       .story-card{overflow:visible!important}
       .profile-story-cover{overflow:hidden}
       .freshness-ribbon{position:absolute;z-index:3;display:inline-flex;align-items:center;justify-content:center;padding:0 8px;font-weight:800;letter-spacing:.08em;line-height:1;color:var(--fresh-ribbon-fg);background:var(--fresh-ribbon-bg);border:0;border-radius:0;box-shadow:0 2px 6px color-mix(in srgb,var(--fg) 14%,transparent);pointer-events:none;user-select:none}
-      .freshness-ribbon[hidden]{display:none!important}
-      .story-card>.freshness-ribbon{right:-20px;bottom:12px;width:78px;height:19px;font-size:8.5px;transform:rotate(-45deg);transform-origin:center;box-shadow:0 1px 4px color-mix(in srgb,var(--fg) 12%,transparent)}
-      .story-card>.freshness-ribbon::before{content:none}
-      .story-card>.freshness-ribbon::after{content:"";position:absolute;right:0;top:100%;width:0;height:0;border-top:4px solid var(--fresh-ribbon-fold);border-left:5px solid transparent}
+      .freshness-ribbon[hidden],.freshness-corner-shell[hidden]{display:none!important}
+      .story-card>.freshness-corner-shell{position:absolute;right:-6px;bottom:-6px;width:64px;height:64px;overflow:hidden;z-index:3;pointer-events:none;user-select:none}
+      .story-card>.freshness-corner-shell>.freshness-ribbon{right:-23px;bottom:13px;width:78px;height:19px;font-size:8.5px;transform:rotate(-45deg);transform-origin:center;box-shadow:0 1px 4px color-mix(in srgb,var(--fg) 12%,transparent)}
+      .story-card>.freshness-corner-shell>.freshness-ribbon::after{content:"";position:absolute;right:0;top:100%;width:0;height:0;border-top:4px solid var(--fresh-ribbon-fold);border-left:5px solid transparent}
       .profile-story-cover>.freshness-ribbon{left:-23px;top:13px;width:78px;height:19px;font-size:8.5px;transform:rotate(-45deg);transform-origin:center;box-shadow:0 1px 4px color-mix(in srgb,var(--fg) 12%,transparent)}
       .profile-story-cover>.freshness-ribbon::after{content:"";position:absolute;right:0;top:100%;width:0;height:0;border-top:4px solid var(--fresh-ribbon-fold);border-left:5px solid transparent}
       #introChapters button{display:flex;align-items:center;gap:10px}
@@ -39,7 +39,8 @@
       .notif-filters{display:flex!important;flex-wrap:nowrap!important;overflow:visible!important;gap:5px!important;width:100%;padding-bottom:2px!important}
       .notif-filters button{flex:1 1 0;min-width:0;min-height:38px!important;padding:6px 7px!important;font-size:14px!important;font-weight:600!important;white-space:nowrap!important}
       @media(max-width:700px){
-        .story-card>.freshness-ribbon{right:-18px;bottom:10px;width:72px;height:18px;font-size:8px}
+        .story-card>.freshness-corner-shell{right:-5px;bottom:-5px;width:58px;height:58px}
+        .story-card>.freshness-corner-shell>.freshness-ribbon{right:-21px;bottom:12px;width:72px;height:18px;font-size:8px}
         .profile-story-cover>.freshness-ribbon{left:-21px;top:12px;width:72px;height:18px;font-size:8px}
         .chapter-freshness-badge{padding:3px 6px;font-size:8.5px}
         header .notif-filters{display:flex!important;flex-wrap:nowrap!important;overflow:visible!important;gap:4px!important;width:100%}
@@ -57,18 +58,39 @@
     return match?Number(match[1]):null;
   }
 
+  function makeRibbon(){
+    const ribbon=document.createElement('span');
+    ribbon.className='freshness-ribbon';
+    ribbon.textContent='MỚI';
+    ribbon.hidden=true;
+    ribbon.setAttribute('aria-label','Mới');
+    return ribbon;
+  }
+
   function ensureRibbon(host,storyId){
-    let ribbon=host.querySelector(':scope > .freshness-ribbon');
-    if(!ribbon){
-      ribbon=document.createElement('span');
-      ribbon.className='freshness-ribbon';
-      ribbon.textContent='MỚI';
-      ribbon.hidden=true;
-      ribbon.setAttribute('aria-label','Mới');
-      host.appendChild(ribbon);
+    let ribbon=null;
+    let visibilityTarget=null;
+    if(host.classList.contains('story-card')){
+      host.querySelectorAll(':scope > .freshness-ribbon').forEach(old=>old.remove());
+      let shell=host.querySelector(':scope > .freshness-corner-shell');
+      if(!shell){
+        shell=document.createElement('span');
+        shell.className='freshness-corner-shell';
+        shell.hidden=true;
+        host.appendChild(shell);
+      }
+      ribbon=shell.querySelector(':scope > .freshness-ribbon');
+      if(!ribbon){ribbon=makeRibbon();shell.appendChild(ribbon);}
+      visibilityTarget=shell;
+    }else{
+      ribbon=host.querySelector(':scope > .freshness-ribbon');
+      if(!ribbon){ribbon=makeRibbon();host.appendChild(ribbon);}
+      visibilityTarget=ribbon;
     }
     const marker=controller?.marker(storyId);
-    ribbon.hidden=!marker?.isNew;
+    const visible=!!marker?.isNew;
+    visibilityTarget.hidden=!visible;
+    ribbon.hidden=!visible;
   }
 
   function refreshRibbons(){

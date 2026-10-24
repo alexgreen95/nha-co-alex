@@ -14,6 +14,7 @@
         bottom:-4px!important;
         width:72px!important;
         height:72px!important;
+        filter:drop-shadow(0 1px 2px color-mix(in srgb,var(--fg) 16%,transparent));
       }
       .story-card>.freshness-corner-shell>.freshness-ribbon{
         right:-25px!important;
@@ -39,6 +40,7 @@
         box-shadow:none!important;
         transform:none!important;
         overflow:hidden!important;
+        filter:drop-shadow(0 1px 2px color-mix(in srgb,var(--fg) 16%,transparent));
       }
       .profile-story-cover>.freshness-ribbon::before{
         content:"MỚI";

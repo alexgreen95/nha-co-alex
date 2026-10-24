@@ -15,6 +15,8 @@ language plpgsql
 security definer
 set search_path to ''
 as $function$
+declare
+  v_admin_id pg_catalog.uuid;
 begin
   if TG_TABLE_SCHEMA<>'public'
      or TG_TABLE_NAME<>'content_publications'
@@ -28,18 +30,22 @@ begin
     return NEW;
   end if;
 
+  select p.id into v_admin_id
+  from public.profiles p
+  where p.role='admin'
+  order by p.id
+  limit 1;
+
   insert into public.notifications(
     user_id,actor_id,type,story_id,chapter_id,comment_id,
     is_read,created_at,content_publication_id
   )
   select
-    p.id,null,NEW.kind,NEW.story_id,NEW.chapter_id,null,
+    p.id,v_admin_id,'update',NEW.story_id,NEW.chapter_id,null,
     false,NEW.occurred_at,NEW.id
   from public.profiles p
   where p.role='reader'
-  on conflict(user_id,content_publication_id)
-    where content_publication_id is not null
-  do nothing;
+  on conflict do nothing;
 
   return NEW;
 end;

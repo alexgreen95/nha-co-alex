@@ -91,6 +91,18 @@
         ack:state?.acks.get(id)
       });
     }
+    function msUntilNextExpiry(){
+      if(!Number.isFinite(catalog.nowMs)||catalog.nowMs<=0)return null;
+      let next=Infinity;
+      for(const entry of catalog.stories.values()){
+        for(const at of [entry.storyAt,entry.chapterAt]){
+          if(!Number.isFinite(at))continue;
+          const remaining=at+THREE_DAYS_MS-catalog.nowMs;
+          if(remaining>0&&remaining<next)next=remaining;
+        }
+      }
+      return Number.isFinite(next)?Math.ceil(next):null;
+    }
     async function ackStoryOpen(storyId){
       if(!getAccount())return false;
       const id=Number(storyId),current=marker(id);
@@ -119,7 +131,7 @@
       ++generation;catalog=Object.freeze({nowMs:0,stories:new Map()});state=null;emit();
     }
     return Object.freeze({
-      load,reset,marker,ackStoryOpen,ackChapterOpen,
+      load,reset,marker,msUntilNextExpiry,ackStoryOpen,ackChapterOpen,
       get catalogLoaded(){return catalog.nowMs>0},
       get authenticated(){return !!getAccount()}
     });

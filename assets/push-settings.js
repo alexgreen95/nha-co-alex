@@ -22,6 +22,24 @@
       document.head.appendChild(neonFont);
     }
 
+    const neonTitle=document.querySelector('.art-hero .hero-panel h1');
+    if(neonTitle&&!neonTitle.dataset.neonTubed){
+      const label=neonTitle.textContent||'Nhà có Alex';
+      neonTitle.dataset.neonTubed='1';
+      neonTitle.setAttribute('aria-label',label);
+      neonTitle.textContent='';
+      let visible=0;
+      for(const ch of Array.from(label)){
+        if(ch===' '){neonTitle.appendChild(document.createTextNode(' '));continue;}
+        const span=document.createElement('span');
+        span.className='nca-neon-letter';
+        span.textContent=ch;
+        if([1,4,7,9].includes(visible))span.classList.add(visible%2?'tube-cut-bottom':'tube-cut-right');
+        neonTitle.appendChild(span);
+        visible++;
+      }
+    }
+
     if(document.getElementById('nca-freshness-ribbon-inset'))return;
     const style=document.createElement('style');
     style.id='nca-freshness-ribbon-inset';
@@ -117,17 +135,26 @@
         border-bottom-color:rgba(77,249,255,.24)!important;
         box-shadow:0 5px 24px rgba(0,0,0,.30),0 1px 0 rgba(255,78,213,.12)!important;
       }
-      body.purplenight .card,
-      body.purplenight .story-card,
-      body.purplenight .community-card,
-      body.purplenight .story-intro-top,
-      body.purplenight .intro-tabs,
-      body.purplenight .intro-pane,
-      body.purplenight .profile-card,
-      body.purplenight .profile-section{
+
+      /* Light ambient panel glow: visible, but never brighter than the controls. */
+      body.purplenight :is(
+        #stories .story-card,
+        .story-intro-top,
+        .intro-tabs,
+        .intro-pane,
+        .community-card,
+        .profile-card,
+        .profile-section,
+        .chapter-comments,
+        .intro-compose,
+        .comment-bubble
+      ){
         background:#090c15!important;
-        border-color:#252b3d!important;
-        box-shadow:0 8px 24px rgba(0,0,0,.24)!important;
+        border-color:#252d42!important;
+        box-shadow:
+          0 8px 24px rgba(0,0,0,.30),
+          0 0 12px rgba(77,249,255,.055),
+          0 0 20px rgba(255,78,213,.025)!important;
       }
       body.purplenight .theme-menu,
       body.purplenight .font-menu,
@@ -164,21 +191,21 @@
         opacity:.50!important;
       }
       body.purplenight .hero-panel{
-        width:min(900px,calc(100% - 36px))!important;
+        width:min(930px,calc(100% - 36px))!important;
         padding:30px 20px 24px!important;
         background:transparent!important;
         box-shadow:none!important;
         border:0!important;
       }
 
-      /* Hollow tube wordmark: the letter outline itself is the neon tubing. */
+      /* Tubed wordmark: rounded outline, more breathing room, with occasional real-looking tube breaks. */
       body.purplenight .art-hero .hero-panel h1{
         margin:0 0 14px!important;
         font-family:'Comfortaa','Arial Rounded MT Bold','Trebuchet MS','Nunito',sans-serif!important;
         font-size:clamp(68px,8.1vw,112px)!important;
         font-weight:300!important;
         line-height:1.02!important;
-        letter-spacing:.065em!important;
+        letter-spacing:.11em!important;
         color:transparent!important;
         -webkit-text-fill-color:transparent!important;
         -webkit-text-stroke:2px #eaffff!important;
@@ -191,6 +218,37 @@
           drop-shadow(0 0 14px rgba(77,249,255,.86))
           drop-shadow(0 0 28px rgba(77,249,255,.44))!important;
         transform:none!important;
+        white-space:nowrap!important;
+      }
+      body.purplenight .art-hero .hero-panel h1 .nca-neon-letter{
+        position:relative;
+        display:inline-block;
+      }
+      body.purplenight .art-hero .hero-panel h1 .nca-neon-letter.tube-cut-bottom::after{
+        content:"";
+        position:absolute;
+        left:48%;
+        bottom:1px;
+        width:8px;
+        height:4px;
+        transform:translateX(-50%) rotate(-4deg);
+        background:#070912;
+        border-left:1.5px solid #eaffff;
+        border-right:1.5px solid #eaffff;
+        box-shadow:-2px 0 4px rgba(77,249,255,.88),2px 0 4px rgba(77,249,255,.88);
+      }
+      body.purplenight .art-hero .hero-panel h1 .nca-neon-letter.tube-cut-right::after{
+        content:"";
+        position:absolute;
+        right:0;
+        top:53%;
+        width:4px;
+        height:8px;
+        transform:translateY(-50%) rotate(3deg);
+        background:#070912;
+        border-top:1.5px solid #eaffff;
+        border-bottom:1.5px solid #eaffff;
+        box-shadow:0 -2px 4px rgba(77,249,255,.88),0 2px 4px rgba(77,249,255,.88);
       }
       body.purplenight .art-hero .hero-panel .muted{
         color:#c8d4e7!important;
@@ -214,11 +272,6 @@
         caret-color:var(--neon-cyan)!important;
       }
       body.purplenight .hero-panel .search input::placeholder{color:#8f9bb2!important}
-      body.purplenight .hero-panel .search button{
-        background:rgba(8,12,23,.94)!important;
-        border-color:rgba(255,78,213,.75)!important;
-        color:#ffd8f5!important;
-      }
 
       /* Color assignment across Neon controls. */
       body.purplenight .story-actions .btn:first-child,
@@ -255,8 +308,10 @@
       body.purplenight .sort-main{--neon-tone:var(--neon-violet)}
       body.purplenight .chapter-end-nav>button:first-child{--neon-tone:var(--neon-cyan)}
       body.purplenight .chapter-end-nav>button:last-child{--neon-tone:var(--neon-pink)}
+      body.purplenight :is(.comment-compose-row>button:not(.emoji-trigger),.intro-compose-actions>button){--neon-tone:var(--neon-cyan)}
+      body.purplenight .story-comment-pagination button{--neon-tone:var(--neon-violet)}
 
-      /* Physical neon signs: bright tube core with a soft, layered halo. */
+      /* Physical tube frames: the visible line is a neon tube, not the button border itself. */
       body.purplenight :is(
         .nav button,
         .btn,
@@ -269,24 +324,22 @@
         .profile-activity-list-more,
         .theme-option,
         .comment-panel-close,
-        .emoji-trigger
+        .emoji-trigger,
+        .comment-compose-row>button:not(.emoji-trigger),
+        .intro-compose-actions>button,
+        .story-comment-pagination button
       ){
-        background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,0) 58%),rgba(6,9,17,.93)!important;
+        position:relative!important;
+        isolation:isolate!important;
+        overflow:visible!important;
+        background:rgba(6,9,17,.94)!important;
         color:#f7feff!important;
-        border:1.8px solid color-mix(in srgb,#fff 18%,var(--neon-tone,var(--neon-cyan)) 82%)!important;
+        border:0!important;
+        outline:0!important;
         border-radius:13px!important;
-        box-shadow:
-          inset 0 0 2px rgba(255,255,255,.24),
-          inset 0 0 8px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 12%,transparent),
-          0 0 1px #fff,
-          0 0 4px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 94%,transparent),
-          0 0 10px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 62%,transparent),
-          0 0 21px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 29%,transparent)!important;
-        text-shadow:
-          0 0 2px rgba(255,255,255,.95),
-          0 0 6px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 70%,transparent)!important;
+        box-shadow:none!important;
+        text-shadow:0 0 2px rgba(255,255,255,.94),0 0 6px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 68%,transparent)!important;
       }
-      body.purplenight :is(.story-actions .btn,.intro-actions .btn){border-radius:11px!important}
       body.purplenight :is(
         .nav button,
         .btn,
@@ -299,39 +352,114 @@
         .profile-activity-list-more,
         .theme-option,
         .comment-panel-close,
-        .emoji-trigger
-      ):is(:hover,:focus-visible){
+        .emoji-trigger,
+        .comment-compose-row>button:not(.emoji-trigger),
+        .intro-compose-actions>button,
+        .story-comment-pagination button
+      )::before{
+        content:""!important;
+        position:absolute!important;
+        inset:1px!important;
+        z-index:-1!important;
+        pointer-events:none!important;
+        border:2.2px solid color-mix(in srgb,#fff 56%,var(--neon-tone,var(--neon-cyan)) 44%)!important;
+        border-radius:inherit!important;
+        background:transparent!important;
+        box-shadow:
+          0 0 1px #fff,
+          0 0 4px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 96%,transparent),
+          0 0 9px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 62%,transparent),
+          0 0 18px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 30%,transparent),
+          inset 0 0 4px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 18%,transparent)!important;
+        opacity:.96!important;
+      }
+      body.purplenight :is(
+        .nav button,
+        .btn,
+        .sort-main,
+        .sort-choice,
+        .float-tools button,
+        .chapter-end-nav button,
+        .comment-login-gate button,
+        .home-feed-list-more,
+        .profile-activity-list-more,
+        .theme-option,
+        .comment-panel-close,
+        .emoji-trigger,
+        .comment-compose-row>button:not(.emoji-trigger),
+        .intro-compose-actions>button,
+        .story-comment-pagination button
+      ):is(:hover,:focus-visible)::before{
         border-color:#fff!important;
         box-shadow:
-          inset 0 0 2px rgba(255,255,255,.35),
-          inset 0 0 11px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 17%,transparent),
           0 0 2px #fff,
-          0 0 7px var(--neon-tone,var(--neon-cyan)),
-          0 0 16px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 68%,transparent),
-          0 0 30px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 34%,transparent)!important;
+          0 0 6px var(--neon-tone,var(--neon-cyan)),
+          0 0 13px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 74%,transparent),
+          0 0 25px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 38%,transparent),
+          inset 0 0 6px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 22%,transparent)!important;
       }
+      body.purplenight :is(.story-actions .btn,.intro-actions .btn){border-radius:12px!important}
 
-      /* Tabs: no framed boxes and exactly one glowing underline. */
-      body.purplenight :is(.home-tab,.profile-tabs button,.notif-filters button,.intro-tabs button){
+      /* Home tabs: white and quiet until selected. */
+      body.purplenight .home-tab{
+        --neon-tone:var(--neon-cyan);
         background:none!important;
         background-image:none!important;
-        color:color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 70%,#fff)!important;
+        color:#f3f5f8!important;
         border:0!important;
         border-bottom:0!important;
         border-radius:0!important;
         box-shadow:none!important;
         outline:0!important;
         filter:none!important;
+        text-shadow:none!important;
         padding-bottom:10px!important;
-        text-shadow:0 0 5px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 56%,transparent)!important;
       }
-      body.purplenight :is(.home-tab,.profile-tabs button,.notif-filters button,.intro-tabs button)::before,
-      body.purplenight :is(.home-tab,.profile-tabs button,.notif-filters button,.intro-tabs button)::after{
+      body.purplenight .home-tab::before,
+      body.purplenight .home-tab::after{content:none!important;display:none!important}
+      body.purplenight .home-tab.active{
+        background-image:linear-gradient(90deg,transparent 0%,var(--neon-tone) 18%,var(--neon-tone) 82%,transparent 100%)!important;
+        background-repeat:no-repeat!important;
+        background-position:center bottom!important;
+        background-size:76% 2px!important;
+        color:#fff!important;
+        filter:drop-shadow(0 3px 3px color-mix(in srgb,var(--neon-tone) 72%,transparent)) drop-shadow(0 6px 8px color-mix(in srgb,var(--neon-tone) 38%,transparent))!important;
+        text-shadow:0 0 2px #fff,0 0 6px color-mix(in srgb,var(--neon-tone) 84%,transparent),0 0 14px color-mix(in srgb,var(--neon-tone) 42%,transparent)!important;
+      }
+
+      /* Story/profile/notification tabs: kill every legacy underline source with higher specificity. */
+      body.purplenight #storyIntro .intro-tabs button,
+      body.purplenight #storyIntro .intro-tabs button.active,
+      body.purplenight .profile-tabs button,
+      body.purplenight .notif-filters button{
+        --neon-tone:var(--neon-cyan);
+        position:relative!important;
+        background:none!important;
+        background-image:none!important;
+        color:#f3f5f8!important;
+        border:0!important;
+        border-bottom:0!important;
+        border-bottom-color:transparent!important;
+        border-radius:0!important;
+        box-shadow:none!important;
+        outline:0!important;
+        filter:none!important;
+        text-shadow:none!important;
+        padding-bottom:10px!important;
+      }
+      body.purplenight #storyIntro .intro-tabs button::before,
+      body.purplenight #storyIntro .intro-tabs button::after,
+      body.purplenight .profile-tabs button::before,
+      body.purplenight .profile-tabs button::after,
+      body.purplenight .notif-filters button::before,
+      body.purplenight .notif-filters button::after{
         content:none!important;
         display:none!important;
       }
-      body.purplenight :is(.home-tab,.profile-tabs button,.notif-filters button,.intro-tabs button).active{
-        background-image:linear-gradient(90deg,transparent 0%,var(--neon-tone,var(--neon-cyan)) 18%,var(--neon-tone,var(--neon-cyan)) 82%,transparent 100%)!important;
+      body.purplenight #storyIntro .intro-tabs button.active,
+      body.purplenight .profile-tabs button.active,
+      body.purplenight .notif-filters button.active{
+        background-image:linear-gradient(90deg,transparent 0%,var(--neon-tone) 18%,var(--neon-tone) 82%,transparent 100%)!important;
         background-repeat:no-repeat!important;
         background-position:center bottom!important;
         background-size:76% 2px!important;
@@ -339,11 +467,37 @@
         border:0!important;
         border-bottom:0!important;
         box-shadow:none!important;
-        filter:drop-shadow(0 3px 3px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 72%,transparent)) drop-shadow(0 6px 8px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 38%,transparent))!important;
-        text-shadow:
-          0 0 2px #fff,
-          0 0 6px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 84%,transparent),
-          0 0 14px color-mix(in srgb,var(--neon-tone,var(--neon-cyan)) 42%,transparent)!important;
+        filter:drop-shadow(0 3px 3px color-mix(in srgb,var(--neon-tone) 72%,transparent)) drop-shadow(0 6px 8px color-mix(in srgb,var(--neon-tone) 38%,transparent))!important;
+        text-shadow:0 0 2px #fff,0 0 6px color-mix(in srgb,var(--neon-tone) 84%,transparent),0 0 14px color-mix(in srgb,var(--neon-tone) 42%,transparent)!important;
+      }
+      body.purplenight #storyIntro .intro-tabs{border-bottom:1px solid rgba(255,255,255,.10)!important}
+
+      /* Comment surfaces: one consistent ambient glow and one consistent input treatment. */
+      body.purplenight :is(.intro-compose,.comment-compose,.comment-bubble,#storyCommentComposer,.chapter-comments){
+        --neon-tone:var(--neon-cyan);
+      }
+      body.purplenight :is(.intro-compose textarea,.comment-compose-row input,.review-editor){
+        background:#070a13!important;
+        color:#f4fbff!important;
+        border:1px solid rgba(77,249,255,.36)!important;
+        border-radius:11px!important;
+        box-shadow:inset 0 0 9px rgba(77,249,255,.045),0 0 7px rgba(77,249,255,.075)!important;
+        outline:0!important;
+      }
+      body.purplenight :is(.intro-compose textarea,.comment-compose-row input,.review-editor):focus{
+        border-color:rgba(77,249,255,.72)!important;
+        box-shadow:inset 0 0 10px rgba(77,249,255,.07),0 0 4px rgba(77,249,255,.46),0 0 11px rgba(77,249,255,.18)!important;
+      }
+      body.purplenight .comment-bubble{
+        background:#080c16!important;
+        border-color:rgba(77,249,255,.19)!important;
+        box-shadow:0 0 10px rgba(77,249,255,.035),0 0 16px rgba(255,78,213,.018)!important;
+      }
+      body.purplenight #introComments .intro-community-toolbar>strong{
+        color:#f7feff!important;
+        background:#080b14!important;
+        border:1px solid rgba(77,249,255,.42)!important;
+        box-shadow:0 0 5px rgba(77,249,255,.18)!important;
       }
 
       body.purplenight .status-done{color:#baffd9!important}
@@ -352,7 +506,6 @@
       body.purplenight textarea,
       body.purplenight select{
         background:#080b14!important;
-        border-color:#283148!important;
         color:#f2f8ff!important;
       }
 
@@ -384,9 +537,9 @@
         .profile-story-cover>.freshness-ribbon::after{left:13px;top:7px}
         #stories .story-actions .btn{font-size:14px!important}
         body.purplenight .art-hero .hero-panel h1{
-          font-size:clamp(52px,15vw,78px)!important;
+          font-size:clamp(50px,14vw,74px)!important;
           -webkit-text-stroke:1.6px #eaffff!important;
-          letter-spacing:.045em!important;
+          letter-spacing:.07em!important;
         }
         body.purplenight .hero-panel{padding:24px 14px 20px!important}
       }

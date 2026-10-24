@@ -14,10 +14,10 @@
     document.head.appendChild(base);
   }
 
-  let style=document.getElementById('nca-neon-preview-match-v11');
+  let style=document.getElementById('nca-neon-preview-match-v12');
   if(!style){
     style=document.createElement('style');
-    style.id='nca-neon-preview-match-v11';
+    style.id='nca-neon-preview-match-v12';
     style.textContent=`
       /* Banner is intentionally frozen at the approved state. */
       html body.purplenight .art-hero{
@@ -59,13 +59,13 @@
       }
       html body.purplenight .hero-panel{z-index:3!important}
 
-      /* Path-only SVG wordmark: no runtime font dependency. */
+      /* iCiel Smoothy Cursive converted to path-only SVG: no runtime font dependency. */
       html body.purplenight .art-hero .hero-panel h1{
         display:block!important;
-        width:min(640px,76vw)!important;
-        aspect-ratio:3358.4/871!important;
+        width:min(660px,78vw)!important;
+        aspect-ratio:1652.8617/300!important;
         height:auto!important;
-        margin:0 auto 7px!important;
+        margin:0 auto 10px!important;
         padding:0!important;
         overflow:visible!important;
         font-size:0!important;
@@ -74,16 +74,16 @@
         -webkit-text-fill-color:transparent!important;
         -webkit-text-stroke:0!important;
         text-shadow:none!important;
-        background-image:url('/assets/neon-title-signature.svg?v=20261025-1')!important;
+        background-image:url('/assets/neon-title-signature.svg?v=20261025-2')!important;
         background-size:contain!important;
         background-position:center!important;
         background-repeat:no-repeat!important;
         filter:
-          drop-shadow(0 0 2px rgba(255,255,255,.98))
-          drop-shadow(0 0 7px rgba(255,159,234,.94))
-          drop-shadow(0 0 14px rgba(255,76,216,.86))
-          drop-shadow(0 0 25px rgba(209,54,239,.62))
-          drop-shadow(0 0 42px rgba(142,54,243,.34))!important;
+          drop-shadow(0 0 3px rgba(255,210,244,.92))
+          drop-shadow(0 0 8px rgba(255,123,223,.88))
+          drop-shadow(0 0 16px rgba(255,70,211,.72))
+          drop-shadow(0 0 28px rgba(209,54,239,.48))
+          drop-shadow(0 0 44px rgba(142,54,243,.28))!important;
         transform:none!important;
         white-space:nowrap!important;
       }
@@ -96,33 +96,48 @@
           0 0 14px rgba(168,59,242,.18)!important;
       }
 
-      /* Search field now matches the pink neon wordmark instead of cyan. */
-      html body.purplenight .art-hero .search input{
-        border-color:rgba(255,115,220,.96)!important;
+      /* Search is one pink neon tube only: explicitly cancel the base cyan/white tube. */
+      html body.purplenight .art-hero .hero-panel .search{
+        background:rgba(4,7,14,.90)!important;
+        border:1.8px solid #ff78dc!important;
+        border-radius:18px!important;
+        outline:0!important;
+        box-shadow:
+          inset 0 0 9px rgba(255,78,213,.06),
+          0 0 6px rgba(255,78,213,.76),
+          0 0 14px rgba(255,78,213,.44),
+          0 0 26px rgba(194,58,238,.24)!important;
+      }
+      html body.purplenight .art-hero .hero-panel .search:focus-within{
+        border-color:#ff8fe2!important;
+        box-shadow:
+          inset 0 0 10px rgba(255,78,213,.08),
+          0 0 7px rgba(255,92,218,.84),
+          0 0 17px rgba(255,78,213,.52),
+          0 0 30px rgba(194,58,238,.28)!important;
+      }
+      html body.purplenight .art-hero .hero-panel .search input{
+        background:transparent!important;
         color:#f8effb!important;
-        caret-color:#ff78de!important;
-        box-shadow:
-          0 0 2px rgba(255,255,255,.82),
-          0 0 7px rgba(255,116,222,.78),
-          0 0 15px rgba(255,66,207,.48),
-          0 0 26px rgba(183,62,238,.24),
-          inset 0 0 10px rgba(255,92,218,.07)!important;
+        caret-color:#ff78dc!important;
+        border:0!important;
+        outline:0!important;
+        box-shadow:none!important;
+        filter:none!important;
       }
-      html body.purplenight .art-hero .search input:focus{
-        outline:none!important;
-        border-color:#ff8be3!important;
-        box-shadow:
-          0 0 2px rgba(255,255,255,.92),
-          0 0 8px rgba(255,134,227,.88),
-          0 0 17px rgba(255,67,209,.58),
-          0 0 30px rgba(183,62,238,.30),
-          inset 0 0 12px rgba(255,92,218,.09)!important;
+      html body.purplenight .art-hero .hero-panel .search input:focus{
+        border:0!important;
+        outline:0!important;
+        box-shadow:none!important;
+        filter:none!important;
       }
-      html body.purplenight .art-hero .search input::placeholder{color:#bca9c7!important}
-      html body.purplenight .art-hero .search button{
-        border-color:rgba(255,115,220,.96)!important;
+      html body.purplenight .art-hero .hero-panel .search input::placeholder{color:#bca9c7!important}
+      html body.purplenight .art-hero .hero-panel .search button{
+        border:0!important;
+        outline:0!important;
+        box-shadow:none!important;
+        filter:none!important;
         color:#fff6ff!important;
-        box-shadow:0 0 7px rgba(255,116,222,.56),0 0 15px rgba(183,62,238,.22)!important;
       }
 
       /* Keep the theme picker plain like Night. */
@@ -169,8 +184,8 @@
 
       @media(max-width:700px){
         html body.purplenight .art-hero .hero-panel h1{
-          width:min(94vw,540px)!important;
-          margin-bottom:4px!important;
+          width:min(94vw,560px)!important;
+          margin-bottom:6px!important;
         }
         html body.purplenight .hero-panel{
           width:calc(100% - 10px)!important;
@@ -185,7 +200,7 @@
   }
 
   const pinLast=()=>{
-    const current=document.getElementById('nca-neon-preview-match-v11');
+    const current=document.getElementById('nca-neon-preview-match-v12');
     if(current&&document.head.lastElementChild!==current)document.head.appendChild(current);
   };
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',pinLast,{once:true});

@@ -4,7 +4,7 @@
   if(typeof module==='object'&&module.exports){module.exports=require('./push-settings-base.js');return;}
   if(typeof document!=='object')return;
 
-  const BASE_SRC='/assets/push-settings-base.js?v=neon-final-20261024-3';
+  const BASE_SRC='/assets/push-settings-base.js?v=neon-final-20261024-4';
   if(document.readyState==='loading'){
     document.write('<script src="'+BASE_SRC+'"><\/script>');
   }else{
@@ -14,20 +14,12 @@
     document.head.appendChild(base);
   }
 
-  if(!document.getElementById('nca-neon-preview-font')){
-    const link=document.createElement('link');
-    link.id='nca-neon-preview-font';
-    link.rel='stylesheet';
-    link.href='https://fonts.cdnfonts.com/css/housttely-signature';
-    document.head.appendChild(link);
-  }
-
-  let style=document.getElementById('nca-neon-preview-match-v7');
+  let style=document.getElementById('nca-neon-preview-match-v8');
   if(!style){
     style=document.createElement('style');
-    style.id='nca-neon-preview-match-v7';
+    style.id='nca-neon-preview-match-v8';
     style.textContent=`
-      /* Neon hero: keep the original banner, darkened like wallpaper in a switched-off room. */
+      /* Neon hero: original banner kept intact, darkened like wallpaper in a switched-off room. */
       html body.purplenight .art-hero{
         background:#05060d!important;
         overflow:hidden!important;
@@ -42,7 +34,7 @@
         filter:brightness(.34) saturate(.34) contrast(1.06)!important;
       }
 
-      /* Overall magenta-violet ambience + stronger local light spill behind the neon sign. */
+      /* Keep the local neon spill + dark room overlay; reduce only the all-over pink/violet wash. */
       html body.purplenight .art-hero::after{
         content:""!important;
         position:absolute!important;
@@ -52,11 +44,11 @@
         opacity:1!important;
         background:
           radial-gradient(ellipse 46% 36% at 50% 28%,rgba(255,158,236,.26) 0%,rgba(255,74,211,.24) 17%,rgba(211,55,230,.20) 31%,rgba(145,49,226,.14) 47%,rgba(90,30,145,.07) 62%,transparent 76%),
-          linear-gradient(120deg,rgba(102,12,108,.16) 0%,rgba(171,17,139,.12) 42%,rgba(103,24,146,.16) 100%),
+          linear-gradient(120deg,rgba(102,12,108,.08) 0%,rgba(171,17,139,.055) 42%,rgba(103,24,146,.08) 100%),
           linear-gradient(180deg,rgba(2,1,8,.54),rgba(2,1,8,.60))!important;
       }
 
-      /* Restore the same soft top/bottom fades used by the other dark themes. */
+      /* Same soft top/bottom fade language as the other dark themes. */
       html body.purplenight .hero-fade-top{
         display:block!important;
         height:54px!important;
@@ -71,34 +63,36 @@
       }
       html body.purplenight .hero-panel{z-index:3!important}
 
-      /* Housttely Signature: elegant monoline signature used as the neon tube wordmark. */
+      /* Transparent vector image: no runtime font dependency, so the wordmark is identical on every device. */
       html body.purplenight .art-hero .hero-panel h1{
-        font-family:'Housttely Signature','Segoe Script','Brush Script MT',cursive!important;
-        font-size:clamp(96px,8.6vw,126px)!important;
-        font-weight:400!important;
-        line-height:.88!important;
-        letter-spacing:.012em!important;
-        color:#fff7ff!important;
-        -webkit-text-fill-color:#fff7ff!important;
-        -webkit-text-stroke:.62px rgba(255,249,255,.98)!important;
-        text-shadow:
-          0 0 1px #fff,
-          0 0 3px rgba(255,255,255,.98),
-          0 0 6px rgba(255,229,252,.98),
-          0 0 11px rgba(255,157,234,.96),
-          0 0 18px rgba(255,79,215,.94),
-          0 0 30px rgba(244,54,218,.82),
-          0 0 46px rgba(203,52,242,.64),
-          0 0 68px rgba(144,55,244,.42)!important;
-        filter:
-          drop-shadow(0 0 6px rgba(255,91,220,.74))
-          drop-shadow(0 0 20px rgba(182,58,249,.34))!important;
+        display:block!important;
+        width:min(635px,76vw)!important;
+        height:min(179px,21.43vw)!important;
+        margin:0 auto 7px!important;
+        padding:0!important;
+        overflow:hidden!important;
+        font-size:0!important;
+        line-height:0!important;
+        color:transparent!important;
+        -webkit-text-fill-color:transparent!important;
+        -webkit-text-stroke:0!important;
+        text-shadow:none!important;
+        background-image:url('/assets/neon-title.svg?v=20261024-1')!important;
+        background-size:contain!important;
+        background-position:center!important;
+        background-repeat:no-repeat!important;
+        filter:drop-shadow(0 0 7px rgba(255,86,218,.30)) drop-shadow(0 0 18px rgba(173,54,246,.18))!important;
         transform:none!important;
         white-space:nowrap!important;
       }
+
+      /* Subtitle gets only a small glow so it stays subordinate to the sign. */
       html body.purplenight .art-hero .hero-panel .muted{
-        color:#ded8e4!important;
-        text-shadow:0 0 7px rgba(255,83,214,.24),0 0 14px rgba(168,59,242,.15)!important;
+        color:#f0e8f3!important;
+        text-shadow:
+          0 0 3px rgba(255,238,252,.42),
+          0 0 8px rgba(255,83,214,.30),
+          0 0 14px rgba(168,59,242,.18)!important;
       }
 
       /* Keep the theme picker plain like Night. */
@@ -145,11 +139,9 @@
 
       @media(max-width:700px){
         html body.purplenight .art-hero .hero-panel h1{
-          font-size:clamp(38px,10.8vw,52px)!important;
-          line-height:.90!important;
-          letter-spacing:.002em!important;
-          -webkit-text-stroke:.44px rgba(255,249,255,.98)!important;
-          white-space:nowrap!important;
+          width:min(92vw,540px)!important;
+          height:min(152px,25.94vw)!important;
+          margin-bottom:5px!important;
         }
         html body.purplenight .hero-panel{
           width:calc(100% - 10px)!important;
@@ -164,7 +156,7 @@
   }
 
   const pinLast=()=>{
-    const current=document.getElementById('nca-neon-preview-match-v7');
+    const current=document.getElementById('nca-neon-preview-match-v8');
     if(current&&document.head.lastElementChild!==current)document.head.appendChild(current);
   };
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',pinLast,{once:true});

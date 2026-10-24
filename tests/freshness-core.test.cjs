@@ -14,6 +14,15 @@ function entry(overrides={}) {
     ...overrides
   };
 }
+function catalogPayload(){
+  return {server_now:'2026-10-24T10:00:00Z',stories:[{
+    story_id:2,story_sequence:'1',story_occurred_at:'2026-10-24T09:00:00Z',
+    chapter_sequence:'2',chapter_occurred_at:'2026-10-24T09:30:00Z',chapter_id:967
+  }]};
+}
+function statePayload(){
+  return {baseline_cutoff_at:'2026-10-21T10:00:00Z',acks:[]};
+}
 
 test('guest uses moving 3-day server-time window only',()=>{
   assert.equal(F.markerFor(entry(),{authenticated:false,catalogNowMs:now}).isNew,true);
@@ -62,4 +71,49 @@ test('sequences compare as bigint, not Number or lexicographic strings',()=>{
 
 test('parser rejects malformed publication catalog',()=>{
   assert.throws(()=>F.parseCatalog({server_now:'2026-10-24T10:00:00Z',stories:[{story_id:2,story_sequence:'bad',story_occurred_at:'2026-10-24T09:00:00Z',chapter_sequence:null,chapter_occurred_at:null,chapter_id:null}]}),/INVALID_FRESHNESS_CATALOG/);
+});
+
+test('guest load never creates per-account state',async()=>{
+  const calls=[];
+  const sb={rpc:async(name,args)=>{calls.push([name,args]);return {data:catalogPayload()};}};
+  const controller=F.create({sb,getAccount:()=>null});
+  assert.equal(await controller.load(),true);
+  assert.deepEqual(calls.map(([name])=>name),['nca_get_freshness_catalog']);
+  assert.equal(controller.marker(2).isNew,true);
+});
+
+test('story acknowledgement is separate from chapter acknowledgement',async()=>{
+  const calls=[];
+  const account='user-1';
+  const sb={rpc:async(name,args)=>{
+    calls.push([name,args]);
+    if(name==='nca_get_freshness_catalog')return {data:catalogPayload()};
+    if(name==='nca_get_freshness_state')return {data:statePayload()};
+    if(name==='nca_ack_story_freshness')return {data:{acknowledged:true,story_ack_sequence:'1'}};
+    throw new Error('unexpected rpc '+name);
+  }};
+  const controller=F.create({sb,getAccount:()=>account});
+  await controller.load();
+  assert.equal(await controller.ackStoryOpen(2),true);
+  const marker=controller.marker(2);
+  assert.equal(marker.storyNew,false);
+  assert.equal(marker.chapterNew,true);
+  assert.deepEqual(calls.at(-1),['nca_ack_story_freshness',{p_story_id:2}]);
+});
+
+test('old chapter is rejected client-side before ack rpc',async()=>{
+  const calls=[];
+  const account='user-1';
+  const sb={rpc:async(name,args)=>{
+    calls.push([name,args]);
+    if(name==='nca_get_freshness_catalog')return {data:catalogPayload()};
+    if(name==='nca_get_freshness_state')return {data:statePayload()};
+    throw new Error('unexpected rpc '+name);
+  }};
+  const controller=F.create({sb,getAccount:()=>account});
+  await controller.load();
+  const before=calls.length;
+  assert.equal(await controller.ackChapterOpen(2,966),false);
+  assert.equal(calls.length,before);
+  assert.equal(controller.marker(2).chapterNew,true);
 });

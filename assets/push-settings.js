@@ -9,8 +9,44 @@
     const style=document.createElement('style');
     style.id='nca-freshness-ribbon-inset';
     style.textContent=`
-      .story-card>.freshness-corner-shell{right:-2px!important;bottom:-2px!important}
-      @media(max-width:700px){.story-card>.freshness-corner-shell{right:-1px!important;bottom:-1px!important}}
+      .story-card>.freshness-corner-shell{
+        right:-1px!important;
+        bottom:-1px!important;
+        width:72px!important;
+        height:72px!important;
+      }
+      .story-card>.freshness-corner-shell>.freshness-ribbon{
+        right:-25px!important;
+        bottom:16px!important;
+        width:90px!important;
+      }
+      .profile-story-cover{
+        overflow:visible!important;
+      }
+      .profile-story-cover img{
+        border-radius:inherit;
+      }
+      .profile-story-cover>.freshness-ribbon{
+        left:-10px!important;
+        top:13px!important;
+      }
+      @media(max-width:700px){
+        .story-card>.freshness-corner-shell{
+          right:-1px!important;
+          bottom:-1px!important;
+          width:66px!important;
+          height:66px!important;
+        }
+        .story-card>.freshness-corner-shell>.freshness-ribbon{
+          right:-23px!important;
+          bottom:14px!important;
+          width:84px!important;
+        }
+        .profile-story-cover>.freshness-ribbon{
+          left:-9px!important;
+          top:12px!important;
+        }
+      }
     `;
     document.head.appendChild(style);
   },{once:true});

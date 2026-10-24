@@ -5,20 +5,28 @@
   const STYLE_ID='nca-freshness-style';
   let controller=null;
   let refreshQueued=false;
+  let expiryTimer=null;
 
   function installStyles(){
     if(document.getElementById(STYLE_ID))return;
     const style=document.createElement('style');
     style.id=STYLE_ID;
     style.textContent=`
-      .story-card,.profile-story-cover{position:relative}
-      .freshness-ribbon{--fresh-bg:color-mix(in srgb,var(--accent) 72%,var(--card));--fresh-fg:color-mix(in srgb,var(--fg) 88%,white 12%);position:absolute;z-index:3;display:inline-flex;align-items:center;justify-content:center;min-width:48px;height:25px;padding:0 10px;font-size:11px;font-weight:800;letter-spacing:.08em;line-height:1;color:var(--fresh-fg);background:var(--fresh-bg);border:1px solid color-mix(in srgb,var(--accent) 48%,var(--line));box-shadow:0 3px 9px color-mix(in srgb,var(--fg) 12%,transparent);pointer-events:none;user-select:none}
-      .freshness-ribbon::after{content:"";position:absolute;width:8px;height:8px;background:color-mix(in srgb,var(--fresh-bg) 72%,black 28%);clip-path:polygon(0 0,100% 0,100% 100%)}
-      .story-card>.freshness-ribbon{right:-1px;bottom:14px;border-radius:7px 0 0 7px;border-right:0}
-      .story-card>.freshness-ribbon::after{right:0;bottom:-8px;transform:scaleY(-1)}
-      .profile-story-cover>.freshness-ribbon{left:-1px;top:10px;border-radius:0 7px 7px 0;border-left:0}
-      .profile-story-cover>.freshness-ribbon::after{left:0;bottom:-8px;transform:scaleX(-1) scaleY(-1)}
-      body.night .freshness-ribbon,body.purplenight .freshness-ribbon{--fresh-bg:color-mix(in srgb,var(--accent) 58%,var(--card));--fresh-fg:var(--fg)}
+      :root{--fresh-ribbon-bg:#d789a4;--fresh-ribbon-fold:#a95770;--fresh-ribbon-fg:#fffafd}
+      body.light{--fresh-ribbon-bg:#d789a4;--fresh-ribbon-fold:#a95770;--fresh-ribbon-fg:#fffafd}
+      body.smoky{--fresh-ribbon-bg:#ad8451;--fresh-ribbon-fold:#795a34;--fresh-ribbon-fg:#fffaf0}
+      body.dustyrose{--fresh-ribbon-bg:#b86f84;--fresh-ribbon-fold:#844a5c;--fresh-ribbon-fg:#fff8fa}
+      body.mistblue{--fresh-ribbon-bg:#668f9a;--fresh-ribbon-fold:#466a73;--fresh-ribbon-fg:#f7fcfd}
+      body.pastel{--fresh-ribbon-bg:#a98bc6;--fresh-ribbon-fold:#795f96;--fresh-ribbon-fg:#fffaff}
+      body.night{--fresh-ribbon-bg:#718aa3;--fresh-ribbon-fold:#4b6176;--fresh-ribbon-fg:#f7fbff}
+      body.purplenight{--fresh-ribbon-bg:#9878b8;--fresh-ribbon-fold:#684d83;--fresh-ribbon-fg:#fffaff}
+      .story-card,.profile-story-tile{position:relative}
+      .freshness-ribbon{position:absolute;z-index:3;right:-22px;bottom:13px;width:92px;height:25px;padding:0 10px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;letter-spacing:.08em;line-height:1;color:var(--fresh-ribbon-fg);background:var(--fresh-ribbon-bg);border:0;border-radius:0;box-shadow:0 3px 8px color-mix(in srgb,var(--fg) 16%,transparent);transform:rotate(-45deg);transform-origin:center;pointer-events:none;user-select:none}
+      .freshness-ribbon[hidden]{display:none!important}
+      .freshness-ribbon::before,.freshness-ribbon::after{content:"";position:absolute;bottom:-6px;width:0;height:0;border-top:6px solid var(--fresh-ribbon-fold)}
+      .freshness-ribbon::before{left:0;border-right:7px solid transparent}
+      .freshness-ribbon::after{right:0;border-left:7px solid transparent}
+      @media(max-width:700px){.freshness-ribbon{right:-23px;bottom:12px;width:90px;height:24px;font-size:10.5px}}
     `;
     document.head.appendChild(style);
   }
@@ -50,8 +58,9 @@
     document.querySelectorAll('.story-card').forEach(card=>{
       const id=storyIdFromElement(card);if(id)ensureRibbon(card,id);
     });
-    document.querySelectorAll('.profile-story-tile .profile-story-cover').forEach(cover=>{
-      const id=storyIdFromElement(cover);if(id)ensureRibbon(cover,id);
+    document.querySelectorAll('.profile-story-cover > .freshness-ribbon').forEach(ribbon=>ribbon.remove());
+    document.querySelectorAll('.profile-story-tile').forEach(tile=>{
+      const id=storyIdFromElement(tile);if(id)ensureRibbon(tile,id);
     });
   }
 
@@ -185,12 +194,21 @@
     patchNotificationNavigation();
   }
 
+  function scheduleExpiryReload(){
+    if(expiryTimer!==null){clearTimeout(expiryTimer);expiryTimer=null;}
+    const delay=controller?.msUntilNextExpiry?.();
+    if(Number.isFinite(delay)&&delay>=0){
+      expiryTimer=setTimeout(()=>{expiryTimer=null;void reload();},Math.max(1000,delay+1000));
+    }
+  }
+
   async function reload(){
     if(!controller)return;
     controller.reset();
     try{await controller.load();}catch(error){console.warn('freshness load',error);}
     configureNotificationRoleTab();
     queueRibbonRefresh();
+    scheduleExpiryReload();
   }
 
   function boot(){
@@ -213,6 +231,7 @@
     if(sb?.auth?.onAuthStateChange){
       sb.auth.onAuthStateChange(()=>setTimeout(reload,0));
     }
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)void reload();});
     void reload();
   }
 

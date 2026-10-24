@@ -36,16 +36,16 @@
       .chapter-freshness-title{min-width:0;flex:1 1 auto}
       .chapter-freshness-badge{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;padding:3px 7px;border:1px solid color-mix(in srgb,var(--fresh-ribbon-bg) 55%,var(--line));background:color-mix(in srgb,var(--fresh-ribbon-bg) 16%,var(--card));color:color-mix(in srgb,var(--fresh-ribbon-bg) 78%,var(--fg));font-size:9px;font-weight:800;letter-spacing:.08em;line-height:1;border-radius:999px}
       .notif-filters{display:flex!important;flex-wrap:nowrap!important;overflow:visible!important;gap:5px!important;width:100%;padding-bottom:2px!important}
-      .notif-filters button{flex:1 1 0;min-width:0;min-height:36px!important;padding:6px 6px!important;font-size:12px!important;white-space:nowrap!important}
+      .notif-filters button{flex:1 1 0;min-width:0;min-height:36px!important;padding:6px 6px!important;font-size:13px!important;white-space:nowrap!important}
       @media(max-width:700px){
         .story-card>.freshness-ribbon{right:0;bottom:36px;width:112px;height:26px;font-size:10px}
         .story-card>.freshness-ribbon::before{left:-9px;top:4px;width:11px;height:26px}
         .profile-story-cover>.freshness-ribbon{left:-21px;top:12px;width:72px;height:18px;font-size:8px}
         .chapter-freshness-badge{padding:3px 6px;font-size:8.5px}
         header .notif-filters{display:flex!important;flex-wrap:nowrap!important;overflow:visible!important;gap:4px!important;width:100%}
-        header .notif-filters button{flex:1 1 0;min-width:0;min-height:34px!important;padding:5px 4px!important;font-size:11px!important;white-space:nowrap!important}
+        header .notif-filters button{flex:1 1 0;min-width:0;min-height:34px!important;padding:5px 4px!important;font-size:12px!important;white-space:nowrap!important}
       }
-      @media(max-width:360px){header .notif-filters button{padding-inline:2px!important;font-size:10px!important}}
+      @media(max-width:360px){header .notif-filters button{padding-inline:2px!important;font-size:11px!important}}
     `;
     document.head.appendChild(style);
   }

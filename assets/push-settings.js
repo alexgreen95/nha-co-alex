@@ -4,7 +4,7 @@
   if(typeof module==='object'&&module.exports){module.exports=require('./push-settings-base.js');return;}
   if(typeof document!=='object')return;
 
-  const BASE_SRC='/assets/push-settings-base.js?v=neon-final-20261024-5';
+  const BASE_SRC='/assets/push-settings-base.js?v=neon-final-20261024-6';
   if(document.readyState==='loading'){
     document.write('<script src="'+BASE_SRC+'"><\/script>');
   }else{
@@ -14,29 +14,29 @@
     document.head.appendChild(base);
   }
 
-  if(!document.getElementById('nca-neon-housttely-font')){
-    const link=document.createElement('link');
-    link.id='nca-neon-housttely-font';
-    link.rel='stylesheet';
-    link.href='https://fonts.cdnfonts.com/css/housttely-signature';
-    document.head.appendChild(link);
-  }
-
   const applyWordmark=()=>{
     const title=document.querySelector('.art-hero .hero-panel h1');
-    if(!title||title.dataset.neonBalanced==='1')return;
+    if(!title)return;
     title.setAttribute('aria-label','Nhà có Alex');
-    title.innerHTML='<span class="neon-cap">N</span><span>hà có&nbsp;</span><span class="neon-cap">A</span><span>lex</span>';
-    title.dataset.neonBalanced='1';
+    title.textContent='Nhà có Alex';
+    delete title.dataset.neonBalanced;
   };
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',applyWordmark,{once:true});
   else applyWordmark();
 
-  let style=document.getElementById('nca-neon-preview-match-v9');
+  let style=document.getElementById('nca-neon-preview-match-v10');
   if(!style){
     style=document.createElement('style');
-    style.id='nca-neon-preview-match-v9';
+    style.id='nca-neon-preview-match-v10';
     style.textContent=`
+      @font-face{
+        font-family:'NCA Keystone';
+        src:url('https://www.fontmirror.com/app_public/files/t/22/2024/10/KEYSTONE.OTF') format('opentype');
+        font-weight:400;
+        font-style:normal;
+        font-display:swap;
+      }
+
       /* Banner is intentionally frozen at the approved state. */
       html body.purplenight .art-hero{
         background:#05060d!important;
@@ -77,45 +77,34 @@
       }
       html body.purplenight .hero-panel{z-index:3!important}
 
-      /* Housttely wordmark, with only N/A reduced so the capitals no longer dominate. */
+      /* Keystone trial wordmark: one continuous title, no split capitals. */
       html body.purplenight .art-hero .hero-panel h1{
-        display:inline-flex!important;
-        align-items:baseline!important;
-        justify-content:center!important;
+        display:block!important;
         width:auto!important;
         height:auto!important;
-        margin:0 auto 10px!important;
+        margin:0 auto 12px!important;
         padding:0!important;
         overflow:visible!important;
-        font-family:'Housttely Signature','Segoe Script','Brush Script MT',cursive!important;
-        font-size:clamp(82px,7.7vw,112px)!important;
+        font-family:'NCA Keystone','Keystone','Arial Rounded MT Bold',sans-serif!important;
+        font-size:clamp(58px,5.6vw,82px)!important;
         font-weight:400!important;
-        line-height:.90!important;
-        letter-spacing:.006em!important;
+        line-height:1!important;
+        letter-spacing:.055em!important;
         color:#fff7ff!important;
         -webkit-text-fill-color:#fff7ff!important;
-        -webkit-text-stroke:.58px rgba(255,249,255,.98)!important;
+        -webkit-text-stroke:.9px rgba(255,249,255,.98)!important;
         background:none!important;
         text-shadow:
           0 0 1px #fff,
           0 0 3px rgba(255,255,255,.98),
-          0 0 6px rgba(255,229,252,.98),
-          0 0 11px rgba(255,157,234,.96),
-          0 0 18px rgba(255,79,215,.94),
-          0 0 30px rgba(244,54,218,.82),
-          0 0 46px rgba(203,52,242,.64),
-          0 0 68px rgba(144,55,244,.42)!important;
-        filter:drop-shadow(0 0 6px rgba(255,91,220,.66)) drop-shadow(0 0 18px rgba(182,58,249,.28))!important;
+          0 0 7px rgba(255,229,252,.98),
+          0 0 12px rgba(255,157,234,.96),
+          0 0 20px rgba(255,79,215,.92),
+          0 0 32px rgba(244,54,218,.78),
+          0 0 48px rgba(203,52,242,.58)!important;
+        filter:drop-shadow(0 0 6px rgba(255,91,220,.62)) drop-shadow(0 0 18px rgba(182,58,249,.24))!important;
         transform:none!important;
         white-space:nowrap!important;
-      }
-      html body.purplenight .art-hero .hero-panel h1 .neon-cap{
-        display:inline-block!important;
-        font-size:.72em!important;
-        line-height:1!important;
-        vertical-align:-.025em!important;
-        margin-left:-.02em!important;
-        margin-right:-.025em!important;
       }
 
       html body.purplenight .art-hero .hero-panel .muted{
@@ -170,13 +159,12 @@
 
       @media(max-width:700px){
         html body.purplenight .art-hero .hero-panel h1{
-          font-size:clamp(36px,9.5vw,48px)!important;
-          line-height:.92!important;
-          letter-spacing:0!important;
-          -webkit-text-stroke:.42px rgba(255,249,255,.98)!important;
+          font-size:clamp(29px,8.5vw,42px)!important;
+          line-height:1!important;
+          letter-spacing:.035em!important;
+          -webkit-text-stroke:.6px rgba(255,249,255,.98)!important;
           white-space:nowrap!important;
         }
-        html body.purplenight .art-hero .hero-panel h1 .neon-cap{font-size:.72em!important}
         html body.purplenight .hero-panel{
           width:calc(100% - 10px)!important;
           padding-left:5px!important;
@@ -190,7 +178,7 @@
   }
 
   const pinLast=()=>{
-    const current=document.getElementById('nca-neon-preview-match-v9');
+    const current=document.getElementById('nca-neon-preview-match-v10');
     if(current&&document.head.lastElementChild!==current)document.head.appendChild(current);
   };
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',pinLast,{once:true});

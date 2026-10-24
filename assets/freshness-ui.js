@@ -28,9 +28,10 @@
       .profile-story-cover{overflow:hidden}
       .freshness-ribbon{position:absolute;z-index:3;display:inline-flex;align-items:center;justify-content:center;padding:0 8px;font-weight:800;letter-spacing:.08em;line-height:1;color:var(--fresh-ribbon-fg);background:var(--fresh-ribbon-bg);border:0;border-radius:0;box-shadow:0 2px 6px color-mix(in srgb,var(--fg) 14%,transparent);pointer-events:none;user-select:none}
       .freshness-ribbon[hidden]{display:none!important}
-      .story-card>.freshness-ribbon{right:-8px;bottom:-8px;width:96px;height:96px;padding:0;font-size:0;color:transparent;background:linear-gradient(135deg,transparent 0 38%,var(--fresh-ribbon-bg) 38% 60%,transparent 60% 100%);box-shadow:none;transform:none;overflow:visible}
-      .story-card>.freshness-ribbon::before{content:"";position:absolute;inset:0;background:linear-gradient(45deg,var(--fresh-ribbon-fold) 0 49%,transparent 50%) left bottom/13px 13px no-repeat,linear-gradient(225deg,var(--fresh-ribbon-fold) 0 49%,transparent 50%) right top/13px 13px no-repeat;pointer-events:none}
-      .story-card>.freshness-ribbon::after{content:"MỚI";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-45deg);color:var(--fresh-ribbon-fg);font-size:10.5px;font-weight:800;letter-spacing:.08em;line-height:1;white-space:nowrap}
+      .story-card>.freshness-ribbon{right:-16px;bottom:20px;width:106px;height:26px;padding:0 10px;font-size:10.5px;color:var(--fresh-ribbon-fg);background:var(--fresh-ribbon-bg);box-shadow:0 2px 6px color-mix(in srgb,var(--fg) 14%,transparent);transform:rotate(-45deg);transform-origin:center;overflow:visible}
+      .story-card>.freshness-ribbon::before,.story-card>.freshness-ribbon::after{content:"";position:absolute;top:3px;width:7px;height:20px;background:var(--fresh-ribbon-fold);pointer-events:none}
+      .story-card>.freshness-ribbon::before{left:-6px;clip-path:polygon(100% 0,100% 100%,0 76%,45% 50%,0 24%)}
+      .story-card>.freshness-ribbon::after{right:-6px;clip-path:polygon(0 0,0 100%,100% 76%,55% 50%,100% 24%)}
       .profile-story-cover>.freshness-ribbon{left:-23px;top:13px;width:78px;height:19px;font-size:8.5px;transform:rotate(-45deg);transform-origin:center;box-shadow:0 1px 4px color-mix(in srgb,var(--fg) 12%,transparent)}
       .profile-story-cover>.freshness-ribbon::after{content:"";position:absolute;right:0;top:100%;width:0;height:0;border-top:4px solid var(--fresh-ribbon-fold);border-left:5px solid transparent}
       #introChapters button{display:flex;align-items:center;gap:10px}
@@ -39,9 +40,10 @@
       .notif-filters{display:flex!important;flex-wrap:nowrap!important;overflow:visible!important;gap:5px!important;width:100%;padding-bottom:2px!important}
       .notif-filters button{flex:1 1 0;min-width:0;min-height:38px!important;padding:6px 7px!important;font-size:14px!important;font-weight:600!important;white-space:nowrap!important}
       @media(max-width:700px){
-        .story-card>.freshness-ribbon{right:-7px;bottom:-7px;width:88px;height:88px}
-        .story-card>.freshness-ribbon::before{background-size:12px 12px,12px 12px}
-        .story-card>.freshness-ribbon::after{font-size:9.5px}
+        .story-card>.freshness-ribbon{right:-14px;bottom:18px;width:92px;height:22px;padding:0 8px;font-size:9.5px}
+        .story-card>.freshness-ribbon::before,.story-card>.freshness-ribbon::after{top:3px;width:6px;height:16px}
+        .story-card>.freshness-ribbon::before{left:-5px}
+        .story-card>.freshness-ribbon::after{right:-5px}
         .profile-story-cover>.freshness-ribbon{left:-21px;top:12px;width:72px;height:18px;font-size:8px}
         .chapter-freshness-badge{padding:3px 6px;font-size:8.5px}
         header .notif-filters{display:flex!important;flex-wrap:nowrap!important;overflow:visible!important;gap:4px!important;width:100%}

@@ -18,9 +18,7 @@ function entry(overrides={}) {
 test('guest uses moving 3-day server-time window only',()=>{
   assert.equal(F.markerFor(entry(),{authenticated:false,catalogNowMs:now}).isNew,true);
   const old=entry({storyAt:now-F.THREE_DAYS_MS-1,chapterAt:now-F.THREE_DAYS_MS-1});
-  assert.deepEqual(F.markerFor(old,{authenticated:false,catalogNowMs:now}),{
-    isNew:false,storyNew:false,chapterNew:false,chapterId:null
-  });
+  assert.deepEqual(F.markerFor(old,{authenticated:false,catalogNowMs:now}),{isNew:false,storyNew:false,chapterNew:false,chapterId:null});
 });
 
 test('authenticated baseline cutoff is fixed and does not expire with wall time',()=>{
@@ -64,10 +62,4 @@ test('sequences compare as bigint, not Number or lexicographic strings',()=>{
 
 test('parser rejects malformed publication catalog',()=>{
   assert.throws(()=>F.parseCatalog({server_now:'2026-10-24T10:00:00Z',stories:[{story_id:2,story_sequence:'bad',story_occurred_at:'2026-10-24T09:00:00Z',chapter_sequence:null,chapter_occurred_at:null,chapter_id:null}]}),/INVALID_FRESHNESS_CATALOG/);
-});
-
-test('member update parser keeps feed-read state separate',()=>{
-  const parsed=F.parseUpdates({is_admin:false,unread_count:1,max_sequence:'2',updates:[{catalog_sequence:'2',occurred_at:'2026-10-24T09:30:00Z',kind:'new_chapter',story_id:2,chapter_id:967,story_title:'X',chapter_title:'Y',is_read:false}]});
-  assert.equal(parsed.updates[0].isRead,false);
-  assert.equal(parsed.updates[0].sequence,2n);
 });

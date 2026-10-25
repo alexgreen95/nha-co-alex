@@ -8,9 +8,10 @@
   const TAIL='/assets/neon-reader-freshness-v15.js?v=20261025-3';
   const TAIL2='/assets/neon-controls-profile-v16.js?v=20261025-1';
   const TAIL3='/assets/neon-search-reader-home-v17.js?v=20261025-1';
+  const TAIL4='/assets/neon-mobile-reader-align-v18.js?v=20261025-1';
 
   if(document.readyState==='loading'){
-    document.write('<script src="'+FROZEN+'"><\/script><script src="'+TAIL+'"><\/script><script src="'+TAIL2+'"><\/script><script src="'+TAIL3+'"><\/script>');
+    document.write('<script src="'+FROZEN+'"><\/script><script src="'+TAIL+'"><\/script><script src="'+TAIL2+'"><\/script><script src="'+TAIL3+'"><\/script><script src="'+TAIL4+'"><\/script>');
     return;
   }
 
@@ -29,6 +30,12 @@
         const tail3=document.createElement('script');
         tail3.src=TAIL3;
         tail3.async=false;
+        tail3.onload=()=>{
+          const tail4=document.createElement('script');
+          tail4.src=TAIL4;
+          tail4.async=false;
+          document.head.appendChild(tail4);
+        };
         document.head.appendChild(tail3);
       };
       document.head.appendChild(tail2);

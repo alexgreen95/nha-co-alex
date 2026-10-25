@@ -24,9 +24,10 @@
   const TAIL5='/assets/neon-search-size-v19.js?v=20261025-2';
   const TAIL6='/assets/profile-ribbon-align-v20.js?v=20261025-3';
   const TAIL7='/assets/profile-shelf-cover-v21.js?v=20261025-3';
+  const TAIL8='/assets/neon-banner-overlay-v22.js?v=20261025-1';
 
   if(document.readyState==='loading'){
-    document.write('<script src="'+FROZEN+'"><\/script><script src="'+TAIL+'"><\/script><script src="'+TAIL2+'"><\/script><script src="'+TAIL3+'"><\/script><script src="'+TAIL4+'"><\/script><script src="'+TAIL5+'"><\/script><script src="'+TAIL6+'"><\/script><script src="'+TAIL7+'"><\/script>');
+    document.write('<script src="'+FROZEN+'"><\/script><script src="'+TAIL+'"><\/script><script src="'+TAIL2+'"><\/script><script src="'+TAIL3+'"><\/script><script src="'+TAIL4+'"><\/script><script src="'+TAIL5+'"><\/script><script src="'+TAIL6+'"><\/script><script src="'+TAIL7+'"><\/script><script src="'+TAIL8+'"><\/script>');
     return;
   }
 
@@ -61,6 +62,12 @@
                 const tail7=document.createElement('script');
                 tail7.src=TAIL7;
                 tail7.async=false;
+                tail7.onload=()=>{
+                  const tail8=document.createElement('script');
+                  tail8.src=TAIL8;
+                  tail8.async=false;
+                  document.head.appendChild(tail8);
+                };
                 document.head.appendChild(tail7);
               };
               document.head.appendChild(tail6);

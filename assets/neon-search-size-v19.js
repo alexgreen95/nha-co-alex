@@ -23,6 +23,12 @@
       height:auto!important;
       box-sizing:border-box!important;
     }
+    @media(max-width:640px){
+      html body.purplenight .art-hero .hero-panel .search{
+        width:calc(100vw - 60px)!important;
+        max-width:calc(100vw - 60px)!important;
+      }
+    }
   `;
   document.head.appendChild(style);
 })();

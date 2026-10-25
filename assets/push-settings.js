@@ -23,9 +23,10 @@
   const TAIL4='/assets/neon-mobile-reader-align-v18.js?v=20261025-1';
   const TAIL5='/assets/neon-search-size-v19.js?v=20261025-2';
   const TAIL6='/assets/profile-ribbon-align-v20.js?v=20261025-2';
+  const TAIL7='/assets/profile-shelf-cover-v21.js?v=20261025-2';
 
   if(document.readyState==='loading'){
-    document.write('<script src="'+FROZEN+'"><\/script><script src="'+TAIL+'"><\/script><script src="'+TAIL2+'"><\/script><script src="'+TAIL3+'"><\/script><script src="'+TAIL4+'"><\/script><script src="'+TAIL5+'"><\/script><script src="'+TAIL6+'"><\/script>');
+    document.write('<script src="'+FROZEN+'"><\/script><script src="'+TAIL+'"><\/script><script src="'+TAIL2+'"><\/script><script src="'+TAIL3+'"><\/script><script src="'+TAIL4+'"><\/script><script src="'+TAIL5+'"><\/script><script src="'+TAIL6+'"><\/script><script src="'+TAIL7+'"><\/script>');
     return;
   }
 
@@ -56,6 +57,12 @@
               const tail6=document.createElement('script');
               tail6.src=TAIL6;
               tail6.async=false;
+              tail6.onload=()=>{
+                const tail7=document.createElement('script');
+                tail7.src=TAIL7;
+                tail7.async=false;
+                document.head.appendChild(tail7);
+              };
               document.head.appendChild(tail6);
             };
             document.head.appendChild(tail5);

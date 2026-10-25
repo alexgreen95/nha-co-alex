@@ -4,6 +4,18 @@
   if(typeof module==='object'&&module.exports){module.exports=require('./push-settings-frozen-v14.js');return;}
   if(typeof document!=='object')return;
 
+  /* Vercel Web Analytics for this vanilla HTML/JS site. */
+  root.va=root.va||function(){(root.vaq=root.vaq||[]).push(arguments);};
+  const ensureVercelAnalytics=()=>{
+    if(document.querySelector('script[data-nca-vercel-analytics]'))return;
+    const analytics=document.createElement('script');
+    analytics.defer=true;
+    analytics.src='/_vercel/insights/script.js';
+    analytics.dataset.ncaVercelAnalytics='true';
+    document.head.appendChild(analytics);
+  };
+  ensureVercelAnalytics();
+
   const FROZEN='/assets/push-settings-frozen-v14.js?v=20261025-1';
   const TAIL='/assets/neon-reader-freshness-v15.js?v=20261025-3';
   const TAIL2='/assets/neon-controls-profile-v16.js?v=20261025-1';

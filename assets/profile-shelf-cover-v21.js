@@ -27,6 +27,11 @@
       position:absolute!important;
     }
 
+    /* Non-Neon ribbon keeps the previously approved slight overhang. */
+    html body:not(.purplenight) .profile-story-cover>.freshness-ribbon{
+      top:-4px!important;
+    }
+
     @media(min-width:721px){
       .profile-story-cover,
       .profile-story-cover.profile-resume-cover{

@@ -5,7 +5,7 @@
   if(typeof document!=='object')return;
 
   const FROZEN='/assets/push-settings-frozen-v14.js?v=20261025-1';
-  const TAIL='/assets/neon-reader-freshness-v15.js?v=20261025-2';
+  const TAIL='/assets/neon-reader-freshness-v15.js?v=20261025-3';
 
   if(document.readyState==='loading'){
     document.write('<script src="'+FROZEN+'"><\/script><script src="'+TAIL+'"><\/script>');

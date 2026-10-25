@@ -21,7 +21,7 @@
   const TAIL2='/assets/neon-controls-profile-v16.js?v=20261025-1';
   const TAIL3='/assets/neon-search-reader-home-v17.js?v=20261025-1';
   const TAIL4='/assets/neon-mobile-reader-align-v18.js?v=20261025-1';
-  const TAIL5='/assets/neon-search-size-v19.js?v=20261025-1';
+  const TAIL5='/assets/neon-search-size-v19.js?v=20261025-2';
 
   if(document.readyState==='loading'){
     document.write('<script src="'+FROZEN+'"><\/script><script src="'+TAIL+'"><\/script><script src="'+TAIL2+'"><\/script><script src="'+TAIL3+'"><\/script><script src="'+TAIL4+'"><\/script><script src="'+TAIL5+'"><\/script>');

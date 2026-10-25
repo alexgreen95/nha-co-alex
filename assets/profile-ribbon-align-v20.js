@@ -19,7 +19,7 @@
         width:100%!important;
         height:auto!important;
         min-height:0!important;
-        aspect-ratio:3/4!important;
+        aspect-ratio:2/3!important;
         box-sizing:border-box!important;
       }
       html body:not(.purplenight) .profile-story-cover:has(> .freshness-ribbon)>img{

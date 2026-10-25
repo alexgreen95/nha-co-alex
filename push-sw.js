@@ -1,5 +1,5 @@
 'use strict';
-// Push only: no fetch/cache interception, database calls or background mutations.
+// Push only: no fetch/cache interception or database calls. Click navigation is handed to the app as well as the requested URL.
 (function (scope) {
   const exact = (o, keys) => o && typeof o === 'object' && !Array.isArray(o) &&
     Object.keys(o).length === keys.length && keys.every(k => Object.hasOwn(o, k));
@@ -31,28 +31,41 @@
       story_id:d.story_id, chapter_id:d.chapter_id
     }}};
   }
-  function clickTarget(data) {
-    if (!data || typeof data !== 'object' || Array.isArray(data)) return scope.location.origin + '/';
-    const url = new URL('/', scope.location.origin);
+  function normalizedIntent(data) {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return null;
     if (data.type === 'content' && ['new_story','new_chapter'].includes(data.category) && decimal(data.story_id) &&
       (data.category === 'new_story' ? data.chapter_id === null : decimal(data.chapter_id))) {
-      url.searchParams.set('nca_push','content');
-      url.searchParams.set('category',data.category);
-      url.searchParams.set('story_id',data.story_id);
-      if (data.chapter_id !== null) url.searchParams.set('chapter_id',data.chapter_id);
-      return url.href;
+      return {type:'content',category:data.category,story_id:data.story_id,chapter_id:data.chapter_id};
     }
     if (data.type === 'personal' && ['comment','reply','mention','comment_like'].includes(data.category) && decimal(data.notification_id) &&
       ['story_id','chapter_id','comment_id'].every(k => data[k] === null || decimal(data[k]))) {
-      url.searchParams.set('nca_push','personal');
-      url.searchParams.set('category',data.category);
-      url.searchParams.set('notification_id',data.notification_id);
-      for (const key of ['story_id','chapter_id','comment_id']) if (data[key] !== null) url.searchParams.set(key,data[key]);
-      return url.href;
+      return {type:'personal',category:data.category,notification_id:data.notification_id,
+        story_id:data.story_id,chapter_id:data.chapter_id,comment_id:data.comment_id};
     }
-    return scope.location.origin + '/';
+    return null;
+  }
+  function clickTarget(intent) {
+    if (!intent) return scope.location.origin + '/';
+    const url = new URL('/', scope.location.origin);
+    url.searchParams.set('nca_push',intent.type);
+    url.searchParams.set('category',intent.category);
+    if (intent.type === 'personal') url.searchParams.set('notification_id',intent.notification_id);
+    if (intent.story_id !== null) url.searchParams.set('story_id',intent.story_id);
+    if (intent.chapter_id !== null) url.searchParams.set('chapter_id',intent.chapter_id);
+    if (intent.type === 'personal' && intent.comment_id !== null) url.searchParams.set('comment_id',intent.comment_id);
+    return url.href;
+  }
+  const messageFor = intent => ({type:'nca-push-click-v1', intent});
+  const sleep = ms => new Promise(resolve => scope.setTimeout(resolve, ms));
+  async function handoff(client, message) {
+    if (!client || typeof client.postMessage !== 'function') return;
+    for (const delay of [0,100,250,500,900,1500]) {
+      if (delay) await sleep(delay);
+      try { client.postMessage(message); } catch {}
+    }
   }
   scope.addEventListener('install', event => event.waitUntil(scope.skipWaiting()));
+  scope.addEventListener('activate', event => event.waitUntil(scope.clients.claim()));
   scope.addEventListener('push', event => {
     event.waitUntil((async () => {
       try {
@@ -66,18 +79,33 @@
   scope.addEventListener('notificationclick', event => {
     event.notification.close();
     event.waitUntil((async () => {
-      const target = clickTarget(event.notification.data);
+      const intent = normalizedIntent(event.notification.data), target = clickTarget(intent);
+      if (!intent) {
+        try { await scope.clients.openWindow(scope.location.origin + '/'); } catch {}
+        return;
+      }
+      const message = messageFor(intent);
       try {
         const windows = await scope.clients.matchAll({type:'window', includeUncontrolled:true});
-        for (const window of windows) {
-          try {
-            if (new URL(window.url).origin !== scope.location.origin || typeof window.navigate !== 'function') continue;
-            const navigated = await window.navigate(target);
-            if (navigated && typeof navigated.focus === 'function') { await navigated.focus(); return; }
-          } catch {}
+        const existing = windows.find(window => {
+          try { return new URL(window.url).origin === scope.location.origin; } catch { return false; }
+        });
+        if (existing) {
+          try { existing.postMessage(message); } catch {}
+          let client=existing;
+          try { if (typeof existing.navigate === 'function') client=(await existing.navigate(target))||existing; } catch {}
+          try { if (typeof client.focus === 'function') await client.focus(); } catch {}
+          await handoff(client,message);
+          return;
         }
-        await scope.clients.openWindow(target);
-      } catch { /* Validated IDs only; fall back silently if the platform rejects navigation. */ }
+        const opened = await scope.clients.openWindow(target);
+        if (opened) {
+          try { if (typeof opened.focus === 'function') await opened.focus(); } catch {}
+          await handoff(opened,message);
+        }
+      } catch {
+        try { await scope.clients.openWindow(target); } catch {}
+      }
     })());
   });
 })(self);

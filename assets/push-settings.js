@@ -22,9 +22,10 @@
   const TAIL3='/assets/neon-search-reader-home-v17.js?v=20261025-1';
   const TAIL4='/assets/neon-mobile-reader-align-v18.js?v=20261025-1';
   const TAIL5='/assets/neon-search-size-v19.js?v=20261025-2';
+  const TAIL6='/assets/profile-ribbon-align-v20.js?v=20261025-1';
 
   if(document.readyState==='loading'){
-    document.write('<script src="'+FROZEN+'"><\/script><script src="'+TAIL+'"><\/script><script src="'+TAIL2+'"><\/script><script src="'+TAIL3+'"><\/script><script src="'+TAIL4+'"><\/script><script src="'+TAIL5+'"><\/script>');
+    document.write('<script src="'+FROZEN+'"><\/script><script src="'+TAIL+'"><\/script><script src="'+TAIL2+'"><\/script><script src="'+TAIL3+'"><\/script><script src="'+TAIL4+'"><\/script><script src="'+TAIL5+'"><\/script><script src="'+TAIL6+'"><\/script>');
     return;
   }
 
@@ -51,6 +52,12 @@
             const tail5=document.createElement('script');
             tail5.src=TAIL5;
             tail5.async=false;
+            tail5.onload=()=>{
+              const tail6=document.createElement('script');
+              tail6.src=TAIL6;
+              tail6.async=false;
+              document.head.appendChild(tail6);
+            };
             document.head.appendChild(tail5);
           };
           document.head.appendChild(tail4);

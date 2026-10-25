@@ -25,7 +25,7 @@
         overflow:hidden!important;
       }
       html body.purplenight .story-card>.freshness-corner-shell>.freshness-ribbon{
-        right:-25px!important;
+        right:-19.5px!important;
         bottom:16px!important;
         width:90px!important;
         height:19px!important;
@@ -165,7 +165,7 @@
 
       @media(max-width:700px){
         html body.purplenight .story-card>.freshness-corner-shell>.freshness-ribbon{
-          right:-25px!important;
+          right:-19.5px!important;
           bottom:16px!important;
           width:90px!important;
           height:19px!important;

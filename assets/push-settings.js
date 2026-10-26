@@ -27,11 +27,12 @@
   const TAIL8='/assets/neon-banner-overlay-v22.js?v=20261025-1';
   const TAIL9='/assets/neon-sort-choice-v23.js?v=20261025-1';
   const TAIL10='/assets/neon-notification-tab-v28.js?v=20261026-1';
+  const TAIL11='/assets/admin-library-role-gate-v29.js?v=20261026-1';
   const PUSH_NAV='/assets/push-deeplink-v25.js?v=20261026-2';
 
   if(document.readyState==='loading'){
     /* Push receiver is first and independent: a theme-tail failure cannot suppress navigation handoff. */
-    document.write('<script src="'+PUSH_NAV+'"><\/script><script src="'+FROZEN+'"><\/script><script src="'+TAIL+'"><\/script><script src="'+TAIL2+'"><\/script><script src="'+TAIL3+'"><\/script><script src="'+TAIL4+'"><\/script><script src="'+TAIL5+'"><\/script><script src="'+TAIL6+'"><\/script><script src="'+TAIL7+'"><\/script><script src="'+TAIL8+'"><\/script><script src="'+TAIL9+'"><\/script><script src="'+TAIL10+'"><\/script>');
+    document.write('<script src="'+PUSH_NAV+'"><\/script><script src="'+FROZEN+'"><\/script><script src="'+TAIL+'"><\/script><script src="'+TAIL2+'"><\/script><script src="'+TAIL3+'"><\/script><script src="'+TAIL4+'"><\/script><script src="'+TAIL5+'"><\/script><script src="'+TAIL6+'"><\/script><script src="'+TAIL7+'"><\/script><script src="'+TAIL8+'"><\/script><script src="'+TAIL9+'"><\/script><script src="'+TAIL10+'"><\/script><script src="'+TAIL11+'"><\/script>');
     return;
   }
 
@@ -84,6 +85,12 @@
                       const tail10=document.createElement('script');
                       tail10.src=TAIL10;
                       tail10.async=false;
+                      tail10.onload=()=>{
+                        const tail11=document.createElement('script');
+                        tail11.src=TAIL11;
+                        tail11.async=false;
+                        document.head.appendChild(tail11);
+                      };
                       document.head.appendChild(tail10);
                     };
                     document.head.appendChild(tail9);

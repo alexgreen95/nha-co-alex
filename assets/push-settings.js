@@ -26,7 +26,7 @@
   const TAIL7='/assets/profile-shelf-cover-v21.js?v=20261025-3';
   const TAIL8='/assets/neon-banner-overlay-v22.js?v=20261025-1';
   const TAIL9='/assets/neon-sort-choice-v23.js?v=20261025-1';
-  const TAIL10='/assets/neon-notification-tab-v26.js?v=20261026-1';
+  const TAIL10='/assets/neon-notification-tab-v27.js?v=20261026-1';
   const PUSH_NAV='/assets/push-deeplink-v25.js?v=20261026-2';
 
   if(document.readyState==='loading'){

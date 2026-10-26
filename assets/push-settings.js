@@ -26,12 +26,19 @@
   const TAIL7='/assets/profile-shelf-cover-v21.js?v=20261025-3';
   const TAIL8='/assets/neon-banner-overlay-v22.js?v=20261025-1';
   const TAIL9='/assets/neon-sort-choice-v23.js?v=20261025-1';
-  const TAIL10='/assets/push-deeplink-v25.js?v=20261026-1';
+  const PUSH_NAV='/assets/push-deeplink-v25.js?v=20261026-2';
 
   if(document.readyState==='loading'){
-    document.write('<script src="'+FROZEN+'"><\/script><script src="'+TAIL+'"><\/script><script src="'+TAIL2+'"><\/script><script src="'+TAIL3+'"><\/script><script src="'+TAIL4+'"><\/script><script src="'+TAIL5+'"><\/script><script src="'+TAIL6+'"><\/script><script src="'+TAIL7+'"><\/script><script src="'+TAIL8+'"><\/script><script src="'+TAIL9+'"><\/script><script src="'+TAIL10+'"><\/script>');
+    /* Push receiver is first and independent: a theme-tail failure cannot suppress navigation handoff. */
+    document.write('<script src="'+PUSH_NAV+'"><\/script><script src="'+FROZEN+'"><\/script><script src="'+TAIL+'"><\/script><script src="'+TAIL2+'"><\/script><script src="'+TAIL3+'"><\/script><script src="'+TAIL4+'"><\/script><script src="'+TAIL5+'"><\/script><script src="'+TAIL6+'"><\/script><script src="'+TAIL7+'"><\/script><script src="'+TAIL8+'"><\/script><script src="'+TAIL9+'"><\/script>');
     return;
   }
+
+  /* Dynamic path: start push navigation independently before the frozen/theme chain. */
+  const pushNav=document.createElement('script');
+  pushNav.src=PUSH_NAV;
+  pushNav.async=false;
+  document.head.appendChild(pushNav);
 
   const old=document.createElement('script');
   old.src=FROZEN;
@@ -72,12 +79,6 @@
                     const tail9=document.createElement('script');
                     tail9.src=TAIL9;
                     tail9.async=false;
-                    tail9.onload=()=>{
-                      const tail10=document.createElement('script');
-                      tail10.src=TAIL10;
-                      tail10.async=false;
-                      document.head.appendChild(tail10);
-                    };
                     document.head.appendChild(tail9);
                   };
                   document.head.appendChild(tail8);

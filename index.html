@@ -2387,6 +2387,7 @@ function openCommentLocation(storyId,chapterIndex,paraIndex,commentId=null){
 function focusExactComment(commentId){
  const el=document.querySelector(`.comment-item[data-comment-id="${CSS.escape(String(commentId))}"]`);
  if(!el)return;
+ window.NcaReaderPosition?.cancel();
  el.scrollIntoView({behavior:'smooth',block:'center'});
  el.classList.add('jump-flash');
  setTimeout(()=>el.classList.remove('jump-flash'),1800);
@@ -2437,13 +2438,14 @@ async function read(id,chapterOverride=null,updateRoute=true){
  let pr=progress[id]||{chapter:0,scroll:0};
  currentChapter=chapterOverride===null?Math.min(pr.chapter||0,s.chapters.length-1):chapterOverride;
  if(updateRoute)setRoute(chapterPath(s,currentChapter));
- return paintRequestedChapter(s,currentChapter,chapterOverride===null ? (pr.scroll||0) : 0,navigationEpoch);
+ const resume=window.NcaReaderPosition?.consume(s,currentChapter,chapterOverride,updateRoute);
+ return paintRequestedChapter(s,currentChapter,resume?resume.scroll:chapterOverride===null ? (pr.scroll||0) : 0,navigationEpoch,resume);
 }
-async function paintRequestedChapter(story,chapter,restoreScroll,epoch){
+async function paintRequestedChapter(story,chapter,restoreScroll,epoch,resume=null){
  await ensureChapterContent(story,chapter);
  if(currentStory!==story||currentChapter!==chapter||navigationEpoch!==epoch)return;
  const accounting=recordStoryView(story.id);
- renderChapter(restoreScroll);
+ renderChapter(restoreScroll,resume);
  // Keep read() completion/accounting semantics while allowing the text to paint first.
  await accounting;
 }
@@ -2474,7 +2476,7 @@ function backToCurrentStory(){
  if(!currentStory)return;
  openStory(currentStory.id,true);
 }
-function renderChapter(restoreScroll=0){
+function renderChapter(restoreScroll=0,resume=null){
  let s=currentStory,ch=s.chapters[currentChapter];
  const imagesByParagraph=new Map();
  for(const image of (ch.images||[])){
@@ -2509,8 +2511,9 @@ function renderChapter(restoreScroll=0){
  const ongoing=s.status!=='completed';
  tbc.classList.toggle('hidden',!(isLast&&ongoing));
  renderToc();
+ window.NcaReaderPosition?.didRender(s,currentChapter);
  setReadingProgress(s.id,currentChapter,restoreScroll||0,true);
- requestAnimationFrame(()=>window.scrollTo(0,restoreScroll||0));
+ requestAnimationFrame(()=>{if(resume)window.NcaReaderPosition?.restore(resume);else window.scrollTo(0,restoreScroll||0)});
 }
 async function moveChapter(n){
  if(!currentStory)return;
@@ -2981,7 +2984,7 @@ function addChapterComment(){
 }
 
 function jumpToParagraph(k){let el=document.getElementById('para_'+k);if(!el)return;el.scrollIntoView({behavior:'smooth',block:'center'});el.classList.add('jump-flash');toggleComments(k,true);setTimeout(()=>el.classList.remove('jump-flash'),1700)}
-function jumpToParagraphOnly(k){const el=document.getElementById('para_'+k);if(!el)return;el.scrollIntoView({behavior:'smooth',block:'center'});el.classList.add('jump-flash');setTimeout(()=>el.classList.remove('jump-flash'),1700)}
+function jumpToParagraphOnly(k){const el=document.getElementById('para_'+k);if(!el)return;window.NcaReaderPosition?.cancel();el.scrollIntoView({behavior:'smooth',block:'center'});el.classList.add('jump-flash');setTimeout(()=>el.classList.remove('jump-flash'),1700)}
 document.addEventListener('click',event=>{
  const group=event.target.closest('[data-chapter-comment-jump]');
  if(!group||event.target.closest('button,a,input,textarea,select,form,.comment-owner-menu'))return;
@@ -3914,7 +3917,7 @@ document.addEventListener('click',e=>{
 
 window.addEventListener('scroll',()=>{
  document.getElementById('topBtn').style.display=window.scrollY>350?'grid':'none';
- if(currentStory){
+ if(currentStory&&!window.NcaReaderPosition?.isRestoring()){
   clearTimeout(saveScrollTimer);
   const story=currentStory,chapter=currentChapter,scroll=window.scrollY,owner=authUser?.id||null;
   saveScrollTimer=setTimeout(()=>{

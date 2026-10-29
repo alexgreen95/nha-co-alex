@@ -28,7 +28,7 @@
   const TAIL9='/assets/neon-sort-choice-v23.js?v=20261025-1';
   const TAIL10='/assets/neon-notification-tab-v28.js?v=20261026-1';
   const TAIL11='/assets/admin-library-role-gate-v29.js?v=20261026-1';
-  const TAIL12='/assets/reader-reload-position-v30.js?v=20261029-1';
+  const TAIL12='/assets/reader-reload-position-v30.js?v=20261029-2';
   const PUSH_NAV='/assets/push-deeplink-v25.js?v=20261026-2';
 
   if(document.readyState==='loading'){

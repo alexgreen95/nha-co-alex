@@ -26,7 +26,7 @@ async function fixture({signed=false,gate=true}={}){
     };requestAnimationFrame(sample);
     if(signed){let sdk;Object.defineProperty(window,'supabase',{configurable:true,get:()=>sdk,set:v=>{sdk=v;const create=v.createClient;v.createClient=(...args)=>{const c=create(...args),session={user:{id:'reader',user_metadata:{full_name:'Reader'}}};c.auth.getSession=async()=>({data:{session}});c.auth.onAuthStateChange=cb=>{queueMicrotask(()=>cb('INITIAL_SESSION',session));return {data:{subscription:{unsubscribe(){}}}}};return c}}});}
   },{signed});
-  await page.route('**/*',async route=>{
+  await context.route('**/*',async route=>{
     const req=route.request(),url=new URL(req.url());
     if(url.hostname==='cdn.jsdelivr.net')return route.fulfill({contentType:'application/javascript',body:sdk});
     if(url.hostname==='fonts.googleapis.com')return route.fulfill({contentType:'text/css',body:''});
@@ -56,6 +56,7 @@ async function fixture({signed=false,gate=true}={}){
     if(table==='nca_chapter_like_counts')data=(body.p_chapter_ids||[]).map(chapter_id=>({chapter_id,like_count:0}));
     if(table==='nca_story_comment_counts')data=[{story_id:1,comment_count:0}];
     if(table==='nca_profile_comment_count')data=0;
+    if(table==='nca_comment_like_counts')data=(body.p_comment_ids||[]).map(comment_id=>({comment_id,like_count:0}));
     if(table==='nca_comment_activity_page')data={status:'ok',rows:[],has_more:false,next_cursor:null,page_size:body.p_limit||6};
     if(['nca_story_comment_root_page','nca_context_comment_root_page','nca_comment_thread_page','nca_comment_target_path'].includes(table))data=commentPagesFixture(table,body,fixtures,signed?'reader':null);
     if(table==='nca_chapter_comment_counts')data={story_id:1,chapter_index:body.p_chapter_index,chapter_comment_count:0,paragraph_counts:(body.p_paragraph_indices||[]).map(paragraph_index=>({paragraph_index,comment_count:0}))};

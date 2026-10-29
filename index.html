@@ -3203,6 +3203,7 @@ async function fetchAllRows(table,orderCol,columns='*'){const out=[];for(let fro
 
 // V21.9 — cloud-first cover + public stats so incognito/other devices see the same values.
 let publicMetadataRevision=0,publicMetadataSnapshot=null,publicRefreshGeneration=0,publicRefreshFlight=null;
+let publicChapterTimestampSnapshot=null;
 function refreshPublicStoryCloudFields({forceFresh=false,metadataSnapshot=null}={}){
  const target=stories,account=activateChapterLikeAccount();
  const storyIds=target.map(story=>String(story.id)).sort(),chapterIds=loadedChapterLikeIds();
@@ -3249,6 +3250,7 @@ storyLikeTotal=function(story){ return _storyLikeTotalV219(story); };
 async function loadCloudStories(){
  const revision=++publicMetadataRevision;
  ++publicRefreshGeneration;publicRefreshFlight=null;publicMetadataSnapshot=null;
+ publicChapterTimestampSnapshot=null;
  try{
   // V21.15: tải metadata + danh sách chương trước để Trang chủ hiện nhanh.
   // Nội dung paragraph chỉ tải khi người đọc thật sự mở chương đó.
@@ -3256,6 +3258,7 @@ async function loadCloudStories(){
   if(revision!==publicMetadataRevision)return false;
   const storyRows=results[0].status==='fulfilled'?results[0].value:[];
   const chapterRows=results[1].status==='fulfilled'?results[1].value:[];
+  if(results[1].status==='fulfilled')publicChapterTimestampSnapshot={revision,rows:chapterRows.map(({story_id,published,created_at,updated_at})=>({story_id,published,created_at,updated_at}))};
   if(results[1].status==='rejected')console.warn('chapter cloud read',results[1].reason);
   if(!storyRows.length){console.warn('Không đọc được truyện công khai từ Supabase hoặc bảng stories đang trống.');return false;}
   const chaptersByStory={};

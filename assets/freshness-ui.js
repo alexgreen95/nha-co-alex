@@ -169,12 +169,16 @@
     root.render=wrapped;
   }
 
-  async function refreshChapterUpdateTimes(){
+  async function refreshChapterUpdateTimes({reuseBootstrap=false}={}){
     if(chapterUpdateFlight)return chapterUpdateFlight;
     if(typeof root.fetchAllRows!=='function')return;
     chapterUpdateFlight=(async()=>{
       try{
-        const rows=await root.fetchAllRows('chapters','id','story_id,published,created_at,updated_at');
+        // Only bootstrap may reuse this snapshot; visibility refreshes still read fresh timestamps.
+        if(reuseBootstrap&&typeof authMetadataReady!=='undefined')await authMetadataReady;
+        const snapshot=reuseBootstrap&&typeof publicChapterTimestampSnapshot!=='undefined'?publicChapterTimestampSnapshot:null;
+        const rows=snapshot&&snapshot.revision===publicMetadataRevision?snapshot.rows
+          :await root.fetchAllRows('chapters','id','story_id,published,created_at,updated_at');
         const next=new Map();
         for(const row of rows){
           if(row?.published===false)continue;
@@ -413,7 +417,7 @@
       void reload();
       void refreshChapterUpdateTimes();
     });
-    void refreshChapterUpdateTimes();
+    void refreshChapterUpdateTimes({reuseBootstrap:true});
     void reload();
   }
 

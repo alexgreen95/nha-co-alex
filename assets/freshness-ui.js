@@ -7,6 +7,7 @@
   let refreshQueued=false;
   let expiryTimer=null;
   let activeCompletion=null;
+  let reloadFlight=null;
   let latestChapterUpdatedByStory=new Map();
   let chapterUpdateFlight=null;
 
@@ -368,14 +369,22 @@
     }
   }
 
-  async function reload(){
+  function reload(){
     if(!controller)return;
+    const account=typeof authUser==='undefined'||!authUser?null:authUser.id;
+    if(reloadFlight?.account===account)return reloadFlight.promise;
+    const job={account};
+    reloadFlight=job;
     controller.reset();
     activeCompletion=null;
-    try{await controller.load();}catch(error){console.warn('freshness load',error);}
-    configureNotificationRoleTab();
-    queueFreshnessRefresh();
-    scheduleExpiryReload();
+    job.promise=(async()=>{
+      try{await controller.load();}catch(error){console.warn('freshness load',error);}
+      if(reloadFlight!==job||account!==(typeof authUser==='undefined'||!authUser?null:authUser.id))return;
+      configureNotificationRoleTab();
+      queueFreshnessRefresh();
+      scheduleExpiryReload();
+    })().finally(()=>{if(reloadFlight===job)reloadFlight=null;});
+    return job.promise;
   }
 
   function boot(){

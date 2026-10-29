@@ -2437,9 +2437,15 @@ async function read(id,chapterOverride=null,updateRoute=true){
  let pr=progress[id]||{chapter:0,scroll:0};
  currentChapter=chapterOverride===null?Math.min(pr.chapter||0,s.chapters.length-1):chapterOverride;
  if(updateRoute)setRoute(chapterPath(s,currentChapter));
- await ensureChapterContent(s,currentChapter);
- await recordStoryView(s.id);
- renderChapter(chapterOverride===null ? (pr.scroll||0) : 0);
+ return paintRequestedChapter(s,currentChapter,chapterOverride===null ? (pr.scroll||0) : 0,navigationEpoch);
+}
+async function paintRequestedChapter(story,chapter,restoreScroll,epoch){
+ await ensureChapterContent(story,chapter);
+ if(currentStory!==story||currentChapter!==chapter||navigationEpoch!==epoch)return;
+ const accounting=recordStoryView(story.id);
+ renderChapter(restoreScroll);
+ // Keep read() completion/accounting semantics while allowing the text to paint first.
+ await accounting;
 }
 function isImportedChapterMetadata(text,index=0){
  if(index!==0)return false;
@@ -2513,10 +2519,7 @@ async function moveChapter(n){
  currentChapter=next;
  setRoute(chapterPath(currentStory,currentChapter));
  // Progress/recency is recorded once by renderChapter after the content is ready.
- // V21.17: chương được tải lazy từ Supabase, nên phải đợi nội dung cloud trước khi render.
- await ensureChapterContent(currentStory,currentChapter);
- await recordStoryView(currentStory.id);
- renderChapter(0);
+ return paintRequestedChapter(currentStory,currentChapter,0,navigationEpoch);
 }
 function renderToc(){
  if(!currentStory)return;
@@ -2528,10 +2531,7 @@ async function goChapter(i){
  setRoute(chapterPath(currentStory,i));
  // Progress/recency is recorded once by renderChapter after the content is ready.
  toggleToc(false);
- // V21.17: chọn chương từ mục lục cũng phải tải paragraph từ Supabase trước.
- await ensureChapterContent(currentStory,i);
- await recordStoryView(currentStory.id);
- renderChapter(0);
+ return paintRequestedChapter(currentStory,i,0,navigationEpoch);
 }
 function toggleToc(force){toggleFontMenu(false);
  const t=document.getElementById('toc'),b=document.getElementById('drawerBackdrop');

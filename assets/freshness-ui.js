@@ -338,10 +338,11 @@
       if(name==='moveChapter'&&Number(args[0])>0&&activeCompletionCurrent())void finishActiveChapter();
       const result=original.apply(this,args);
       const routeFlag=name==='read'?args[2]:true;
+      const target=currentChapterDescriptor(),epoch=typeof navigationEpoch==='number'?navigationEpoch:null;
       if(routeFlag!==false){
         Promise.resolve(result).then(()=>{
           const current=currentChapterDescriptor();
-          if(!current)return;
+          if(!current||!target||current.storyId!==target.storyId||current.chapterId!==target.chapterId||epoch!==null&&navigationEpoch!==epoch+1)return;
           controller?.ackChapterOpen(current.storyId,current.chapterId).catch(()=>{});
           armChapterCompletion(current.storyId,current.chapterId);
         }).catch(()=>{});

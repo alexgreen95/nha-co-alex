@@ -9,7 +9,7 @@ function fixture(record,{type='navigate',url=readerPath,user=null,local=null,clo
   c.window=c;vm.createContext(c);vm.runInContext(source,c);return {c,story,events,get cloudCalls(){return cloudCalls},take:(explicit=0,update=false)=>c.NcaReaderPosition.consume(story,0,explicit,update)};
 }
 test('exact surviving tab snapshot wins over per-story fallback on reload and re-entry',async()=>{
-  for(const type of ['navigate','reload']){
+  for(const type of ['navigate','reload','back_forward']){
     const f=fixture(saved(),{type,url:readerPath+'/',local:{...saved(),scroll:350}});assert.equal((await f.take()).scroll,600);assert.equal(await f.take(),null);assert.equal(f.c.history.scrollRestoration,'manual');
     const signed=fixture({...saved(),owner:'user:A'},{type,user:{id:'A'}});assert.equal((await signed.take()).scroll,600);assert.equal(signed.cloudCalls,0);
   }
@@ -18,7 +18,7 @@ for(const [label,patch] of [['other tab',{tab:'unrelated'}],['other path',{path:
   const f=fixture({...saved(),...patch},{local:{...saved(),scroll:350}});assert.equal((await f.take()).scroll,350);
 });
 test('fresh context reads guest progress by exact story/chapter, independently of navigation type',async()=>{
-  for(const type of ['navigate','reload'])assert.equal((await fixture(null,{type,local:saved()}).take()).scroll,600);
+  for(const type of ['navigate','reload','back_forward'])assert.equal((await fixture(null,{type,local:saved()}).take()).scroll,600);
   for(const patch of [{storyId:'2'},{chapterId:'11'},{owner:'user:A'},{scroll:-1}])assert.equal((await fixture(null,{local:{...saved(),...patch}}).take()).scroll,0);
 });
 test('account snapshot cannot leak into another account or guest, and guest storage cannot leak into signed',async()=>{
@@ -28,7 +28,8 @@ test('account snapshot cannot leak into another account or guest, and guest stor
 });
 test('interactive chapter selection, Continue and history traversal keep their existing positioning',async()=>{
   assert.equal(await fixture(saved()).take(0,true),null);assert.equal(await fixture(saved()).take(null,true),null);
-  assert.equal((await fixture(saved(),{type:'back_forward'}).take()).native,true);
+  const live=fixture(saved(),{type:'back_forward'});live.events.get('popstate')();live.c.navigationEpoch++;
+  assert.equal((await live.take()).native,true);
 });
 test('unowned old snapshots cannot establish account scope; fall back to per-story progress',async()=>{
   for(const old of [{path:readerPath,scroll:600,at:Date.now()},{...saved(),owner:undefined}]){

@@ -5,7 +5,6 @@
   const STORAGE_KEY='nca_reader_reload_position_v1',GUEST_PREFIX='nca_reader_progress_v1:guest:',MAX_AGE=6*60*60*1000,TAB_PREFIX='nca-reader-tab:';
   const cleanPath=path=>String(path||'').replace(/\/+$/,'');
   const readerPath=path=>/^\/truyen\/[^/]+\/chuong-\d+$/.test(cleanPath(path));
-  const navigation=performance.getEntriesByType?.('navigation')[0]?.type||({0:'navigate',1:'reload',2:'back_forward'})[performance.navigation?.type];
   let tab=null,candidate=null,active=null,rendered=null,frame=0,consumed=false,historyEpoch=null,progressUnknown=false;
   let guestTimer=null,guestPending=null,guestSince=0;
   const owner=()=>typeof authUser==='undefined'||!authUser?'guest':'user:'+authUser.id;
@@ -75,7 +74,9 @@
     return !!candidate||!!active||progressUnknown;
   }
   async function consume(story,chapter,explicit,updateRoute){
-    const traversal=historyEpoch===navigationEpoch||!consumed&&navigation==='back_forward';historyEpoch=null;
+    // Only a popstate in this live context establishes history traversal. A cold
+    // document may report NavigationTiming back_forward without retaining native scroll.
+    const traversal=historyEpoch===navigationEpoch;historyEpoch=null;
     if(traversal&&explicit!==null&&updateRoute===false){consumed=true;cancel();return {native:true,scroll:0};}
     if(consumed)return null;consumed=true;
     const target=identity(story,chapter);
@@ -141,6 +142,7 @@
   const flush=()=>{departing();flushGuest();};
   root.addEventListener('pagehide',flush);root.addEventListener('beforeunload',flush);
   document.addEventListener('visibilitychange',()=>{if(document.hidden)flush();});
+  root.addEventListener('pageshow',event=>{if(event.persisted)cancel();}); // BFCache retains this document and its native position.
   root.addEventListener('popstate',()=>{cancel();historyEpoch=navigationEpoch+1;});
   for(const type of ['wheel','touchstart','pointerdown'])root.addEventListener(type,cancel,{passive:true});
   root.addEventListener('keydown',event=>{if(['ArrowUp','ArrowDown','PageUp','PageDown','Home','End',' '].includes(event.key))cancel();});

@@ -2438,12 +2438,43 @@ async function read(id,chapterOverride=null,updateRoute=true){
  let pr=progress[id]||{chapter:0,scroll:0};
  currentChapter=chapterOverride===null?Math.min(pr.chapter||0,s.chapters.length-1):chapterOverride;
  if(updateRoute)setRoute(chapterPath(s,currentChapter));
- const resume=window.NcaReaderPosition?.consume(s,currentChapter,chapterOverride,updateRoute);
- return paintRequestedChapter(s,currentChapter,resume?resume.scroll:chapterOverride===null ? (pr.scroll||0) : 0,navigationEpoch,resume);
+ const chapter=currentChapter,epoch=navigationEpoch,owner=authUser?.id||null;
+ const resume=await window.NcaReaderPosition?.consume(s,chapter,chapterOverride,updateRoute);
+ if(resume?.cancelled||currentStory!==s||currentChapter!==chapter||navigationEpoch!==epoch||(authUser?.id||null)!==owner)return;
+ return paintRequestedChapter(s,chapter,resume?resume.scroll:chapterOverride===null ? (pr.scroll||0) : 0,epoch,resume);
+}
+async function initialReaderProgress(story,chapter){
+ const state=activateMemberSync(),sid=Number(story.id);
+ if(!state)return {scroll:0};
+ const epoch=state.epoch;
+ const known=()=>{
+  const value=state.dirty.get(sid)||(state.progressReady?progress[sid]:null);
+  if(value)return {scroll:value.chapter===chapter?value.scroll:0};
+  return state.progressReady?{scroll:0}:null;
+ };
+ const current=()=>memberSyncCurrent(state,epoch);
+ const decision=value=>({...value,recheck:()=>current()?known():{cancelled:true}});
+ if(known())return decision(known());
+ // Read only this story. Do not wait for saved stories, chapter maps or unrelated member data.
+ const controller=new AbortController(),signal=state.controller.signal,abort=()=>controller.abort(),timer=setTimeout(abort,5000);
+ signal.addEventListener('abort',abort,{once:true});
+ try{
+  const result=await sb.from('reading_progress').select('story_id,chapter_id,scroll_position,updated_at').eq('user_id',state.owner).eq('story_id',sid).maybeSingle().abortSignal(controller.signal);
+  if(!current())return {cancelled:true};
+  if(known())return decision(known()); // Existing dirty/hydration guards remain authoritative over an older response.
+  if(result.error)return decision({scroll:0,skipProgress:true});
+  const row=result.data,scroll=row&&String(row.chapter_id)===String(story.chapters[chapter]?.id)?Number(row.scroll_position):0;
+  return decision({scroll:Number.isFinite(scroll)&&scroll>=0?scroll:0});
+ }catch{return current()?decision(known()||{scroll:0,skipProgress:true}):{cancelled:true};}
+ finally{clearTimeout(timer);signal.removeEventListener('abort',abort);}
 }
 async function paintRequestedChapter(story,chapter,restoreScroll,epoch,resume=null){
  await ensureChapterContent(story,chapter);
  if(currentStory!==story||currentChapter!==chapter||navigationEpoch!==epoch)return;
+ // Content can finish after member hydration or a newer local write. Recheck memory only before first paint.
+ const latest=resume?.recheck?.();
+ if(latest?.cancelled)return;
+ if(latest){restoreScroll=resume.scroll=latest.scroll;resume.skipProgress=latest.skipProgress===true;}
  const accounting=recordStoryView(story.id);
  renderChapter(restoreScroll,resume);
  // Keep read() completion/accounting semantics while allowing the text to paint first.
@@ -2511,8 +2542,8 @@ function renderChapter(restoreScroll=0,resume=null){
  const ongoing=s.status!=='completed';
  tbc.classList.toggle('hidden',!(isLast&&ongoing));
  renderToc();
- window.NcaReaderPosition?.didRender(s,currentChapter);
- setReadingProgress(s.id,currentChapter,restoreScroll||0,true);
+ window.NcaReaderPosition?.didRender(s,currentChapter,resume);
+ if(!resume?.skipProgress)setReadingProgress(s.id,currentChapter,restoreScroll||0,true);
  requestAnimationFrame(()=>{if(resume)window.NcaReaderPosition?.restore(resume);else window.scrollTo(0,restoreScroll||0)});
 }
 async function moveChapter(n){

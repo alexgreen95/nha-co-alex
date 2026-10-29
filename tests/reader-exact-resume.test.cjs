@@ -14,7 +14,7 @@ async function at(page,y){
 async function place(page,y=600){
   await settled(page);await page.evaluate(y=>scrollTo({top:y,behavior:'instant'}),y);
   await page.waitForFunction(({key,y})=>JSON.parse(sessionStorage.getItem(key)||'{}').scroll===y,{key,y});
-  await page.waitForTimeout(150);
+  await page.waitForTimeout(300);
 }
 async function delayed(f){
   f.fixtures.comments=[{id:'1',story_id:1,user_id:'reader',scope:'chapter',chapter_index:0,paragraph_index:null,parent_id:null,reply_to_user_id:null,content:'A delayed comment',created_at:'2026-10-29T00:00:00Z'}];
@@ -64,13 +64,13 @@ test('Back/Forward retains the existing route behavior without consuming a resum
     assert.equal(await f.page.evaluate(()=>history.scrollRestoration),'auto');assert.deepEqual(f.errors,[]);
   }finally{await f.close();}
 });
-test('new opener tab ignores a copied sessionStorage snapshot and leaves its source tab intact',async()=>{
+test('new opener tab falls back to shared guest progress and leaves its source tab intact',async()=>{
   const f=await browser.fixture();try{
     await f.page.goto(f.base+chapter,{waitUntil:'load'});await place(f.page);
     const owner=await f.page.evaluate(()=>window.name);
     await f.context.addInitScript(key=>{window.inheritedReaderSnapshot=sessionStorage.getItem(key)},key);
     const opened=f.context.waitForEvent('page');await f.page.evaluate(url=>window.open(url,'_blank'),f.base+chapter);const child=await opened;
-    await at(child,0);assert.notEqual(await child.evaluate(()=>window.name),owner);
+    await at(child,600);assert.notEqual(await child.evaluate(()=>window.name),owner);
     assert.equal(await child.evaluate(()=>JSON.parse(inheritedReaderSnapshot).scroll),600);
     assert.equal(await f.page.evaluate(()=>scrollY),600);await child.close();assert.deepEqual(f.errors,[]);
   }finally{await f.close();}
@@ -80,7 +80,7 @@ test('same-path snapshot does not match a different story/chapter identity or an
     await f.page.goto(f.base+chapter,{waitUntil:'load'});await place(f.page);
     const original=await f.page.evaluate(key=>JSON.parse(sessionStorage.getItem(key)),key);
     for(const patch of [{storyId:'999'},{chapterId:'999'},{at:Date.now()-7*60*60*1000},{at:Date.now()+60000},{scroll:-1}]){
-      await f.page.addInitScript(({key,record})=>sessionStorage.setItem(key,JSON.stringify(record)),{key,record:{...original,...patch}});
+      await f.page.addInitScript(({key,record})=>{localStorage.removeItem('nca_reader_progress_v1:guest:1');sessionStorage.setItem(key,JSON.stringify(record))},{key,record:{...original,...patch}});
       await f.page.goto(f.base+chapter,{waitUntil:'load'});await at(f.page,0);
     }assert.deepEqual(f.errors,[]);
   }finally{await f.close();}

@@ -1,37 +1,63 @@
-/* Same-tab, exact-chapter resume. Initial positioning never uses smooth scrolling. */
+/* Initial/direct entry resumes this tab, then this story's progress; targets and history own their scroll. */
 (function(root){
   'use strict';
   if(typeof root!=='object'||typeof document!=='object')return;
-  const STORAGE_KEY='nca_reader_reload_position_v1',MAX_AGE=6*60*60*1000,TAB_PREFIX='nca-reader-tab:';
+  const STORAGE_KEY='nca_reader_reload_position_v1',GUEST_PREFIX='nca_reader_progress_v1:guest:',MAX_AGE=6*60*60*1000,TAB_PREFIX='nca-reader-tab:';
   const cleanPath=path=>String(path||'').replace(/\/+$/,'');
   const readerPath=path=>/^\/truyen\/[^/]+\/chuong-\d+$/.test(cleanPath(path));
   const navigation=performance.getEntriesByType?.('navigation')[0]?.type||({0:'navigate',1:'reload',2:'back_forward'})[performance.navigation?.type];
-  let tab=null,candidate=null,active=null,rendered=null,frame=0,consumed=false,historyEpoch=null;
+  let tab=null,candidate=null,active=null,rendered=null,frame=0,consumed=false,historyEpoch=null,progressUnknown=false;
+  let guestTimer=null,guestPending=null,guestSince=0;
+  const owner=()=>typeof authUser==='undefined'||!authUser?'guest':'user:'+authUser.id;
   try{
     // sessionStorage may be copied to an opener's new tab; window.name is not.
     if(!new RegExp('^'+TAB_PREFIX+'[a-f0-9-]{32,36}$').test(root.name||''))root.name=TAB_PREFIX+(root.crypto.randomUUID?.()||Array.from(root.crypto.getRandomValues(new Uint8Array(16)),v=>v.toString(16).padStart(2,'0')).join(''));
     tab=root.name;
     const saved=JSON.parse(sessionStorage.getItem(STORAGE_KEY)||'null'),age=Date.now()-saved?.at;
-    const modern=saved?.version===2&&saved.tab===tab&&typeof saved.storyId==='string'&&typeof saved.chapterId==='string';
-    const legacy=navigation==='reload'&&saved?.version===undefined; // One-time upgrade from the previous reload-only snapshot.
-    if(saved&&saved.version===undefined&&!legacy)sessionStorage.removeItem(STORAGE_KEY);
-    if((navigation==='reload'||navigation==='navigate')&&(modern||legacy)&&saved&&readerPath(saved.path)&&cleanPath(saved.path)===cleanPath(location.pathname)&&typeof saved.scroll==='number'&&Number.isFinite(saved.scroll)&&saved.scroll>=0&&Number.isFinite(age)&&age>=0&&age<=MAX_AGE)candidate=saved;
+    const modern=saved?.version===2&&saved.tab===tab&&typeof saved.owner==='string'&&typeof saved.storyId==='string'&&typeof saved.chapterId==='string';
+    // Old unowned records cannot establish account scope; use normal per-story progress instead.
+    if(modern&&readerPath(saved.path)&&cleanPath(saved.path)===cleanPath(location.pathname)&&typeof saved.scroll==='number'&&Number.isFinite(saved.scroll)&&saved.scroll>=0&&Number.isFinite(age)&&age>=0&&age<=MAX_AGE)candidate=saved;
   }catch{}
+
+  function flushGuest(){
+    root.clearTimeout(guestTimer);guestTimer=null;guestSince=0;
+    const value=guestPending;guestPending=null;
+    if(!value||owner()!=='guest')return;
+    try{
+      const key=GUEST_PREFIX+value.storyId,old=JSON.parse(localStorage.getItem(key)||'null');
+      if(!old||!(old.at>value.at))localStorage.setItem(key,JSON.stringify(value));
+    }catch{}
+  }
+  function queueGuest(value){
+    if(owner()!=='guest')return;
+    if(guestPending&&guestPending.storyId!==value.storyId)flushGuest();
+    guestPending={version:1,owner:'guest',...value,at:Date.now()};
+    if(!guestSince)guestSince=Date.now();
+    root.clearTimeout(guestTimer);
+    guestTimer=root.setTimeout(flushGuest,Math.max(0,Math.min(250,1000-(Date.now()-guestSince))));
+  }
+  function guestProgress(target){
+    let value=null;
+    try{value=JSON.parse(localStorage.getItem(GUEST_PREFIX+target.storyId)||'null');}catch{}
+    if(value?.owner!=='guest'||value.storyId!==target.storyId||value.chapterId!==target.chapterId||cleanPath(value.path)!==target.path||typeof value.scroll!=='number'||!Number.isFinite(value.scroll)||value.scroll<0||!Number.isFinite(value.at)||value.at>Date.now())return {scroll:0};
+    return {scroll:value.scroll};
+  }
 
   function identity(story,chapter){
     const row=story?.chapters?.[chapter];
     return row?{storyId:String(story.id),chapterId:String(row.id),path:cleanPath(chapterPath(story,chapter))}:null;
   }
   function current(job){
-    return active===job&&rendered?.storyId===job.storyId&&rendered?.chapterId===job.chapterId&&cleanPath(location.pathname)===job.path&&navigationEpoch===job.epoch&&!document.getElementById('reader')?.classList.contains('hidden');
+    return active===job&&owner()===job.owner&&rendered?.storyId===job.storyId&&rendered?.chapterId===job.chapterId&&cleanPath(location.pathname)===job.path&&navigationEpoch===job.epoch&&!document.getElementById('reader')?.classList.contains('hidden');
   }
   function persist(value){
     if(!tab)return;
-    try{sessionStorage.setItem(STORAGE_KEY,JSON.stringify({version:2,tab,...value,at:Date.now()}));}catch{}
+    try{sessionStorage.setItem(STORAGE_KEY,JSON.stringify({version:2,tab,owner:owner(),...value,at:Date.now()}));}catch{}
+    queueGuest(value);
   }
   function snapshot(){
     frame=0;
-    if(candidate||active||!rendered||!readerPath(location.pathname)||cleanPath(location.pathname)!==rendered.path||document.getElementById('reader')?.classList.contains('hidden'))return;
+    if(candidate||active||progressUnknown||!rendered||rendered.owner!==owner()||!readerPath(location.pathname)||cleanPath(location.pathname)!==rendered.path||document.getElementById('reader')?.classList.contains('hidden'))return;
     // A URL can advance while the old chapter DOM is still visible.
     const actual=typeof currentStory==='undefined'?null:identity(currentStory,currentChapter);
     if(actual?.storyId!==rendered.storyId||actual?.chapterId!==rendered.chapterId)return;
@@ -40,25 +66,33 @@
   function queueSnapshot(){if(!frame)frame=root.requestAnimationFrame(snapshot);}
   function cancel(){
     candidate=null;
+    progressUnknown=false;
     const job=active;active=null;
     if(job){job.observer?.disconnect();if(job.frame)root.cancelAnimationFrame(job.frame);job.cleanup?.();if(job.historyMode!==undefined)history.scrollRestoration=job.historyMode;}
   }
   function restoring(){
-    if(active&&(active.epoch!==undefined?!current(active):navigationEpoch!==active.requestEpoch||cleanPath(location.pathname)!==active.path))cancel();
-    return !!candidate||!!active;
+    if(active&&(active.epoch!==undefined?!current(active):owner()!==active.owner||navigationEpoch!==active.requestEpoch||cleanPath(location.pathname)!==active.path))cancel();
+    return !!candidate||!!active||progressUnknown;
   }
-  function consume(story,chapter,explicit,updateRoute){
+  async function consume(story,chapter,explicit,updateRoute){
     const traversal=historyEpoch===navigationEpoch||!consumed&&navigation==='back_forward';historyEpoch=null;
     if(traversal&&explicit!==null&&updateRoute===false){consumed=true;cancel();return {native:true,scroll:0};}
     if(consumed)return null;consumed=true;
-    const saved=candidate;candidate=null;
     const target=identity(story,chapter);
-    if(!saved||explicit===null||updateRoute!==false||!target||target.path!==cleanPath(location.pathname)||target.path!==cleanPath(saved.path)||saved.version===2&&(saved.storyId!==target.storyId||saved.chapterId!==target.chapterId))return null;
-    const job={...target,story,chapter,scroll:saved.scroll,requestEpoch:navigationEpoch,historyMode:history.scrollRestoration};
-    active=job;history.scrollRestoration='manual';return job;
+    if(explicit===null||updateRoute!==false||!target||target.path!==cleanPath(location.pathname)){cancel();return null;}
+    const job={...target,story,chapter,owner:owner(),scroll:0,requestEpoch:navigationEpoch,historyMode:history.scrollRestoration};
+    active=job;history.scrollRestoration='manual';
+    // A surviving tab owns its exact position, independently of other tabs of the same story.
+    const ownSnapshot=candidate&&candidate.owner===job.owner&&candidate.storyId===target.storyId&&candidate.chapterId===target.chapterId;
+    const selected=ownSnapshot?{scroll:candidate.scroll}:job.owner==='guest'?guestProgress(target):await initialReaderProgress(story,chapter);
+    candidate=null;
+    if(selected.cancelled||owner()!==job.owner||navigationEpoch!==job.requestEpoch){if(active===job)cancel();return {cancelled:true};}
+    if(active!==job)return {native:true,scroll:0,skipProgress:true}; // User interaction owns positioning, but must not strand the initial render.
+    job.scroll=selected.scroll;job.skipProgress=selected.skipProgress===true;job.recheck=selected.recheck;return job;
   }
-  function didRender(story,chapter){
-    rendered=identity(story,chapter);
+  function didRender(story,chapter,resume){
+    rendered={...identity(story,chapter),owner:owner()};
+    if(!active)progressUnknown=resume?.skipProgress===true;
     if(active){
       if(active.story!==story||active.chapter!==chapter||active.epoch!==undefined||navigationEpoch!==active.requestEpoch+1)cancel();
       else active.epoch=navigationEpoch;
@@ -92,19 +126,21 @@
       if(!current(job))return;
       root.requestAnimationFrame(()=>root.requestAnimationFrame(()=>{
         if(!current(job))return;
-        apply();cancel();snapshot();
+        apply();cancel();progressUnknown=job.skipProgress;snapshot();
         // A genuinely shorter chapter uses the existing progress setter for its clamped position.
-        if(typeof setReadingProgress==='function'&&Math.round(root.scrollY)!==Math.round(job.scroll))setReadingProgress(job.story.id,job.chapter,root.scrollY);
+        if(!job.skipProgress&&typeof setReadingProgress==='function'&&Math.round(root.scrollY)!==Math.round(job.scroll))setReadingProgress(job.story.id,job.chapter,root.scrollY);
       }));
-    }).catch(()=>{if(current(job)){apply();cancel();snapshot();}});
+    }).catch(()=>{if(current(job)){apply();cancel();progressUnknown=job.skipProgress;snapshot();}});
   }
   root.addEventListener('scroll',queueSnapshot,{passive:true});
   const departing=()=>{
-    if(candidate){if(candidate.version===2)persist({path:cleanPath(candidate.path),storyId:candidate.storyId,chapterId:candidate.chapterId,scroll:candidate.scroll});}
-    else if(active)persist({path:active.path,storyId:active.storyId,chapterId:active.chapterId,scroll:active.scroll});
+    if(candidate){if(candidate.owner===owner())persist({path:cleanPath(candidate.path),storyId:candidate.storyId,chapterId:candidate.chapterId,scroll:candidate.scroll});}
+    else if(active){if(active.owner===owner()&&active.epoch!==undefined&&!active.skipProgress)persist({path:active.path,storyId:active.storyId,chapterId:active.chapterId,scroll:active.scroll});}
     else snapshot();
   };
-  root.addEventListener('pagehide',departing);root.addEventListener('beforeunload',departing);
+  const flush=()=>{departing();flushGuest();};
+  root.addEventListener('pagehide',flush);root.addEventListener('beforeunload',flush);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)flush();});
   root.addEventListener('popstate',()=>{cancel();historyEpoch=navigationEpoch+1;});
   for(const type of ['wheel','touchstart','pointerdown'])root.addEventListener(type,cancel,{passive:true});
   root.addEventListener('keydown',event=>{if(['ArrowUp','ArrowDown','PageUp','PageDown','Home','End',' '].includes(event.key))cancel();});

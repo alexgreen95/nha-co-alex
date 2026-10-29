@@ -4,12 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Nhà có Alex</title>
+<script>
+// Keep the initial Home surface out of direct-route and push startup paints.
+if(location.pathname!=='/'||new URLSearchParams(location.search).has('nca_push'))document.documentElement.classList.add('initial-route-pending');
+</script>
 <link rel="icon" href="/assets/icons/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
 <link rel="manifest" href="/manifest.webmanifest">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
+html.initial-route-pending #home{visibility:hidden}
 :root{--bg:#fffaf5;--fg:#463a3a;--muted:#817575;--line:#eadfda;--accent:#d87998;--panel:#fff3ef;--card:#ffffff;--soft:#f9ece8;--reader:20px}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
@@ -2007,12 +2012,21 @@ function routeFromLocation(){
  openStory(st.id,false);
 }
 const pageIds=['home','storyIntro','reader','library','login','profilePage','adminLibrary','storyAdmin','chapterAdmin'];
+function initialPushHomePending(){
+ const status=window.NcaPushNavigation?.getState();
+ if(!['PENDING','WAITING_FOR_DATA','NAVIGATING'].includes(status))return false;
+ const query=new URLSearchParams(location.search);
+ if(query.get('nca_push')==='personal'&&query.get('comment_id'))return stories.length>0;
+ const story=stories.find(s=>String(s.id)===query.get('story_id'));
+ return !!story&&(!query.get('chapter_id')||story.chapters.some(ch=>String(ch.id)===query.get('chapter_id')));
+}
 function displayPage(id){
  ++navigationEpoch;
  if(id!=='profilePage')++profileRequestId;
  activeReply=null;
  document.querySelectorAll('.reply-compose').forEach(form=>form.remove());
  pageIds.forEach(page=>document.getElementById(page)?.classList.toggle('hidden',page!==id));
+ if(id!=='home'||!initialPushHomePending())document.documentElement.classList.remove('initial-route-pending');
  document.body.classList.toggle('reading',id==='reader');
  if(id!=='reader')currentStory=null;
  closeParagraphComments();closeEmojiPicker();toggleToc(false);toggleFontMenu(false);toggleThemeMenu(false);

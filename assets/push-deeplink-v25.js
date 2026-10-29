@@ -63,6 +63,9 @@
     if(timer){root.clearTimeout(timer);timer=null;}persist();cleanPushQuery(record);
   }
   function schedule(delay){if(pending&&!timer)timer=root.setTimeout(()=>{timer=null;void run();},delay);}
+  function releaseInitialPushHome(){
+    if(location.pathname==='/')document.documentElement?.classList?.remove('initial-route-pending');
+  }
   function wake(){
     if(!pending)return;
     if(timer){root.clearTimeout(timer);timer=null;}
@@ -71,6 +74,7 @@
   function pause(record){
     if(pending!==record)return;
     status='PAUSED';
+    releaseInitialPushHome();
     const remaining=record.createdAt+TTL-Date.now();
     if(remaining>0)schedule(Math.min(PASSIVE,remaining));
   }
@@ -86,7 +90,7 @@
   async function run(){
     if(!pending||running)return;
     const record=pending;
-    if(!valid(record)){pending=null;status='EXPIRED';persist();cleanPushQuery(record);return;}
+    if(!valid(record)){pending=null;status='EXPIRED';persist();cleanPushQuery(record);releaseInitialPushHome();return;}
     if(Date.now()>=until||attempts>=30){pause(record);return;}
     running=true;attempts++;
     try{
@@ -113,6 +117,7 @@
     }catch{if(pending===record)status='WAITING_FOR_TARGET';}
     finally{
       running=false;
+      if(status==='WAITING_FOR_TARGET')releaseInitialPushHome();
       if(pending&&pending!==record)wake();
       else if(pending&&Date.now()<until&&attempts<30)schedule(Math.min(2000,180*attempts));
       else if(pending)pause(record);

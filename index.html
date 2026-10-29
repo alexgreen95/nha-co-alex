@@ -5012,7 +5012,10 @@ initAuth().catch(()=>{updateAuthUI(); if(!location.pathname.startsWith('/quan-ly
   const savedDrafts=[...document.querySelectorAll(mentionInputSelector)].map(input=>({id:input.id,value:input.value,start:input.selectionStart,end:input.selectionEnd,focused:document.activeElement===input,disabled:input.disabled,tokens:reconcileMentionDraft(input).tokens.map(x=>({...x}))}));
   const scroll=[...document.querySelectorAll('.paragraph-comment-panel,#storyCommentList,#chapterCommentsList')].map(el=>[el,el.scrollTop]),x=scrollX,y=scrollY;
   closeMentionPopup();closeEmojiPicker();fn();for(const d of savedDrafts){const input=document.getElementById(d.id);if(!input)continue;input.value=d.value;input.disabled=d.disabled;mentionDrafts.set(input,{value:d.value,tokens:d.tokens});input.setSelectionRange(d.start,d.end);if(d.focused)input.focus({preventScroll:true});}
-  for(const [el,top] of scroll)el.scrollTop=top;window.scrollTo(x,y);window.syncStoryCommentMore?.(document);
+  for(const [el,top] of scroll)el.scrollTop=top;
+  // An unchanged scrollTo interrupts the reader's in-flight smooth restoration.
+  if(scrollX!==x||scrollY!==y)window.scrollTo(x,y);
+  window.syncStoryCommentMore?.(document);
  }
  function storyFor(id){return stories.find(s=>{try{return decimal(s.id)===id;}catch{return false;}});}
  function locationHTML(e){const story=storyFor(e.storyId);if(!story)return '';

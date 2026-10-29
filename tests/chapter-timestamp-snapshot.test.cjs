@@ -7,6 +7,7 @@ const timestamps=ui.slice(ui.indexOf('  async function refreshChapterUpdateTimes
 function fixture({failed=false}={}){
   const calls=[];let ready;const rows=[{id:1,story_id:1,chapter_number:1,published:true,updated_at:'2026-10-29T00:00:00Z',content:'not retained'},{id:2,story_id:1,published:false,updated_at:'2026-10-30T00:00:00Z'}];
   const context={publicMetadataRevision:0,publicMetadataSnapshot:null,publicChapterTimestampSnapshot:null,publicRefreshGeneration:0,publicRefreshFlight:null,stories:[],introStory:null,authMetadataReady:new Promise(r=>ready=r),console:{warn(){}},mapStoryBaselines:s=>s,render(){},applyStoryUpdateOrder(){},root:{fetchAllRows:async(...args)=>{calls.push(args);return rows;},render(){}},fetchAllRows:async table=>{calls.push([table]);if(table==='chapters'&&failed)throw Error('fixture');return table==='chapters'?rows:[{id:1,title:'Story'}];}};
+  context.Event=Event;context.window={dispatchEvent(){}};
   vm.createContext(context);vm.runInContext('let chapterUpdateFlight=null,latestChapterUpdatedByStory=new Map();'+loader+timestamps+';this.load=loadCloudStories;this.refresh=refreshChapterUpdateTimes;this.times=()=>latestChapterUpdatedByStory;',context);
   return {context,calls,ready};
 }

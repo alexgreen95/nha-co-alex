@@ -147,6 +147,7 @@
   }
   root.addEventListener('pageshow',()=>{void ready();wake();});
   root.addEventListener('focus',()=>{void ready();wake();});
+  root.addEventListener('nca-public-metadata-ready',wake);
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){void ready();wake();}});
   // Refresh registration without touching subscriptions, permission or lifecycle ownership.
   let lastUpdate=-Infinity;

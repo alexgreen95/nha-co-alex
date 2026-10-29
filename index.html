@@ -3298,6 +3298,7 @@ async function loadCloudStories(){
         if(document.getElementById('introAboutView')) renderStoryAbout();
       }
     }
+   window.dispatchEvent(new Event('nca-public-metadata-ready'));
    return true;
   }
   return false;

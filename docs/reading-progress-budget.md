@@ -27,3 +27,12 @@ durable signed-progress queue is claimed.
 Validation: `tests/reading-progress-rate.test.cjs` exercises real 60-second idle,
 continuous-scroll, paced-scroll and shared-tab scenarios, latest-value coalescing,
 delayed responses, explicit opens, per-story/account isolation and guest state.
+
+Failed writes use `assets/progress-retry.js`: invalid/auth/forbidden requests stop
+until auth recovery or a new session. Transient failures use 3/6/12/30/60-second
+delays with up to 10% positive jitter, at most six attempts in a 120-second window.
+After exhaustion there is no idle timer loop; a later meaningful activity or
+online/visible wake can start a new budget after a 60-second cooldown. Changes
+arriving during backoff keep the existing deadline and replace only the dirty
+payload. Offline attempts and retries while hidden are paused. Success resets
+the retry state; logout/account changes invalidate the old work as before.

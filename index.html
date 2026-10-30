@@ -1934,6 +1934,7 @@ if(location.pathname==='/' || location.pathname===''){const b=document.getElemen
 <script src="/assets/push-lifecycle.js"></script>
 <script src="/assets/push-settings.js"></script>
 <script src="/assets/surface-images.js?v=20261030-1"></script>
+<script src="/assets/progress-retry.js?v=20261030-1"></script>
 <script>
 const seed=[];
 
@@ -3222,6 +3223,7 @@ function handleAuthState(event,session){
  // SDK subscribers return immediately; Supabase reads start outside its auth lock.
  return new Promise(resolve=>setTimeout(resolve,0)).then(()=>{
    if(!authAccountCurrent(state)||!state.owner)return;
+   if(event==='TOKEN_REFRESHED'||event==='SIGNED_IN')resumeProgressWrites('auth');
    if(event==='TOKEN_REFRESHED'&&previousOwner===state.owner)return;
    if(event==='USER_UPDATED'&&previousOwner===state.owner)return syncProfile(authUser,true).catch(error=>{if(authAccountCurrent(state))console.warn('auth profile refresh',error)});
    return hydrateAuthAccount(state);
@@ -4297,6 +4299,7 @@ function activateMemberSync(){
    let state=memberSyncAccounts.get(owner);
    if(!state){state={owner,epoch:0,generation:0,dirty:new Map(),base:new Map(),savedDirty:new Map(),savedBase:new Set(),savedAck:new Map(),progressFlight:null,savedFlight:null,sending:new Set(),progressWriteAt:new Map(),openAcks:new Map()};memberSyncAccounts.set(owner,state);}
    state.controller=new AbortController();state.progressReady=false;state.savedReady=false;state.loadGeneration=0;state.firstDirty=0;
+   state.progressRetry=NcaProgressRetry.fresh();
   }
  }
  return owner?memberSyncAccounts.get(owner):null;
@@ -4313,13 +4316,27 @@ function setReadingProgress(storyId,chapter,scroll,opened=false){
  if(!opened&&sameReadingPosition(previous,value))return;
  if(!opened&&!state.sending.has(sid)&&sameReadingPosition(state.base.get(sid),value))state.dirty.delete(sid);
  else{const generation=++state.generation;state.dirty.set(sid,{...value,generation,openGeneration:opened?generation:(state.dirty.get(sid)?.openGeneration||0)});}
+ NcaProgressRetry.wake(state.progressRetry,'activity');
  queueCloudMemberState();
 }
-function queueCloudMemberState(){
+function progressTransportReady(state){return navigator.onLine!==false&&!(document.hidden&&state.progressRetry.failures>0)}
+function resumeProgressWrites(reason){
+ const state=activateMemberSync();if(!state)return;
+ NcaProgressRetry.wake(state.progressRetry,reason);queueCloudMemberState();
+}
+window.addEventListener('online',()=>resumeProgressWrites('online'));
+document.addEventListener('visibilitychange',()=>{
+ const state=activateMemberSync();if(!state)return;
+ if(document.hidden&&state.progressRetry.failures>0)clearTimeout(state.progressTimer);
+ else if(!document.hidden)resumeProgressWrites('visible');
+});
+function queueCloudMemberState(minimumDelay=0){
  const state=activateMemberSync();if(!state||!state.progressReady||!state.dirty.size)return;
+ const retryWait=NcaProgressRetry.wait(state.progressRetry);
+ if(!Number.isFinite(retryWait)||!progressTransportReady(state))return;
  if(!state.firstDirty)state.firstDirty=Date.now();
  clearTimeout(state.progressTimer);const epoch=state.epoch;
- state.progressTimer=setTimeout(()=>{if(memberSyncCurrent(state,epoch))saveCloudMemberState(state)},Math.max(pendingProgressWait(state),0,Math.min(450,3000-(Date.now()-state.firstDirty))));
+ state.progressTimer=setTimeout(()=>{if(memberSyncCurrent(state,epoch))saveCloudMemberState(state)},Math.max(minimumDelay,retryWait,pendingProgressWait(state),0,Math.min(450,3000-(Date.now()-state.firstDirty))));
 }
 function queueSavedStoryState(state=activateMemberSync()){
  if(!state||!state.savedReady||!state.savedDirty.size)return;
@@ -4396,11 +4413,15 @@ async function loadCloudMemberState(metadataRetries=1){
 function saveCloudMemberState(state=activateMemberSync()){
  if(!state||!memberSyncCurrent(state,state.epoch)||!state.progressReady)return Promise.resolve();
  if(state.progressFlight)return state.progressFlight;
+ const retryWait=NcaProgressRetry.wait(state.progressRetry);
+ if(!Number.isFinite(retryWait)||!progressTransportReady(state))return Promise.resolve();
+ if(retryWait>0){queueCloudMemberState();return Promise.resolve();}
  clearTimeout(state.progressTimer);state.firstDirty=0;
  const epoch=state.epoch,signal=state.controller.signal;
  let retryRequired=false;
  const drain=async()=>{
   while(memberSyncCurrent(state,epoch)&&state.dirty.size){
+   if(!progressTransportReady(state)||NcaProgressRetry.wait(state.progressRetry)>0)break;
    // CacheStorage reads see completed cross-tab commits; localStorage's per-window
    // cache can lag a Web Lock handoff. These records contain clocks, never progress.
    await syncProgressClock(state);
@@ -4413,9 +4434,17 @@ function saveCloudMemberState(state=activateMemberSync()){
    }
    if(!rows.length){retryRequired=true;break;} // Retain unknown chapter IDs; a later load/change retries.
    state.sending=new Set(rows.map(r=>r.story_id));
-   const {error}=await sb.from('reading_progress').upsert(rows,{onConflict:'story_id,user_id'}).abortSignal(signal);
+   const requestAuthRevision=authEventRevision;
+   const {error,status}=await sb.from('reading_progress').upsert(rows,{onConflict:'story_id,user_id'}).abortSignal(signal);
    if(!memberSyncCurrent(state,epoch))return;
-   if(error){console.warn('reading progress save',error);retryRequired=true;break;}
+   if(error){
+    console.warn('reading progress save',error);
+    // An old-token response must not re-block an auth recovery that already occurred.
+    if(requestAuthRevision!==authEventRevision)NcaProgressRetry.fail(state.progressRetry,0,{code:'AUTH_REVISION_CHANGED'});
+    else NcaProgressRetry.fail(state.progressRetry,status||0,error);
+    break;
+   }
+   NcaProgressRetry.reset(state.progressRetry);
    await rememberProgressWrite(state,rows.map(row=>row.story_id));
    if(!memberSyncCurrent(state,epoch))return;
    for(const row of rows){
@@ -4430,7 +4459,7 @@ function saveCloudMemberState(state=activateMemberSync()){
  // Serialize same-origin tabs for this account, then recheck each story's shared
  // successful-write timestamp. Explicit opens retain their existing recency semantics.
  const work=navigator.locks?.request?navigator.locks.request('nca-progress-cloud:'+state.owner,{signal},drain):drain();
- state.progressFlight=work.catch(error=>{if(memberSyncCurrent(state,epoch)){console.warn('reading progress save',error);retryRequired=true;}}).finally(()=>{state.progressFlight=null;state.sending.clear();if(memberSyncCurrent(state,state.epoch)&&state.progressReady&&state.dirty.size){const retryEpoch=state.epoch;state.firstDirty=Date.now();clearTimeout(state.progressTimer);state.progressTimer=setTimeout(()=>{if(memberSyncCurrent(state,retryEpoch))saveCloudMemberState(state)},retryRequired?3000:pendingProgressWait(state))}});
+ state.progressFlight=work.catch(error=>{if(memberSyncCurrent(state,epoch)){console.warn('reading progress save',error);NcaProgressRetry.fail(state.progressRetry,0,error);}}).finally(()=>{state.progressFlight=null;state.sending.clear();if(memberSyncCurrent(state,state.epoch)&&state.progressReady&&state.dirty.size){state.firstDirty=Date.now();clearTimeout(state.progressTimer);queueCloudMemberState(retryRequired?3000:0);}});
  return state.progressFlight;
 }
 function saveCloudSavedStories(state=activateMemberSync()){

@@ -1,0 +1,10 @@
+'use strict';const {test}=require('node:test'),assert=require('node:assert/strict'),policy=require('../assets/progress-retry.js');
+for(const status of [400,401,403,404,409,422])test('terminal '+status+' stops immediately and requires auth/new session recovery',()=>{const s=policy.fresh();policy.fail(s,status,{},1000,0);assert.equal(policy.wait(s,2000),Infinity);assert.equal(policy.wake(s,'activity',300000),false);assert.equal(policy.wake(s,'online',300000),false);policy.wake(s,'auth',300000);assert.equal(policy.wait(s,300000),0);});
+for(const status of [0,408,429,500,503])test('transient '+status+' has exponential jitter, six-attempt/120s budget, and no idle wake',()=>{
+ const s=policy.fresh();let now=1000,attempts=0;
+ for(;;){policy.fail(s,status,{},now,.5);attempts++;const delay=policy.wait(s,now);if(!Number.isFinite(delay))break;assert(delay>=3000);assert.equal(policy.wake(s,'activity',now+100),false);assert.equal(s.failures,attempts);now+=delay;}
+ assert.equal(attempts,6);assert.equal(policy.wait(s,now+600000),Infinity);assert.equal(policy.wake(s,'activity',now+59999),false);assert.equal(policy.wake(s,'activity',now+60000),true);assert.equal(s.failures,0);
+});
+test('window expiration blocks delayed/offline retry and jitter stays bounded',()=>{const s=policy.fresh();policy.fail(s,503,{},0,1);assert.equal(s.nextAt,3300);assert.equal(policy.wait(s,120000),Infinity);assert.equal(policy.wake(s,'online',120000),true);policy.fail(s,503,{},130000,0);assert.equal(s.nextAt,133000);policy.reset(s);assert.equal(policy.wait(s,130001),0);});
+test('known auth/RLS/invalid SQL codes are terminal even without an HTTP status',()=>{for(const code of ['PGRST301','42501','23503','22P02']){const s=policy.fresh();policy.fail(s,0,{code},1000,0);assert.equal(s.terminal,true);assert.equal(policy.wait(s,1000),Infinity);}});
+test('auth events do not restart an active transient backoff budget',()=>{const s=policy.fresh();policy.fail(s,503,{},1000,0);const deadline=s.nextAt;assert.equal(policy.wake(s,'auth',2000),false);assert.equal(s.nextAt,deadline);assert.equal(s.failures,1);});

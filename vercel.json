@@ -31,11 +31,15 @@
       "continue": true
     },
     {
+      "src": "^/$",
+      "dest": "/maintenance.html"
+    },
+    {
       "handle": "filesystem"
     },
     {
       "src": "/.*",
-      "dest": "/index.html"
+      "dest": "/maintenance.html"
     }
   ]
 }

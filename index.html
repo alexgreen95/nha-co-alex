@@ -4263,6 +4263,29 @@ let cloudChapterMap={};
 // Account-scoped, memory-only queues. No cross-device newest-wins claim.
 const memberSyncAccounts=new Map();
 let memberSyncOwner=null;
+const READING_PROGRESS_INTERVAL=5000;
+function progressWriteKey(state,id){return 'nca_progress_write_v1:'+state.owner+':'+id}
+function progressClockURL(state,id){return location.origin+'/__nca_progress_clock__/'+encodeURIComponent(progressWriteKey(state,id))}
+async function syncProgressClock(state){
+ try{
+  const cache=await caches.open('nca-progress-clock-v1');
+  await Promise.all([...state.dirty.keys()].map(async id=>{
+   const response=await cache.match(progressClockURL(state,id)),at=response?Number(await response.text()):0;
+   if(Number.isFinite(at)&&at<=Date.now())state.progressWriteAt.set(id,Math.max(state.progressWriteAt.get(id)||0,at));
+  }));
+ }catch{} // Storage-unavailable browsers retain their in-memory per-account/story budget.
+}
+async function rememberProgressWrite(state,ids){
+ const at=Date.now();ids.forEach(id=>state.progressWriteAt.set(id,at));
+ try{const cache=await caches.open('nca-progress-clock-v1');await Promise.all(ids.map(id=>cache.put(progressClockURL(state,id),new Response(String(at)))))}catch{}
+}
+function progressWriteWait(state,id,value,now=Date.now()){
+ if((value.openGeneration||0)>(state.openAcks.get(id)||0))return 0;
+ let last=state.progressWriteAt.get(id)||0;
+ if(last>now)last=0;
+ return Math.max(0,last+READING_PROGRESS_INTERVAL-now);
+}
+function pendingProgressWait(state){return Math.min(...[...state.dirty].map(([id,value])=>progressWriteWait(state,id,value)))}
 function activateMemberSync(){
  const owner=authUser?.id||null;
  if(owner!==memberSyncOwner){
@@ -4272,7 +4295,7 @@ function activateMemberSync(){
   memberSyncOwner=owner;cloudSyncReady=false;clearTimeout(saveScrollTimer);
   if(owner){
    let state=memberSyncAccounts.get(owner);
-   if(!state){state={owner,epoch:0,generation:0,dirty:new Map(),base:new Map(),savedDirty:new Map(),savedBase:new Set(),savedAck:new Map(),progressFlight:null,savedFlight:null,sending:new Set()};memberSyncAccounts.set(owner,state);}
+   if(!state){state={owner,epoch:0,generation:0,dirty:new Map(),base:new Map(),savedDirty:new Map(),savedBase:new Set(),savedAck:new Map(),progressFlight:null,savedFlight:null,sending:new Set(),progressWriteAt:new Map(),openAcks:new Map()};memberSyncAccounts.set(owner,state);}
    state.controller=new AbortController();state.progressReady=false;state.savedReady=false;state.loadGeneration=0;state.firstDirty=0;
   }
  }
@@ -4289,14 +4312,14 @@ function setReadingProgress(storyId,chapter,scroll,opened=false){
  if(!state)return;
  if(!opened&&sameReadingPosition(previous,value))return;
  if(!opened&&!state.sending.has(sid)&&sameReadingPosition(state.base.get(sid),value))state.dirty.delete(sid);
- else state.dirty.set(sid,{...value,generation:++state.generation});
+ else{const generation=++state.generation;state.dirty.set(sid,{...value,generation,openGeneration:opened?generation:(state.dirty.get(sid)?.openGeneration||0)});}
  queueCloudMemberState();
 }
 function queueCloudMemberState(){
  const state=activateMemberSync();if(!state||!state.progressReady||!state.dirty.size)return;
  if(!state.firstDirty)state.firstDirty=Date.now();
  clearTimeout(state.progressTimer);const epoch=state.epoch;
- state.progressTimer=setTimeout(()=>{if(memberSyncCurrent(state,epoch))saveCloudMemberState(state)},Math.max(0,Math.min(450,3000-(Date.now()-state.firstDirty))));
+ state.progressTimer=setTimeout(()=>{if(memberSyncCurrent(state,epoch))saveCloudMemberState(state)},Math.max(pendingProgressWait(state),0,Math.min(450,3000-(Date.now()-state.firstDirty))));
 }
 function queueSavedStoryState(state=activateMemberSync()){
  if(!state||!state.savedReady||!state.savedDirty.size)return;
@@ -4375,26 +4398,39 @@ function saveCloudMemberState(state=activateMemberSync()){
  if(state.progressFlight)return state.progressFlight;
  clearTimeout(state.progressTimer);state.firstDirty=0;
  const epoch=state.epoch,signal=state.controller.signal;
- state.progressFlight=(async()=>{
+ let retryRequired=false;
+ const drain=async()=>{
   while(memberSyncCurrent(state,epoch)&&state.dirty.size){
-   const batch=[...state.dirty.entries()].slice(0,100),rows=[];
+   // CacheStorage reads see completed cross-tab commits; localStorage's per-window
+   // cache can lag a Web Lock handoff. These records contain clocks, never progress.
+   await syncProgressClock(state);
+   if(!memberSyncCurrent(state,epoch))return;
+   const batch=[...state.dirty.entries()].filter(([id,value])=>progressWriteWait(state,id,value)===0).slice(0,100),rows=[];
+   if(!batch.length)break;
    for(const [id,value] of batch){
     const chapter_id=stories.find(s=>s.id===id)?.chapters[value.chapter]?.id||cloudChapterMap[`${id}_${value.chapter}`];
     if(chapter_id)rows.push({story_id:id,user_id:state.owner,chapter_id:Number(chapter_id),scroll_position:Math.round(value.scroll),updated_at:value.updatedAt});
    }
-   if(!rows.length)break; // Retain unknown chapter IDs; a later load/change retries.
+   if(!rows.length){retryRequired=true;break;} // Retain unknown chapter IDs; a later load/change retries.
    state.sending=new Set(rows.map(r=>r.story_id));
    const {error}=await sb.from('reading_progress').upsert(rows,{onConflict:'story_id,user_id'}).abortSignal(signal);
    if(!memberSyncCurrent(state,epoch))return;
-   if(error){console.warn('reading progress save',error);break;}
+   if(error){console.warn('reading progress save',error);retryRequired=true;break;}
+   await rememberProgressWrite(state,rows.map(row=>row.story_id));
+   if(!memberSyncCurrent(state,epoch))return;
    for(const row of rows){
     const value=batch.find(([id])=>id===row.story_id)[1];state.base.set(row.story_id,{chapter:value.chapter,scroll:value.scroll,updatedAt:row.updated_at,generation:value.generation});
+    state.openAcks.set(row.story_id,Math.max(state.openAcks.get(row.story_id)||0,value.openGeneration||0));
     if(state.dirty.get(row.story_id)?.generation===value.generation)state.dirty.delete(row.story_id);
    }
    state.sending.clear();
-   if(rows.length<batch.length)break;
+   if(rows.length<batch.length){retryRequired=true;break;}
   }
- })().catch(error=>{if(memberSyncCurrent(state,epoch))console.warn('reading progress save',error)}).finally(()=>{state.progressFlight=null;state.sending.clear();if(memberSyncCurrent(state,state.epoch)&&state.progressReady&&state.dirty.size){const retryEpoch=state.epoch;state.firstDirty=Date.now();clearTimeout(state.progressTimer);state.progressTimer=setTimeout(()=>{if(memberSyncCurrent(state,retryEpoch))saveCloudMemberState(state)},3000)}});
+ };
+ // Serialize same-origin tabs for this account, then recheck each story's shared
+ // successful-write timestamp. Explicit opens retain their existing recency semantics.
+ const work=navigator.locks?.request?navigator.locks.request('nca-progress-cloud:'+state.owner,{signal},drain):drain();
+ state.progressFlight=work.catch(error=>{if(memberSyncCurrent(state,epoch)){console.warn('reading progress save',error);retryRequired=true;}}).finally(()=>{state.progressFlight=null;state.sending.clear();if(memberSyncCurrent(state,state.epoch)&&state.progressReady&&state.dirty.size){const retryEpoch=state.epoch;state.firstDirty=Date.now();clearTimeout(state.progressTimer);state.progressTimer=setTimeout(()=>{if(memberSyncCurrent(state,retryEpoch))saveCloudMemberState(state)},retryRequired?3000:pendingProgressWait(state))}});
  return state.progressFlight;
 }
 function saveCloudSavedStories(state=activateMemberSync()){

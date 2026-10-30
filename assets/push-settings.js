@@ -29,11 +29,12 @@
   const TAIL10='/assets/neon-notification-tab-v28.js?v=20261026-1';
   const TAIL11='/assets/admin-library-role-gate-v29.js?v=20261026-1';
   const TAIL12='/assets/reader-reload-position-v30.js?v=20261029-4';
+  const TAIL13='/assets/reader-typewriter-font-v31.js?v=20261030-1';
   const PUSH_NAV='/assets/push-deeplink-v25.js?v=20261026-2';
 
   if(document.readyState==='loading'){
     /* Push receiver is first and independent: a theme-tail failure cannot suppress navigation handoff. */
-    document.write('<script src="'+PUSH_NAV+'"><\/script><script src="'+FROZEN+'"><\/script><script src="'+TAIL+'"><\/script><script src="'+TAIL2+'"><\/script><script src="'+TAIL3+'"><\/script><script src="'+TAIL4+'"><\/script><script src="'+TAIL5+'"><\/script><script src="'+TAIL6+'"><\/script><script src="'+TAIL7+'"><\/script><script src="'+TAIL8+'"><\/script><script src="'+TAIL9+'"><\/script><script src="'+TAIL10+'"><\/script><script src="'+TAIL11+'"><\/script><script src="'+TAIL12+'"><\/script>');
+    document.write('<script src="'+PUSH_NAV+'"><\/script><script src="'+FROZEN+'"><\/script><script src="'+TAIL+'"><\/script><script src="'+TAIL2+'"><\/script><script src="'+TAIL3+'"><\/script><script src="'+TAIL4+'"><\/script><script src="'+TAIL5+'"><\/script><script src="'+TAIL6+'"><\/script><script src="'+TAIL7+'"><\/script><script src="'+TAIL8+'"><\/script><script src="'+TAIL9+'"><\/script><script src="'+TAIL10+'"><\/script><script src="'+TAIL11+'"><\/script><script src="'+TAIL12+'"><\/script><script src="'+TAIL13+'"><\/script>');
     return;
   }
 
@@ -94,6 +95,12 @@
                           const tail12=document.createElement('script');
                           tail12.src=TAIL12;
                           tail12.async=false;
+                          tail12.onload=()=>{
+                            const tail13=document.createElement('script');
+                            tail13.src=TAIL13;
+                            tail13.async=false;
+                            document.head.appendChild(tail13);
+                          };
                           document.head.appendChild(tail12);
                         };
                         document.head.appendChild(tail11);

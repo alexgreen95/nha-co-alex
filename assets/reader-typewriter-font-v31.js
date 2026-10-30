@@ -4,7 +4,7 @@
   if(typeof document!=='object')return;
 
   const FONT_NAME='Typewriter';
-  const FONT_LABEL='Đánh máy';
+  const FONT_LABEL='Typewriter';
   const FONT_STACK='ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
 
   function markActive(){
@@ -27,7 +27,7 @@
       button.type='button';
       button.dataset.font=FONT_NAME;
       button.textContent=FONT_LABEL;
-      button.title='Font chữ đánh máy';
+      button.title='Font Typewriter';
       button.style.fontFamily=FONT_STACK;
       button.addEventListener('click',()=>root.setReadingFont(FONT_NAME));
       menu.appendChild(button);

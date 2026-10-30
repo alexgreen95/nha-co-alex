@@ -1935,6 +1935,7 @@ if(location.pathname==='/' || location.pathname===''){const b=document.getElemen
 <script src="/assets/push-settings.js"></script>
 <script src="/assets/surface-images.js?v=20261030-1"></script>
 <script src="/assets/progress-retry.js?v=20261030-1"></script>
+<script src="/assets/avatar-upload.js?v=20261030-1"></script>
 <script>
 const seed=[];
 
@@ -3741,6 +3742,7 @@ document.addEventListener('keydown',event=>{const item=event.target.closest('[da
 setInterval(()=>{if(authUser&&!document.hidden)loadNotifications(!document.getElementById('notifPanel').classList.contains('open'),{forceRefresh:true}).catch(error=>console.warn('notification refresh',error));},30000);
 document.addEventListener('visibilitychange',()=>{if(authUser&&!document.hidden)loadNotifications(false,{forceRefresh:true}).catch(error=>console.warn('notification refresh',error));});
 let pendingAvatarFile=null;
+let profileSaveTask=null;
 function profileEditMarkup(){
  const name=esc(userDisplayName(authUser));
  const avatar=esc(userAvatar(authUser));
@@ -3762,11 +3764,21 @@ function profileEditMarkup(){
 function previewProfileAvatar(input){
  pendingAvatarFile=input.files?.[0]||null;
  if(!pendingAvatarFile)return;
- if(pendingAvatarFile.size>5*1024*1024){document.getElementById('profileEditMessage').textContent='Ảnh tối đa 5 MB nha.';pendingAvatarFile=null;input.value='';return}
+ const validationError=NcaAvatarUpload.validationError(pendingAvatarFile);
+ if(validationError){document.getElementById('profileEditMessage').textContent=validationError;pendingAvatarFile=null;input.value='';return}
+ document.getElementById('profileEditMessage').textContent='';
+ const file=pendingAvatarFile;
  const state=captureAuthAccount(authUser);
- const r=new FileReader();r.onload=()=>{if(authAccountCurrent(state)&&document.getElementById('editAvatarPreview'))document.getElementById('editAvatarPreview').src=r.result};r.readAsDataURL(pendingAvatarFile);
+ const r=new FileReader();r.onload=()=>{const img=document.getElementById('editAvatarPreview');if(authAccountCurrent(state)&&pendingAvatarFile===file&&img){img.removeAttribute('data-surface-src');img.src=r.result}};r.readAsDataURL(file);
 }
-async function saveProfileChanges(){
+function saveProfileChanges(){
+ const state=authAccount,editor=document.getElementById('profileEditMessage');
+ if(profileSaveTask?.state===state&&profileSaveTask.editor===editor)return profileSaveTask.promise;
+ const promise=savePreparedProfileChanges();profileSaveTask={state,editor,promise};
+ promise.finally(()=>{if(profileSaveTask?.promise===promise)profileSaveTask=null;}).catch(()=>{});
+ return promise;
+}
+async function savePreparedProfileChanges(){
  if(!authUser)return;
  const user=authUser,state=captureAuthAccount(user);
  const msg=document.getElementById('profileEditMessage');
@@ -3774,13 +3786,20 @@ async function saveProfileChanges(){
  const bio=document.getElementById('editBio').value.trim();
  if(!display_name){msg.textContent='Tên hiển thị không được để trống.';return}
  msg.textContent='Đang lưu…';
+ const selected=pendingAvatarFile;
  let avatar_url=memberProfile?.avatar_url||'';
- if(pendingAvatarFile){
-   const ext=(pendingAvatarFile.name.split('.').pop()||'jpg').toLowerCase();
-   const path=`${user.id}/avatar-${Date.now()}.${ext}`;
-   const {error:upErr}=await sb.storage.from('avatars').upload(path,pendingAvatarFile,{upsert:true,contentType:pendingAvatarFile.type});
+ if(selected){
+   let optimized;
+   try{optimized=await NcaAvatarUpload.optimize(selected);}catch(error){if(authAccountCurrent(state)&&msg.isConnected)msg.textContent=error.message;return;}
+   if(!authAccountCurrent(state)||!msg.isConnected)return;
+   if(pendingAvatarFile!==selected){msg.textContent='Ảnh đã thay đổi. Hãy bấm Lưu lại để dùng ảnh mới.';return;}
+   const ext=optimized.type==='image/webp'?'webp':optimized.type==='image/png'?'png':'jpg';
+   const unique=crypto.randomUUID?.()||Array.from(crypto.getRandomValues(new Uint8Array(16)),v=>v.toString(16).padStart(2,'0')).join('');
+   const path=`${user.id}/avatar-${unique}.${ext}`;
+   const {error:upErr}=await sb.storage.from('avatars').upload(path,optimized,{upsert:false,contentType:optimized.type,cacheControl:'3600'});
    if(!authAccountCurrent(state))return;
    if(upErr){msg.textContent='Chưa tải được avatar. Cần bật bucket avatars trong Supabase trước.';return}
+   if(pendingAvatarFile!==selected||!msg.isConnected){if(msg.isConnected)msg.textContent='Ảnh đã thay đổi. Hãy bấm Lưu lại để dùng ảnh mới.';return;}
    const {data:pub}=sb.storage.from('avatars').getPublicUrl(path); avatar_url=pub.publicUrl;
  }
  // Prefer UPDATE for an existing profile. If the row does not exist yet, create it.
@@ -3806,10 +3825,11 @@ async function saveProfileChanges(){
  if(data&&data.id!==user.id)return;
  ++state.profileGeneration;state.profileReady=true;
  memberProfile=data||{...(memberProfile||{}),id:user.id,display_name,bio,avatar_url};
- pendingAvatarFile=null;
+ const sameSelection=pendingAvatarFile===selected;
+ if(sameSelection)pendingAvatarFile=null;
  updateAuthUI();
- msg.textContent='Đã lưu ✓';
- setTimeout(()=>{if(authAccountCurrent(state))openProfile('profile')},350);
+ msg.textContent=sameSelection?'Đã lưu ✓':'Đã lưu thay đổi trước. Bấm Lưu để lưu ảnh vừa chọn.';
+ setTimeout(()=>{if(authAccountCurrent(state)&&sameSelection&&pendingAvatarFile===null&&msg.isConnected)openProfile('profile')},350);
 }
 let profileRequestId=0;
 function profileLocalCounts(userId){

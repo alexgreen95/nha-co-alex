@@ -16,3 +16,20 @@
   root.addEventListener('resize',schedule);
   schedule();
 })(window);
+
+/* Reader paragraph selection: keep theme-colored highlight without shifting text. */
+(function(){
+  const style=document.createElement('style');
+  style.id='reader-paragraph-highlight-no-shift';
+  style.textContent=`
+#reader .para-wrap.comment-active .para{
+  background:color-mix(in srgb,var(--accent) 12%,transparent)!important;
+  box-shadow:none!important;
+  border-left:0!important;
+  border-radius:7px!important;
+  padding-left:0!important;
+  margin-left:0!important;
+  transition:background .16s ease!important;
+}`;
+  document.head.appendChild(style);
+})();

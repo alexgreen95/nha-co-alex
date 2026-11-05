@@ -1,5 +1,5 @@
 /* Opt-in admin experiment. Loaded lazily; every visual rule is scoped to the granted class. */
-html body.gach-bong-admin{--bg:#f5ebd7!important;--fg:#4b3227!important;--muted:#826b53!important;--line:#d8bd92!important;--accent:#99583d!important;--panel:#f0e1c5!important;--card:#fff8e9!important;--soft:#f0dfbd!important;background-color:#e7d8b9!important;background-image:url("/assets/gach-bong-admin-tile.jpg")!important;background-size:480px auto!important;background-repeat:repeat!important;background-position:0 0!important;}
+html body.gach-bong-admin{--bg:#f5ebd7!important;--fg:#4b3227!important;--muted:#826b53!important;--line:#d8bd92!important;--accent:#99583d!important;--panel:#f0e1c5!important;--card:#fff8e9!important;--soft:#f0dfbd!important;background-color:#e7d8b9!important;background-image:url("/assets/gach-bong-admin-tile-clean.svg")!important;background-size:480px auto!important;background-repeat:repeat!important;background-position:0 0!important;}
 html body.gach-bong-admin header{background:#fff5e7ed!important;box-shadow:0 3px 14px #62432118!important;}
 html body.gach-bong-admin :is(.card,.profile-card,.profile-section,.story-intro-top,.intro-tabs,.intro-pane,.font-menu,.theme-menu,.paragraph-comment-panel,.account-menu,.notif-panel){background-color:var(--card)!important;border-color:var(--line)!important;box-shadow:0 7px 22px #61402015!important;}
 html body.gach-bong-admin :is(.profile-card,.profile-section,.story-intro-top,.font-menu,.paragraph-comment-panel){background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2240%22%20height%3D%2240%22%20viewBox%3D%220%200%2040%2040%22%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23aa7b46%22%20stroke-width%3D%221.2%22%20opacity%3D%22.65%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M4%2034V18Q4%204%2018%204H34M10%2030V20Q10%2010%2020%2010H30%22%2F%3E%3Cpath%20d%3D%22M15%2015Q30%2013%2025%2025Q13%2030%2015%2015ZM15%2015L26%2026%22%2F%3E%3Ccircle%20cx%3D%228%22%20cy%3D%228%22%20r%3D%222%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"),url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2240%22%20height%3D%2240%22%20viewBox%3D%220%200%2040%2040%22%3E%3Cg%20transform%3D%22translate(40%200)%20scale(-1%201)%22%20fill%3D%22none%22%20stroke%3D%22%23aa7b46%22%20stroke-width%3D%221.2%22%20opacity%3D%22.65%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M4%2034V18Q4%204%2018%204H34M10%2030V20Q10%2010%2020%2010H30%22%2F%3E%3Cpath%20d%3D%22M15%2015Q30%2013%2025%2025Q13%2030%2015%2015ZM15%2015L26%2026%22%2F%3E%3Ccircle%20cx%3D%228%22%20cy%3D%228%22%20r%3D%222%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"),url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2240%22%20height%3D%2240%22%20viewBox%3D%220%200%2040%2040%22%3E%3Cg%20transform%3D%22translate(0%2040)%20scale(1%20-1)%22%20fill%3D%22none%22%20stroke%3D%22%23aa7b46%22%20stroke-width%3D%221.2%22%20opacity%3D%22.65%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M4%2034V18Q4%204%2018%204H34M10%2030V20Q10%2010%2020%2010H30%22%2F%3E%3Cpath%20d%3D%22M15%2015Q30%2013%2025%2025Q13%2030%2015%2015ZM15%2015L26%2026%22%2F%3E%3Ccircle%20cx%3D%228%22%20cy%3D%228%22%20r%3D%222%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"),url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2240%22%20height%3D%2240%22%20viewBox%3D%220%200%2040%2040%22%3E%3Cg%20transform%3D%22translate(40%2040)%20scale(-1%20-1)%22%20fill%3D%22none%22%20stroke%3D%22%23aa7b46%22%20stroke-width%3D%221.2%22%20opacity%3D%22.65%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M4%2034V18Q4%204%2018%204H34M10%2030V20Q10%2010%2020%2010H30%22%2F%3E%3Cpath%20d%3D%22M15%2015Q30%2013%2025%2025Q13%2030%2015%2015ZM15%2015L26%2026%22%2F%3E%3Ccircle%20cx%3D%228%22%20cy%3D%228%22%20r%3D%222%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E")!important;background-size:34px 34px!important;background-repeat:no-repeat!important;background-position:left 3px top 3px,right 3px top 3px,left 3px bottom 3px,right 3px bottom 3px!important;}
@@ -180,4 +180,31 @@ html body.gach-bong-admin #memberArea .bell-btn:not(:hover):not(:focus-visible){
 }
 @media(max-width:360px){
   html body.gach-bong-admin #reader .admin-gach-nameplate{padding:18px 43px!important;}
+}
+
+/* Admin-only gạch bông v3: refined light copper ornaments at safe distances. */
+html body.gach-bong-admin :is(.profile-card,.profile-section,.story-intro-top,#introComments){
+ background-size:36px 36px!important;
+ background-position:left 9px top 9px,right 9px top 9px,left 9px bottom 9px,right 9px bottom 9px!important;
+}
+html body.gach-bong-admin #reader .admin-gach-chapter-panel{
+ background-size:31px 31px!important;
+ background-position:left 7px top 7px,right 7px top 7px,left 7px bottom 7px,right 7px bottom 7px!important;
+}
+html body.gach-bong-admin #reader .admin-gach-chapter-panel .chapter-title::after{
+ height:24px!important;width:min(280px,78%)!important;
+ margin:10px auto 17px!important;
+}
+@media(max-width:700px){
+ html body.gach-bong-admin :is(.profile-card,.profile-section,.story-intro-top,#introComments){
+  background-size:27px 27px!important;
+  background-position:left 7px top 7px,right 7px top 7px,left 7px bottom 7px,right 7px bottom 7px!important;
+ }
+ html body.gach-bong-admin #reader .admin-gach-chapter-panel{
+  background-size:24px 24px!important;
+  background-position:left 7px top 7px,right 7px top 7px,left 7px bottom 7px,right 7px bottom 7px!important;
+ }
+ html body.gach-bong-admin #reader .admin-gach-chapter-panel .chapter-title::after{
+  height:22px!important;width:min(240px,80%)!important;
+ }
 }

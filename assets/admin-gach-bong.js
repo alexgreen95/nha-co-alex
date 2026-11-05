@@ -1,7 +1,7 @@
 /* Optional cosmetic experiment. Authority is the current account's profiles.role; no persisted trial preference. */
 (function(root){
  'use strict';
- const TRIAL='gach-bong-admin',CSS='/assets/admin-gach-bong.css?v=20261105-2';
+ const TRIAL='gach-bong-admin',CSS='/assets/admin-gach-bong.css?v=20261105-3';
  let selected=null,baseTheme=null,denied=null,button=null,flight=null,cssFlight=null,timer=null,selection=0;
  const originalTheme=setTheme,originalUI=updateAuthUI,originalMenu=toggleThemeMenu;
  function account(){try{return authAccount?.owner&&authAccount.owner===authUser?.id?authAccount:null}catch{return null}}

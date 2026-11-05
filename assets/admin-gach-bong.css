@@ -208,3 +208,31 @@ html body.gach-bong-admin #reader .admin-gach-chapter-panel .chapter-title::afte
   height:22px!important;width:min(240px,80%)!important;
  }
 }
+
+
+/* Gạch bông cổ điển v4 — uses the user's tile photo (one cropped original tile,
+   optimized for repetition). No hand-drawn substitute, no corner decorations. */
+html body.gach-bong-admin{
+ background-image:url("/assets/gach-bong-reference.webp")!important;
+ background-repeat:repeat!important;
+ background-size:240px 240px!important;
+ background-position:left top!important;
+ background-color:#d3b48a!important;
+}
+html body.gach-bong-admin :is(.profile-card,.profile-section,.story-intro-top,.font-menu,.paragraph-comment-panel,#introComments),
+html body.gach-bong-admin #reader .admin-gach-chapter-panel{
+ background-image:none!important;
+}
+html body.gach-bong-admin #reader .reader{
+ background-image:none!important;
+}
+html body.gach-bong-admin #reader .admin-gach-nameplate{
+ padding-inline:49px!important;
+ filter:drop-shadow(0 4px 2px #53301b50)!important;
+}
+@media(max-width:700px){
+ html body.gach-bong-admin #reader .admin-gach-nameplate{padding-inline:46px!important;}
+}
+@media(max-width:360px){
+ html body.gach-bong-admin #reader .admin-gach-nameplate{padding-inline:42px!important;}
+}

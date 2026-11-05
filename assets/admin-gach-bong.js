@@ -1,7 +1,7 @@
 /* Optional cosmetic experiment. Authority is the current account's profiles.role; no persisted trial preference. */
 (function(root){
  'use strict';
- const TRIAL='gach-bong-admin',CSS='/assets/admin-gach-bong.css?v=20261105-3';
+ const TRIAL='gach-bong-admin',CSS='/assets/admin-gach-bong.css?v=20261105-4';
  let selected=null,baseTheme=null,denied=null,button=null,flight=null,cssFlight=null,timer=null,selection=0;
  const originalTheme=setTheme,originalUI=updateAuthUI,originalMenu=toggleThemeMenu;
  function account(){try{return authAccount?.owner&&authAccount.owner===authUser?.id?authAccount:null}catch{return null}}
@@ -106,15 +106,46 @@
    'C',l-25,t+7,l-17,t,l,t,'Z'
   ].join(' ');
  }
- function paint(){if(!plate)return;const w=plate.offsetWidth,h=plate.offsetHeight;if(!w||!h)return;const svg=plate.querySelector('svg');svg.setAttribute('viewBox',`0 0 ${w} ${h}`);svg.querySelector('[data-outer]').setAttribute('d',outline(w,h));svg.querySelector('[data-inner]').setAttribute('d',outline(w,h,4));svg.querySelector('[data-np-left]')?.setAttribute('transform',`translate(${Math.min(37,w*.085)} ${h/2})`);svg.querySelector('[data-np-right]')?.setAttribute('transform',`translate(${w-Math.min(37,w*.085)} ${h/2}) scale(-1 1)`);}
+ function paint(){if(!plate)return;const w=plate.offsetWidth,h=plate.offsetHeight;if(!w||!h)return;const svg=plate.querySelector('svg');svg.setAttribute('viewBox',`0 0 ${w} ${h}`);svg.querySelectorAll('[data-plate-inset]').forEach(p=>p.setAttribute('d',outline(w,h,Number(p.getAttribute('data-plate-inset'))||0)));svg.querySelector('[data-np-left]')?.setAttribute('transform',`translate(${Math.min(37,w*.085)} ${h/2})`);svg.querySelector('[data-np-right]')?.setAttribute('transform',`translate(${w-Math.min(37,w*.085)} ${h/2}) scale(-1 1)`);}
  function remove(){observer?.disconnect();if(plate){plate.replaceWith(...originalHeadNodes);while(panel.firstChild)reader.insertBefore(panel.firstChild,panel);panel.remove();plate=null;panel=null;}}
- function install(){if(plate)return;reader=document.querySelector('#reader>.reader');head=reader.querySelector('.reader-head');originalHeadNodes=[...head.childNodes];plate=document.createElement('div');plate.className='admin-gach-nameplate';const svg=document.createElementNS(ns,'svg');svg.setAttribute('aria-hidden','true');svg.setAttribute('focusable','false');for(const [attr,color,width,fill] of [['data-outer','#684128','1.35','#fff6df'],['data-inner','#bc904e','.85','none']]){const p=document.createElementNS(ns,'path');p.setAttribute(attr,'');p.setAttribute('fill',fill);p.setAttribute('stroke',color);p.setAttribute('stroke-width',width);p.setAttribute('stroke-linejoin','round');svg.append(p);}for(const side of ['left','right']){
-    const g=document.createElementNS(ns,'g');g.setAttribute('data-np-'+side,'');g.setAttribute('fill','none');g.setAttribute('stroke-linecap','round');
-    const petal=document.createElementNS(ns,'path');petal.setAttribute('d','M -11 -1 C -8 -14 4 -15 9 -5 C 1 0 -5 4 -11 -1 Z M -11 1 C -6 12 5 13 9 5 C 0 2 -4 -2 -11 1 Z');petal.setAttribute('fill','#4c9994');petal.setAttribute('fill-opacity','.23');petal.setAttribute('stroke','#41797c');petal.setAttribute('stroke-width','1.1');
-    const curl=document.createElementNS(ns,'path');curl.setAttribute('d','M -12 -12 C 5 -23 16 -8 10 1 C 6 7 -2 7 -5 1 C -7 -4 -1 -8 2 -5 M -12 12 C 5 23 16 8 10 -1');curl.setAttribute('stroke','#b78b47');curl.setAttribute('stroke-width','1.45');
-    const dot=document.createElementNS(ns,'circle');dot.setAttribute('cx','2');dot.setAttribute('cy','0');dot.setAttribute('r','2.3');dot.setAttribute('fill','#ad5e43');
-    g.append(petal,curl,dot);svg.append(g);
+ function install(){if(plate)return;reader=document.querySelector('#reader>.reader');head=reader.querySelector('.reader-head');originalHeadNodes=[...head.childNodes];plate=document.createElement('div');plate.className='admin-gach-nameplate';const svg=document.createElementNS(ns,'svg');svg.setAttribute('aria-hidden','true');svg.setAttribute('focusable','false');for(const [inset,color,width,fill] of [
+  [0,'#5a321d','9','none'],
+  [0,'#c99542','6','#fff6df'],
+  [0,'#764a28','1.4','none'],
+  [7,'#deb05c','2.3','none'],
+  [9,'#fff2c4','1.4','none']
+ ]){
+   const p=document.createElementNS(ns,'path');
+   p.setAttribute('data-plate-inset',String(inset));
+   p.setAttribute('fill',fill);
+   p.setAttribute('stroke',color);
+   p.setAttribute('stroke-width',width);
+   p.setAttribute('stroke-linejoin','round');
+   svg.append(p);
+ }
+ for(const side of ['left','right']){
+   const g=document.createElementNS(ns,'g');
+   g.setAttribute('data-np-'+side,'');
+   g.setAttribute('stroke','#ac7531');
+   g.setAttribute('stroke-width','.8');
+   g.setAttribute('stroke-linecap','round');
+   for(const d of [
+    'M -8 -1 C -1 -3 0 -13 13 -17 C 18 -7 12 -1 -3 1 Z',
+    'M -8 1 C -1 3 0 13 13 17 C 18 7 12 1 -3 -1 Z',
+    'M -10 0 C -2 -7 7 -7 17 0 C 7 7 -2 7 -10 0 Z'
+   ]){
+     const p=document.createElementNS(ns,'path');
+     p.setAttribute('d',d);
+     p.setAttribute('fill','#bc852e');
+     g.append(p);
    }
-   plate.append(svg,...originalHeadNodes);head.append(plate);panel=document.createElement('div');panel.className='admin-gach-chapter-panel';while(head.nextSibling)panel.append(head.nextSibling);reader.append(panel);observer=new ResizeObserver(paint);observer.observe(plate);paint();}
+   const stem=document.createElementNS(ns,'path');
+   stem.setAttribute('d','M -18 0 H -5');
+   stem.setAttribute('fill','none');
+   stem.setAttribute('stroke','#a76f2c');
+   stem.setAttribute('stroke-width','1.4');
+   g.append(stem);svg.append(g);
+ }
+ plate.append(svg,...originalHeadNodes);head.append(plate);panel=document.createElement('div');panel.className='admin-gach-chapter-panel';while(head.nextSibling)panel.append(head.nextSibling);reader.append(panel);observer=new ResizeObserver(paint);observer.observe(plate);paint();}
  sync();
 })(window);

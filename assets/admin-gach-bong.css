@@ -35,3 +35,149 @@ html body.gach-bong-admin #reader .admin-gach-nameplate :is(#rtitle,#rauthor){po
 html body.gach-bong-admin #reader .admin-gach-nameplate #rtitle{margin:0 0 8px;}
 html body.gach-bong-admin #reader .admin-gach-chapter-panel{display:flow-root;background-color:var(--card);background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2240%22%20height%3D%2240%22%20viewBox%3D%220%200%2040%2040%22%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23aa7b46%22%20stroke-width%3D%221.2%22%20opacity%3D%22.65%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M4%2034V18Q4%204%2018%204H34M10%2030V20Q10%2010%2020%2010H30%22%2F%3E%3Cpath%20d%3D%22M15%2015Q30%2013%2025%2025Q13%2030%2015%2015ZM15%2015L26%2026%22%2F%3E%3Ccircle%20cx%3D%228%22%20cy%3D%228%22%20r%3D%222%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"),url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2240%22%20height%3D%2240%22%20viewBox%3D%220%200%2040%2040%22%3E%3Cg%20transform%3D%22translate(40%200)%20scale(-1%201)%22%20fill%3D%22none%22%20stroke%3D%22%23aa7b46%22%20stroke-width%3D%221.2%22%20opacity%3D%22.65%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M4%2034V18Q4%204%2018%204H34M10%2030V20Q10%2010%2020%2010H30%22%2F%3E%3Cpath%20d%3D%22M15%2015Q30%2013%2025%2025Q13%2030%2015%2015ZM15%2015L26%2026%22%2F%3E%3Ccircle%20cx%3D%228%22%20cy%3D%228%22%20r%3D%222%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"),url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2240%22%20height%3D%2240%22%20viewBox%3D%220%200%2040%2040%22%3E%3Cg%20transform%3D%22translate(0%2040)%20scale(1%20-1)%22%20fill%3D%22none%22%20stroke%3D%22%23aa7b46%22%20stroke-width%3D%221.2%22%20opacity%3D%22.65%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M4%2034V18Q4%204%2018%204H34M10%2030V20Q10%2010%2020%2010H30%22%2F%3E%3Cpath%20d%3D%22M15%2015Q30%2013%2025%2025Q13%2030%2015%2015ZM15%2015L26%2026%22%2F%3E%3Ccircle%20cx%3D%228%22%20cy%3D%228%22%20r%3D%222%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"),url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2240%22%20height%3D%2240%22%20viewBox%3D%220%200%2040%2040%22%3E%3Cg%20transform%3D%22translate(40%2040)%20scale(-1%20-1)%22%20fill%3D%22none%22%20stroke%3D%22%23aa7b46%22%20stroke-width%3D%221.2%22%20opacity%3D%22.65%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M4%2034V18Q4%204%2018%204H34M10%2030V20Q10%2010%2020%2010H30%22%2F%3E%3Cpath%20d%3D%22M15%2015Q30%2013%2025%2025Q13%2030%2015%2015ZM15%2015L26%2026%22%2F%3E%3Ccircle%20cx%3D%228%22%20cy%3D%228%22%20r%3D%222%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");background-size:26px 26px;background-position:left top,right top,left bottom,right bottom;background-repeat:no-repeat;border-radius:16px;box-shadow:0 0 0 12px var(--card),0 8px 28px 12px #51352622;}
 @media(max-width:700px){html body.gach-bong-admin #reader .reader-head{padding:17px 7px;}html body.gach-bong-admin #reader .admin-gach-nameplate{padding:18px 30px;}}
+
+
+/* Gạch bông cổ điển — admin-only visual refinement (2026-11-05).
+   Isolated from all existing theme classes, selectors and reader behavior. */
+
+/* Framed, lightly aged painting: keep the original banner image sharp. */
+html body.gach-bong-admin #home .art-hero{
+  width:min(1120px,calc(100% - 42px))!important;
+  max-width:1120px!important;
+  height:330px!important;
+  margin:24px auto 28px!important;
+  border:9px solid #bd8b52!important;
+  border-radius:10px!important;
+  outline:2px solid #f3d8a2!important;
+  outline-offset:-5px!important;
+  box-shadow:0 0 0 2px #67442f,0 14px 34px #35221960,inset 0 0 0 2px #fff5d6!important;
+  isolation:isolate;
+}
+html body.gach-bong-admin #home .art-hero-image{
+  filter:sepia(.24) saturate(.94) contrast(1.12) brightness(.98)!important;
+  opacity:1!important;mix-blend-mode:normal!important;
+}
+html body.gach-bong-admin #home .art-hero::before{
+  content:""!important;display:block!important;
+  position:absolute!important;inset:0!important;z-index:1!important;
+  background:rgba(157,91,40,.13)!important;
+  mix-blend-mode:multiply!important;
+  opacity:1!important;pointer-events:none!important;
+}
+html body.gach-bong-admin #home .art-hero::after{content:none!important}
+html body.gach-bong-admin #home :is(.hero-fade,.hero-fade-top){
+  display:none!important;background:none!important;
+}
+html body.gach-bong-admin #home .hero-panel{z-index:3!important}
+
+/* Compact independent tabs and a single sorting control, not full-width bars. */
+html body.gach-bong-admin #home .home-tabs{
+  width:max-content!important;max-width:calc(100% - 28px)!important;
+  padding:0 17px!important;margin:0 auto 17px!important;
+  gap:24px!important;justify-content:center!important;
+  background:var(--card)!important;border:1px solid #d6b98b!important;
+  border-radius:12px!important;box-shadow:0 4px 13px #58392424!important;
+}
+html body.gach-bong-admin #home .home-tabs .home-tab{
+  padding:11px 3px 9px!important;white-space:nowrap!important;
+}
+html body.gach-bong-admin #home .library-controls{
+  background:transparent!important;border:0!important;box-shadow:none!important;
+  padding:0!important;min-height:0!important;
+  justify-content:flex-start!important;
+}
+html body.gach-bong-admin #home .library-controls .sort-wrap{
+  width:auto!important;max-width:100%!important;flex:0 0 auto!important;
+}
+html body.gach-bong-admin #home #sortMain{
+  width:auto!important;min-width:0!important;
+  background:#fff5df!important;padding:8px 13px!important;
+  border-radius:10px!important;box-shadow:0 2px 6px #60402222!important;
+}
+
+/* Single coherent hand-painted ornament family, alternating corner flourishes. */
+html body.gach-bong-admin :is(.profile-card,.profile-section,.story-intro-top,#introComments){
+  background-color:var(--card)!important;
+  background-image:
+    url("/assets/gach-bong-corner-tl.svg"),
+    url("/assets/gach-bong-corner-tr.svg"),
+    url("/assets/gach-bong-corner-bl.svg"),
+    url("/assets/gach-bong-corner-br.svg")!important;
+  background-size:46px 46px!important;
+  background-position:left 9px top 9px,right 9px top 9px,left 9px bottom 9px,right 9px bottom 9px!important;
+  background-repeat:no-repeat!important;
+}
+html body.gach-bong-admin #reader .admin-gach-chapter-panel{
+  background-color:var(--card)!important;
+  background-image:
+    url("/assets/gach-bong-corner-tl.svg"),
+    url("/assets/gach-bong-corner-tr.svg"),
+    url("/assets/gach-bong-corner-bl.svg"),
+    url("/assets/gach-bong-corner-br.svg")!important;
+  background-size:39px 39px!important;
+  background-position:left 8px top 8px,right 8px top 8px,left 8px bottom 8px,right 8px bottom 8px!important;
+  background-repeat:no-repeat!important;
+}
+/* No intrusive corner decals on small overlays or menus. */
+html body.gach-bong-admin :is(.paragraph-comment-panel,.font-menu,.theme-menu,.account-menu,.notif-panel){
+  background-color:var(--card)!important;
+  background-image:none!important;
+}
+html body.gach-bong-admin .paragraph-comment-panel{padding:16px!important;}
+html body.gach-bong-admin .paragraph-comment-panel :is(.comment-panel-head,.comment-compose){background-image:none!important;}
+
+/* Rosette divider after the existing chapter heading, not within story prose. */
+html body.gach-bong-admin #reader .admin-gach-chapter-panel .chapter-title::after{
+  content:""!important;display:block!important;
+  height:29px!important;width:min(310px,80%)!important;
+  margin:12px auto 16px!important;
+  background:url("/assets/gach-bong-divider.svg") center/contain no-repeat!important;
+  border:0!important;box-shadow:none!important;pointer-events:none!important;
+}
+
+/* Preserve no-reflow paragraph selection from main. */
+html body.gach-bong-admin #reader .para-wrap.comment-active .para{
+  background:color-mix(in srgb,var(--accent) 18%,transparent)!important;
+  box-shadow:none!important;border:0!important;outline:0!important;
+  padding-left:0!important;margin-left:0!important;
+}
+
+/* The feedback link is never a permanently highlighted account row. */
+html body.gach-bong-admin #accountMenu>.feedback-link,
+html body.gach-bong-admin #accountMenu>.feedback-link:is(:hover,:active,:focus,:focus-visible,:visited){
+  display:block!important;background:transparent!important;background-color:transparent!important;
+  box-shadow:none!important;text-shadow:none!important;
+  color:var(--fg)!important;opacity:1!important;
+}
+html body.gach-bong-admin #accountMenu>.feedback-link:hover{
+  color:var(--accent)!important;text-decoration:underline!important;text-underline-offset:3px!important;
+}
+html body.gach-bong-admin #accountMenu>.feedback-link:focus-visible{
+  outline:2px solid var(--accent)!important;outline-offset:-2px!important;
+}
+html body.gach-bong-admin #memberArea .bell-btn:not(:hover):not(:focus-visible){
+  filter:none!important;
+}
+
+@media(max-width:700px){
+  html body.gach-bong-admin #home .art-hero{
+    width:calc(100% - 18px)!important;height:260px!important;
+    margin:12px auto 19px!important;border-width:6px!important;border-radius:8px!important;
+  }
+  html body.gach-bong-admin #home .home-tabs{
+    gap:clamp(8px,3vw,17px)!important;padding:0 10px!important;
+  }
+  html body.gach-bong-admin #home .home-tabs .home-tab{font-size:clamp(11px,3.35vw,14px)!important;}
+  html body.gach-bong-admin :is(.profile-card,.profile-section,.story-intro-top,#introComments){
+    background-size:31px 31px!important;
+    background-position:left 5px top 5px,right 5px top 5px,left 5px bottom 5px,right 5px bottom 5px!important;
+  }
+  html body.gach-bong-admin #reader .admin-gach-chapter-panel{
+    background-size:28px 28px!important;
+    background-position:left 5px top 5px,right 5px top 5px,left 5px bottom 5px,right 5px bottom 5px!important;
+  }
+  html body.gach-bong-admin #reader .admin-gach-nameplate{padding:18px 48px!important;}
+}
+@media(max-width:360px){
+  html body.gach-bong-admin #reader .admin-gach-nameplate{padding:18px 43px!important;}
+}

@@ -7,11 +7,17 @@ async function startBrowser() {
   sdk = execFileSync('curl', ['--fail', '--silent', '--show-error', '--max-time', '20', 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2']);
   server = http.createServer((req, res) => {
     const pathname=new URL(req.url,'http://localhost').pathname;
-    if(pathname.startsWith('/_vercel/')){res.setHeader('Content-Type','application/javascript');res.end('');return;}
-    // Serve real local assets; returning index.html for JS hides auth/bootstrap regressions.
-    const file=path.resolve(root,'.'+pathname),mime={'.js':'application/javascript','.css':'text/css','.png':'image/png','.jpg':'image/jpeg','.svg':'image/svg+xml','.woff2':'font/woff2'}[path.extname(pathname)];
-    if(mime&&file.startsWith(root+path.sep)&&fs.existsSync(file)&&fs.statSync(file).isFile()){
-      res.setHeader('Content-Type',mime);res.end(fs.readFileSync(file));return;
+    if(pathname==='/assets/push-lifecycle.js'){
+      res.setHeader('Content-Type','application/javascript');
+      res.end(fs.readFileSync(path.join(root,'assets/push-lifecycle.js')));return;
+    }
+    if(pathname==='/assets/push-settings.js'){
+      res.setHeader('Content-Type','application/javascript');
+      res.end(fs.readFileSync(path.join(root,'assets/push-settings.js')));return;
+    }
+    if(/^\/assets\/image-[a-f0-9]{12}\.png$/.test(pathname)){
+      res.setHeader('Content-Type','image/png');
+      res.end(fs.readFileSync(path.join(root,pathname)));return;
     }
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.end(fs.readFileSync(process.env.HOME_FEED_HTML || path.join(root, 'index.html')));

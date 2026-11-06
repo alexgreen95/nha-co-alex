@@ -4936,13 +4936,32 @@ initAuth().catch(()=>{updateAuthUI(); if(!location.pathname.startsWith('/quan-ly
     rerenderThread(t); requestAnimationFrame(()=>syncStoryCommentMore(document));
   },true);
 
-  function naturalHeight(el){
-    const c=el.cloneNode(true);c.setAttribute('data-layout-measurement','');c.classList.add('expanded');Object.assign(c.style,{position:'absolute',visibility:'hidden',pointerEvents:'none',left:'-99999px',top:'0',width:el.getBoundingClientRect().width+'px',height:'auto',maxHeight:'none',overflow:'visible',display:'block',webkitLineClamp:'unset',webkitBoxOrient:'initial'});document.body.appendChild(c);const h=c.scrollHeight;c.remove();return h;
+  // Measure the clamped and full text at the SAME width and in the SAME
+  // comment bubble. Measuring a detached clone under document.body loses the
+  // popup's inherited font metrics and can falsely show "Xem thêm" for 3 lines.
+  function exceedsThreeLines(el){
+    const width=el.getBoundingClientRect().width, parent=el.parentElement;
+    if(!parent||width<=0)return false;
+    const probe=el.cloneNode(true);
+    probe.setAttribute('data-layout-measurement','');
+    probe.classList.remove('expanded');
+    Object.assign(probe.style,{
+      position:'absolute',visibility:'hidden',pointerEvents:'none',
+      left:'0',top:'0',width:width+'px',boxSizing:'border-box',
+      height:'auto',maxHeight:'none',maxWidth:'none'
+    });
+    parent.appendChild(probe);
+    try{
+      const clamped=probe.getBoundingClientRect().height;
+      probe.classList.add('expanded');
+      const full=probe.getBoundingClientRect().height;
+      return full>clamped+1.5;
+    }finally{probe.remove();}
   }
   window.syncStoryCommentMore=function(root){
     (root||document).querySelectorAll('.comment-bubble').forEach(function(bubble){
       const body=bubble.querySelector('.story-comment-clamp'),btn=bubble.querySelector('.story-comment-more');if(!body||!btn)return;
-      const lh=parseFloat(getComputedStyle(body).lineHeight)||20,h=naturalHeight(body),overflow=h>lh*3+3;
+      const overflow=exceedsThreeLines(body);
       bubble.classList.toggle('story-comment-overflow',overflow);
       if(!overflow){body.classList.remove('expanded');bubble.classList.remove('story-comment-expanded');btn.hidden=true}else if(!body.classList.contains('expanded'))btn.hidden=false;
     });
